@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="40mm"
+   height="8mm"
+   viewBox="0 0 40 8"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="cc7800.svg"
+   inkscape:export-filename="/home/steux/bitmap.png"
+   inkscape:export-xdpi="165.43468"
+   inkscape:export-ydpi="165.43468"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="5.6568542"
+     inkscape:cx="54.623999"
+     inkscape:cy="24.395184"
+     inkscape:window-width="1920"
+     inkscape:window-height="1043"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient14868">
+      <stop
+         style="stop-color:#ff0000;stop-opacity:1"
+         offset="0"
+         id="stop14864" />
+      <stop
+         style="stop-color:#ffcc00;stop-opacity:1"
+         offset="0.31002754"
+         id="stop17251" />
+      <stop
+         style="stop-color:#00ff00;stop-opacity:1"
+         offset="0.50020295"
+         id="stop16963" />
+      <stop
+         style="stop-color:#00ffff;stop-opacity:1"
+         offset="0.70234197"
+         id="stop17795" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1"
+         offset="0.88932669"
+         id="stop17861" />
+      <stop
+         style="stop-color:#000080;stop-opacity:1"
+         offset="1"
+         id="stop14866" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient14868"
+       id="linearGradient14870"
+       x1="17.320932"
+       y1="22.902141"
+       x2="53.64258"
+       y2="22.902141"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-14.368634,-19.170878)">
+    <g
+       id="g19282"
+       transform="matrix(1.0830486,0,0,1,-4.3907779,0.26407649)"
+       inkscape:export-filename="/home/steux/git/cc7800/misc/cc7800.png"
+       inkscape:export-xdpi="165.43468"
+       inkscape:export-ydpi="165.43468">
+      <rect
+         style="fill:url(#linearGradient14870);stroke-width:0.264583"
+         id="rect18993-7-2-3-7"
+         width="36.321648"
+         height="7.9167347"
+         x="17.320932"
+         y="18.943773" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.5085px;line-height:1.25;font-family:MumboSSK;-inkscape-font-specification:'MumboSSK, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.254237"
+         x="27.47753"
+         y="25.609098"
+         id="text24636"
+         transform="scale(0.96089522,1.0406962)"><tspan
+           sodipodi:role="line"
+           id="tspan33876"
+           x="27.47753"
+           y="25.609098">78</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-weight:normal;font-size:10.1695px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.254237"
+         x="18.025829"
+         y="25.810135"
+         id="text36208"
+         transform="scale(0.96089522,1.0406962)"><tspan
+           sodipodi:role="line"
+           id="tspan36206"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.8644px;font-family:MumboSSK;-inkscape-font-specification:'MumboSSK, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.254237"
+           x="18.025829"
+           y="25.810135">cc</tspan></text>
+    </g>
+    <path
+       d="m 44.577507,22.96612 q 0,1.787295 -1.125069,2.912628 -1.11425,1.114301 -2.866763,1.114301 -1.720057,0 -2.726129,-0.981909 -0.995253,-0.981908 -0.995253,-2.736104 0,-1.743165 1.027707,-2.901596 1.049343,-1.202562 2.736947,-1.202562 1.709241,0 2.812673,1.015007 1.135887,1.059137 1.135887,2.780235 z m -1.741693,0.07722 q 0,-1.02604 -0.540899,-1.699033 -0.584171,-0.717124 -1.579423,-0.717124 -1.006073,0 -1.698423,0.794353 -0.659896,0.750223 -0.659896,1.798327 0,1.037072 0.627443,1.688 0.627442,0.650928 1.644331,0.650928 1.006072,0 1.622696,-0.761255 0.584171,-0.717124 0.584171,-1.754196 z"
+       id="path19292"
+       style="font-size:10.9248px;line-height:1.25;font-family:MumboSSK;-inkscape-font-specification:'MumboSSK, Normal';stroke-width:0.27312;fill:#ffffff" />
+    <path
+       d="m 52.961432,22.96612 q 0,1.787295 -1.125069,2.912628 -1.114252,1.114301 -2.866763,1.114301 -1.720058,0 -2.72613,-0.981909 -0.995253,-0.981908 -0.995253,-2.736104 0,-1.743165 1.027708,-2.901596 1.049343,-1.202562 2.736947,-1.202562 1.709239,0 2.812673,1.015007 1.135887,1.059137 1.135887,2.780235 z m -1.741694,0.07722 q 0,-1.02604 -0.540899,-1.699033 -0.58417,-0.717124 -1.579424,-0.717124 -1.006071,0 -1.698421,0.794353 -0.659897,0.750223 -0.659897,1.798327 0,1.037072 0.627442,1.688 0.627443,0.650928 1.644333,0.650928 1.006071,0 1.622696,-0.761255 0.58417,-0.717124 0.58417,-1.754196 z"
+       id="path19294"
+       style="font-size:10.9248px;line-height:1.25;font-family:MumboSSK;-inkscape-font-specification:'MumboSSK, Normal';stroke-width:0.27312;fill:#ffffff" />
+    <rect
+       style="fill:#ffd652;fill-opacity:0.0470588;stroke-width:0.264583"
+       id="rect14640"
+       width="36.560127"
+       height="8.070467"
+       x="10.056902"
+       y="4.1831102" />
+  </g>
+</svg>
