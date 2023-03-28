@@ -1,0 +1,18 @@
+[package]
+name = "cc7800"
+version = "0.1.0"
+edition = "2021"
+authors = ["Bruno STEUX <bruno.steux@gmail.com>"]
+license = "GPL-3.0-or-later"
+description = "a subset of C compiler for Atari 7800"
+readme = "README.md"
+homepage = "https://github.com/steux/cc7800"
+repository = "https://github.com/steux/cc7800"
+keywords = ["cli", "atari7800", "compiler", "gamedev"]
+categories = ["command-line-utilities", "game-development", "compilers"]
+
+[dependencies]
+env_logger = "0.9"
+log = "0.4"
+clap = { version = "4.0", features = ["derive"] }
+cc6502 = { path = "../cc6502" }
