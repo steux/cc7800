@@ -32,6 +32,11 @@ use build::build_cartridge;
 fn main() {
     env_logger::init();
     let args = Args::parse();
+    if args.version {
+        const VERSION: &str = env!("CARGO_PKG_VERSION");
+        println!("cc7800 v{} - a subset of C compiler targetting the Atari 7800 ProSystem console", VERSION);
+        std::process::exit(0); 
+    }
     
     let f = match File::open(&args.input) {
         Ok(file) => file,
