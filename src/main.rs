@@ -22,6 +22,7 @@ use cc6502::Args;
 use cc6502::compile::compile;
 
 use std::fs::File;
+use std::io;
 use std::io::BufReader;
 
 use clap::Parser;
@@ -38,14 +39,6 @@ fn main() {
         std::process::exit(0); 
     }
     
-    let f = match File::open(&args.input) {
-        Ok(file) => file,
-        Err(err) => {
-            eprintln!("{}", err);
-            std::process::exit(1);
-        }
-    };
-    let reader = BufReader::new(f);
     let mut writer = match File::create(&args.output) {
         Ok(file) => file,
         Err(err) => {
@@ -54,11 +47,30 @@ fn main() {
         }
     };
 
-    match compile(reader, &mut writer, &args, build_cartridge) {
-        Err(e) => {
-            eprintln!("{}", e);
-            std::process::exit(1) 
-        },
-        Ok(_) => std::process::exit(0) 
+    if args.input == "stdin" {
+        let reader = io::stdin().lock();
+        match compile(reader, &mut writer, &args, build_cartridge) {
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1) 
+            },
+            Ok(_) => std::process::exit(0) 
+        }
+    } else {
+        let f = match File::open(&args.input) {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("{}", err);
+                std::process::exit(1);
+            }
+        };
+        let reader = BufReader::new(f);
+        match compile(reader, &mut writer, &args, build_cartridge) {
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1) 
+            },
+            Ok(_) => std::process::exit(0) 
+        }
     }
 }
