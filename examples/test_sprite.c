@@ -6,8 +6,7 @@ unsigned char xpos, ypos;
 char *dlpnt;
 
 holeydma scattered(16, 1) char sprite[16] = { 0x3c, 0x3c, 0x42, 0x42, 0x99, 0x99, 0xa5, 0xa5, 0x81, 0x81, 0xa5, 0xa5, 0x42, 0x42, 0x3c, 0x3c };
-ramchip char dl0[64];
-ramchip char dl1[64], dl2[64], dl3[64], dl4[64], dl5[64], dl6[64], dl7[64], dl8[64], dl9[64], dl10[64], dl11[64];
+ramchip char dl0[64], dl1[64], dl2[64], dl3[64], dl4[64], dl5[64], dl6[64], dl7[64], dl8[64], dl9[64], dl10[64], dl11[64];
 #ifdef PAL
 #define DLL_ARRAY_SIZE 15 
 #define YMAX (240 - 16)
@@ -28,7 +27,7 @@ void main()
     dll[X = 0] = 0x4f;  // 16 lines
     dll[++X] = 0x21; // 0x2100 = Blank DL
     dll[++X] = 0x00;
-    dll[++X] = 0x49; // 4 lines
+    dll[++X] = 0x48; // 9 lines
     dll[++X] = 0x21; // 0x2100 = Blank DL
     dll[++X] = 0x00;
     // 192 lines divided into 12 regions
@@ -41,7 +40,7 @@ void main()
     dll[++X] = 0x4f; // 16 lines
     dll[++X] = 0x21; // 0x2100 = Blank DL
     dll[++X] = 0x00;
-    dll[++X] = 0x4a; // 10 lines
+    dll[++X] = 0x49; // 10 lines
     dll[++X] = 0x21; // 0x2100 = Blank DL
     dll[++X] = 0x00;
 
