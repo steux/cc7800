@@ -10,7 +10,7 @@ holeydma scattered(16, 1) char sprite[16] = { 0x3c, 0x3c, 0x42, 0x42, 0x99, 0x99
 ramchip char dll[16 * 3];
 ramchip char dl0[64];
 ramchip char dl1[64], dl2[64], dl3[64], dl4[64], dl5[64], dl6[64], dl7[64], dl8[64], dl9[64], dl10[64], dl11[64];
-ramchip char *dls[12] = { dl0, dl1, dl2, dl3, dl4, dl5, dl6, dl7, dl8, dl9, dl10, dl11 };
+const char *dls[12] = { dl0, dl1, dl2, dl3, dl4, dl5, dl6, dl7, dl8, dl9, dl10, dl11 };
 
 void main()
 {
@@ -92,8 +92,7 @@ void main()
             Y = dlend[X];
             dlpnt[Y++] = sprite; // Low byte of data address
             dlpnt[Y++] = 0x40; // Mode 320x1
-            i ^= 0x0f;
-            dlpnt[Y++] = (sprite >> 8) - i;
+            dlpnt[Y++] = ((sprite - 0x1000) >> 8) | i;
             dlpnt[Y++] = 0x1f; // Palette 0, 1 byte wide  
             dlpnt[Y++] = xpos; // Horizontal position
             dlend[X] = Y;

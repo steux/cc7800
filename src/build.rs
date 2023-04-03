@@ -34,6 +34,7 @@ struct MemoryMap<'a> {
     remaining_functions: u32,
     remaining_scattered: u32,
     remaining_variables: u32,
+    startup_code: bool,
 }
 
 impl<'a> MemoryMap<'a> {
@@ -47,6 +48,7 @@ impl<'a> MemoryMap<'a> {
         let mut remaining_scattered = 0;
         let mut remaining_variables = 0;
         for v in compiler_state.sorted_variables().iter() {
+            debug!("Variable: {}, {:?}", v.0, v.1.memory);
             if let VariableMemory::ROM(b) = v.1.memory {
                 if b == bank {
                     if let Some(_) = v.1.scattered {
@@ -58,21 +60,26 @@ impl<'a> MemoryMap<'a> {
             }
         }
 
+        debug!("Remaining: {}, {}, {}", remaining_variables, remaining_functions, remaining_variables);
         MemoryMap {
             bank,
             set: HashSet::new(),
             remaining_functions,
             remaining_scattered,
             remaining_variables,
+            startup_code: false,
         }
     }
 
-    fn fill_memory(&mut self, org: u32, rorg: u32, size: u32, compiler_state: &'a CompilerState, gstate: &mut GeneratorState, args: &Args) -> Result<(), Error> {
+    // TODO: Manage holey DMA and NOT Holey DMA
+    fn fill_memory(&mut self, org: u32, rorg: u32, size: u32, compiler_state: &'a CompilerState, gstate: &mut GeneratorState, args: &Args, allow_scattered: bool) -> Result<(), Error> {
+        debug!("Filling memory at ${:04x} (RORG=${:04x}), size = ${:04x}, allow_scattered={}", org, rorg, size, allow_scattered);
+
         // Is there any scattered memory remaining ?
-        if self.remaining_scattered > 0 {
+        if allow_scattered && self.remaining_scattered > 0 {
             // Yes. So let's try to fit some.
             // Are we in a zone where 16 lines of scattered data can be stored ?
-            if rorg & 0x1000 == 0 && size >= 0x1000 {
+            if rorg > 0x8000 && rorg & 0x1fff == 0 && size >= 0x1000 {
                 // Yes. Let's see if there is any remaining 16 lines scattered data to be stored
                 let mut scattered_16 = false;
                 for v in compiler_state.sorted_variables().iter() {
@@ -81,7 +88,7 @@ impl<'a> MemoryMap<'a> {
                             if let Some((l, _)) = v.1.scattered {
                                 if l == 16 {
                                     if !self.set.contains(v.0) {
-                                        // OK. We have found a 16 lines scattered data that was not
+                                        // OK. We have found a 16 lines scattered data zone that was not
                                         // allocated to any zone. Let's create a new 16 lines scattered data zone
                                         scattered_16 = true;
                                         break;
@@ -104,7 +111,7 @@ impl<'a> MemoryMap<'a> {
                                 if let Some((l, _)) = v.1.scattered {
                                     if l == 16 {
                                         if !self.set.contains(v.0) {
-                                            // OK. We have found a 16 lines scattered data that was not
+                                            // OK. We have found a 16 lines scattered data zone that was not
                                             // allocated to any zone. Let's set if it can fit into this area
                                             if let VariableDefinition::Array(a) = &v.1.def {
                                                 let width = a.len() as u32 / 16;
@@ -112,6 +119,7 @@ impl<'a> MemoryMap<'a> {
                                                     fill += width;
                                                     sv.push((v.0.clone(), width));
                                                     self.set.insert(v.0);
+                                                    self.remaining_scattered -= 1;
                                                 }
                                             }
                                         }
@@ -122,7 +130,7 @@ impl<'a> MemoryMap<'a> {
                     }
 
                     // Write the effective scattered data
-                    gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
+                    gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
                     for i in &sv {
                         gstate.write(&format!("\n{}", i.0))?;
                         let v = compiler_state.variables.get(&i.0).unwrap();
@@ -141,7 +149,7 @@ impl<'a> MemoryMap<'a> {
                         }
                     }
                     for l in 1..16 {
-                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}\n", org + 256 * l, rorg + 256 * l))?;
+                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org + 256 * l, rorg + 256 * l))?;
                         let mut counter = 0;
                         for i in &sv {
                             let v = compiler_state.variables.get(&i.0).unwrap();
@@ -166,49 +174,163 @@ impl<'a> MemoryMap<'a> {
                     }
 
                     // Go on with filling the memory
-                    return self.fill_memory(org + 0x1000, rorg + 0x1000, size - 0x1000, compiler_state, gstate, args); 
+                    return self.fill_memory(org + 0x1000, rorg + 0x1000, size - 0x1000, compiler_state, gstate, args, true); 
                 }
             }
-            // TODO: Implement the same for 8 lines scattered data
-        }
-        // TODO: Implement partial code generation
+            
+            // Are we in a zone where 8 lines of scattered data can be stored ?
+            if org > 0x8000 && rorg & 0xfff == 0 && size >= 0x800 {
+                // Yes. Let's see if there is any remaining 8 lines scattered data to be stored
+                let mut scattered_8 = false;
+                for v in compiler_state.sorted_variables().iter() {
+                    if let VariableMemory::ROM(b) = v.1.memory {
+                        if b == self.bank {
+                            if let Some((l, _)) = v.1.scattered {
+                                if l == 8 {
+                                    if !self.set.contains(v.0) {
+                                        // OK. We have found a 8 lines scattered data zone that was not
+                                        // allocated to any zone. Let's create a new 8 lines scattered data zone
+                                        scattered_8 = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if scattered_8 {
+                    // Great. Let's fill this 4Kb of memory with 8 lines scattered data
+                    gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
         
-        // Generate functions code
-        gstate.write("\n\n; Functions definitions\n\tSEG CODE\n")?;
+                    // Let's select all the variables that will fit into this scattered data
+                    let mut sv = Vec::<(String, u32)>::new();
+                    let mut fill = 0;
+                    for v in compiler_state.sorted_variables().iter() {
+                        if let VariableMemory::ROM(b) = v.1.memory {
+                            if b == self.bank {
+                                if let Some((l, _)) = v.1.scattered {
+                                    if l == 8 {
+                                        if !self.set.contains(v.0) {
+                                            // OK. We have found a 8 lines scattered data zone that was not
+                                            // allocated to any zone. Let's set if it can fit into this area
+                                            if let VariableDefinition::Array(a) = &v.1.def {
+                                                let width = a.len() as u32 / 8;
+                                                if fill + width <= 256 {
+                                                    fill += width;
+                                                    sv.push((v.0.clone(), width));
+                                                    self.set.insert(v.0);
+                                                    self.remaining_scattered -= 1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-        // Prelude code for each bank
-        debug!("Generating code for bank #{}", self.bank);
-        gstate.current_bank = self.bank;
-        gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
-  
-        if self.bank == 0 {
-            // Generate startup code
-            gstate.write("
+                    // Write the effective scattered data
+                    gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
+                    for i in &sv {
+                        gstate.write(&format!("\n{}", i.0))?;
+                        let v = compiler_state.variables.get(&i.0).unwrap();
+                        gstate.write("\n\thex ")?;
+                        if let Some((_, w)) = v.scattered {
+                            if let VariableDefinition::Array(a) = &v.def {
+                                for j in 0..i.1 {
+                                    let x = if v.reversed {
+                                        a[((j % w) + 7 * w + (j / w) * 8) as usize]
+                                    } else {
+                                        a[((j % w) + (j / w) * 8) as usize]
+                                    };
+                                    gstate.write(&format!("{:02x}", x & 0xff))?;
+                                }
+                            }
+                        }
+                    }
+                    for l in 1..8 {
+                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org + 256 * l, rorg + 256 * l))?;
+                        let mut counter = 0;
+                        for i in &sv {
+                            let v = compiler_state.variables.get(&i.0).unwrap();
+                            if let Some((_, w)) = v.scattered {
+                                if let VariableDefinition::Array(a) = &v.def {
+                                    for j in 0..i.1 {
+                                        let x = if v.reversed {
+                                            a[((j % w) + (7 - l) * w + (j / w) * 8) as usize]
+                                        } else {
+                                            a[((j % w) + l * w + (j / w) * 8) as usize]
+                                        };
+                                        if counter == 0 {
+                                            gstate.write("\n\thex ")?;
+                                        }
+                                        counter += 1;
+                                        if counter == 8 { counter = 0; }
+                                        gstate.write(&format!("{:02x}", x & 0xff))?;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Go on with filling the memory
+                    return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true); 
+                }
+            }
+            if self.remaining_scattered > 0 {
+                // Well, we have scattered data, so let's try to find a place for them
+                self.fill_memory(org, rorg, 0x800, compiler_state, gstate, args, false)?;
+                if size > 0x800 {
+                    return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true);
+                } else {
+                    return Ok(());
+                }
+            }
+        }
+       
+        let mut filled = 0;
+        
+        if self.remaining_functions > 0 {
+
+            // Generate functions code
+            gstate.write("\n\n; Functions definitions\n\tSEG CODE\n")?;
+
+            // Prelude code for each bank
+            debug!("Generating code for bank #{}", self.bank);
+            gstate.current_bank = self.bank;
+            gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
+
+            if self.bank == 0 && !self.startup_code {
+                self.startup_code = true;
+                filled = 0x62; // Size of startup code
+
+                // Generate startup code
+                gstate.write("
 START
-	  sei                     ;Disable interrupts
- 	  cld                     ;Clear decimal mode
+    sei                     ;Disable interrupts
+    cld                     ;Clear decimal mode
 
 ;******** Atari recommended startup procedure
 
-	  lda     #$07
-	  sta     INPTCTRL        ;Lock into 7800 mode
-	  lda     #$7F
-	  sta     CTRL            ;Disable DMA
-	  lda     #$00            
-	  sta     OFFSET
-	  sta     INPTCTRL
-	  ldx     #$FF            ;Reset stack pointer
-	  txs
-	
+    lda     #$07
+    sta     INPTCTRL        ;Lock into 7800 mode
+    lda     #$7F
+    sta     CTRL            ;Disable DMA
+    lda     #$00            
+    sta     OFFSET
+    sta     INPTCTRL
+    ldx     #$FF            ;Reset stack pointer
+    txs
+
 ;************** Clear zero page and hardware ******
 
-	  ldx     #$40
-	  lda     #$00
+    ldx     #$40
+    lda     #$00
 crloop1    
-	  sta     $00,x           ;Clear zero page
-	  sta	$100,x		;Clear page 1
-	  inx
-	  bne     crloop1
+    sta     $00,x           ;Clear zero page
+    sta	$100,x		;Clear page 1
+    inx
+    bne     crloop1
 
 ;************* Clear RAM **************************
 
@@ -250,97 +372,114 @@ crloop5                         ;Clear 2100-213F
     cpx     #$40
     bne     crloop5
     jmp     main 
-	
+
 NMI
     RTI
-	
+
 IRQ
     RTI
                 ")?;
 
-            // Generate included assembler
-            for asm in &compiler_state.included_assembler {
-                gstate.write(asm)?;
+                // Generate included assembler
+                // TODO: How to estimate the size of this included code, since it's not compiled ?
+                for asm in &compiler_state.included_assembler {
+                    gstate.write(asm)?;
+                }
             }
-        }
-        
-        // Generate functions code
-        for f in compiler_state.sorted_functions().iter() {
-            if f.1.code.is_some() && !f.1.inline && f.1.bank == self.bank {
-                debug!("Generating code for function #{}", f.0);
 
-                gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
-                gstate.write_function(f.0)?;
-                gstate.write("\tRTS\n")?;
-            }
-        }
+            // Generate functions code
+            for f in compiler_state.sorted_functions().iter() {
+                if f.1.code.is_some() && !f.1.inline && f.1.bank == self.bank {
+                    if !self.set.contains(f.0) {
+                        let s = gstate.functions_code.get(f.0).unwrap().size_bytes();
+                        if filled + s + 1 <= size {
+                            debug!("Generating code for function #{}", f.0);
 
-        // Generate ROM tables
-        gstate.write("\n; Tables in ROM\n")?;
-        for v in compiler_state.sorted_variables().iter() {
-            if let VariableMemory::ROM(rom_bank) = v.1.memory {
-                if rom_bank == self.bank && v.1.scattered.is_none() {
-                    match &v.1.def {
-                        VariableDefinition::Array(arr) => {
-                            if v.1.alignment != 1 {
-                                gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
-                            }
-                            gstate.write(v.0)?;
-                            let mut counter = 0;
-                            for i in arr {
-                                if counter == 0 {
-                                    gstate.write("\n\thex ")?;
-                                }
-                                counter += 1;
-                                if counter == 16 { counter = 0; }
-                                gstate.write(&format!("{:02x}", i & 0xff))?;
-                            } 
-                            if v.1.var_type == VariableType::ShortPtr {
-                                for i in arr {
-                                    if counter == 0 {
-                                        gstate.write("\n\thex ")?;
-                                    }
-                                    counter += 1;
-                                    if counter == 16 { counter = 0; }
-                                    gstate.write(&format!("{:02x}", (i >> 8) & 0xff))?;
-                                } 
-                            }
-                            gstate.write("\n")?;
-                        },
-                        VariableDefinition::ArrayOfPointers(arr) => {
-                            if v.1.alignment != 1 {
-                                gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
-                            }
-                            gstate.write(v.0)?;
-
-                            let mut counter = 0;
-                            for i in arr {
-                                if counter % 8 == 0 {
-                                    gstate.write("\n\t.byte ")?;
-                                }
-                                counter += 1;
-                                gstate.write(&format!("<{}", i))?;
-                                if counter % 8 != 0 {
-                                    gstate.write(", ")?;
-                                } 
-                            } 
-                            for i in arr {
-                                if counter % 8 == 0 {
-                                    gstate.write("\n\t.byte ")?;
-                                }
-                                counter += 1;
-                                gstate.write(&format!(">{}", i))?;
-                                if counter % 8 != 0 && counter < 2 * arr.len() {
-                                    gstate.write(", ")?;
-                                } 
-                            } 
-                            gstate.write("\n")?;
-                        },
-                        _ => ()
-                    };
+                            gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
+                            gstate.write_function(f.0)?;
+                            gstate.write("\tRTS\n")?;
+                            self.set.insert(f.0);
+                            self.remaining_functions -= 1;
+                        }
+                    }
                 }
             }
         }
+
+        if self.remaining_variables > 0 {
+            // Generate ROM tables
+            gstate.write("\n; Tables in ROM\n")?;
+            for v in compiler_state.sorted_variables().iter() {
+                if let VariableMemory::ROM(rom_bank) = v.1.memory {
+                    if rom_bank == self.bank && v.1.scattered.is_none() {
+                        if !self.set.contains(v.0) {
+                            self.set.insert(v.0);
+                            self.remaining_variables -= 1;
+                            match &v.1.def {
+                                VariableDefinition::Array(arr) => {
+                                    if v.1.alignment != 1 {
+                                        gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
+                                    }
+                                    gstate.write(v.0)?;
+                                    let mut counter = 0;
+                                    for i in arr {
+                                        if counter == 0 {
+                                            gstate.write("\n\thex ")?;
+                                        }
+                                        counter += 1;
+                                        if counter == 16 { counter = 0; }
+                                        gstate.write(&format!("{:02x}", i & 0xff))?;
+                                    } 
+                                    if v.1.var_type == VariableType::ShortPtr {
+                                        for i in arr {
+                                            if counter == 0 {
+                                                gstate.write("\n\thex ")?;
+                                            }
+                                            counter += 1;
+                                            if counter == 16 { counter = 0; }
+                                            gstate.write(&format!("{:02x}", (i >> 8) & 0xff))?;
+                                        } 
+                                    }
+                                    gstate.write("\n")?;
+                                },
+                                VariableDefinition::ArrayOfPointers(arr) => {
+                                    if v.1.alignment != 1 {
+                                        gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
+                                    }
+                                    gstate.write(v.0)?;
+
+                                    let mut counter = 0;
+                                    for i in arr {
+                                        if counter % 8 == 0 {
+                                            gstate.write("\n\t.byte ")?;
+                                        }
+                                        counter += 1;
+                                        gstate.write(&format!("<{}", i))?;
+                                        if counter % 8 != 0 {
+                                            gstate.write(", ")?;
+                                        } 
+                                    } 
+                                    for i in arr {
+                                        if counter % 8 == 0 {
+                                            gstate.write("\n\t.byte ")?;
+                                        }
+                                        counter += 1;
+                                        gstate.write(&format!(">{}", i))?;
+                                        if counter % 8 != 0 && counter < 2 * arr.len() {
+                                            gstate.write(", ")?;
+                                        } 
+                                    } 
+                                    gstate.write("\n")?;
+                                },
+                                _ => ()
+                            };
+                        }
+
+                    }
+                }
+            }
+        }
+        debug!("*** Remaining: {}, {}, {}", self.remaining_variables, self.remaining_functions, self.remaining_variables);
         
         Ok(())
     }
@@ -455,7 +594,10 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         } else { (0, 0x8000, 0x8000) };
 
         let mut map = MemoryMap::new(compiler_state, bank);
-        map.fill_memory(b * banksize, rorg, banksize, compiler_state, &mut gstate, args)?;
+        map.fill_memory(b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true)?;
+        assert!(map.remaining_scattered == 0);
+        assert!(map.remaining_functions == 0);
+        assert!(map.remaining_variables == 0);
 
         if b == maxbank {
             // Epilogue code
