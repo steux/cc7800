@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="50%" src="https://github.com/steux/cc7/raw/main/misc/cc7800.svg" />
+  <img width="50%" src="https://github.com/steux/cc7800/raw/main/misc/cc7800.png" />
 </p>
 
 # cc7800
@@ -20,7 +20,7 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
 - Uses only 1 byte of RAM
 - Scattering of ROM data is supported through the scattered keyword, which greatly simplifies the use of Holey DMA and sprite
   data layout.
-- X and Y registers are directly mapped to X and Y variables, just like if they weree declared as unsigned char global variables.
+- X and Y registers are directly mapped to X and Y variables, just like if they were declared as unsigned char global variables.
 - All C constructs are implemented (for, if, while, goto, etc).
 - Clean bootstrap code is automatically generated
 
@@ -29,7 +29,7 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
 
 - The Atari 7800 silly memory map (shadow zero page and stack in the middle of RAM) is still not fully supported. This
   is coming, as well as bankswitching support.
-- The only data types supported are char (8-bit), short (16-bit) and char pointers (16-bits), and one dimensional arrays of chars, short and pointers.
+- The only data types supported are char (8-bit), short (16-bit) and char pointers (16-bits), and one dimensional arrays of these types.
 - Only global variables are supported, not local variables (no use of stack. It's so slow on 6502 and so dangerous due
     to the lack of RAM that it'd be a bad idea anyway)
 - Functions can't have arguments and return values (no use of stack). Everything must go through global variables.
@@ -52,7 +52,7 @@ If you definitely don't want to install Rust (quite a shame), a Windows installe
 
 A few examples are available in the `examples` directory. To compile HelloWorld, please type in the root directory : 
 
-`cc7800 -I../headers examples/test_helloworld.c`
+`cc7800 -Iheaders examples/test_helloworld.c`
 
 This will produce `out.a`, which is a DASM compatible source code.
 
@@ -79,24 +79,16 @@ cc7800 supports a few intrinsics to help making ASM-like tuned code :
 
 - `csleep(int)` stands for cycle sleep. Helps to insert nops in the code. Implemented for 2 to 10 cycles.
 
-### Assembly code insertion
-
-You can insert assembly code using the `#include`. If the filename provided ends with ".a" or ".inc", it will be considered as assembler and inserted in the DASM generated code. You can also inline code using the following special tag `=== ASSEMBLER BEGIN ===`. For instance, to activate the i2c code from "i2c.inc" (savekey code) and tell the macros to use the `i` temporary variable, just type :
-```
-=== ASSEMBLER BEGIN ===
-    I2C_SUBS i
-==== ASSEMBLER END ====
-```
 
 ### 16-bits arithmetics support
 
 16-bits arithmetics is supported, BUT beware to use only simple expressions (like a simple addition, or `+=`, not multiple additions on the same line of code), since carry propagation is not ensured (maybe will it be in the future). In particular 16-bits operations are not supported in comparisons. Use `short` to declare a 16-bits variable. `char *` are also 16-bits variables, since address space on 6502 is 16-bits wide.
 
-In order to convert from 16-bits to 8-bits, use the `>> 8` special operation to get the higher byte of a `short`, and nothing for the lower byte.
+In order to convert from 16-bits to 8-bits, use the `>> 8` special operation to get the higher byte of a `short`, and use nothing to get the lower byte.
 
 ### Optimizations
 
-X and Y are `unsigned char` typed, BUT in order to optimize the loops, they are considered `signed char` when compared to 0. Hence the code `do { something; Y-- } while (Y >= 0);` will be implemented with a `BPL` (branch if plus) instruction, just like you would do in assembler. Beware then that if Y > 128, due to the complement-to-2 binary representation, it will be considered negative number and the loop will exit immediately (i.e. don't use this for your 192 lines kernel loop. Use `Y > 0` comparison which uses the carry flag).
+X and Y are `unsigned char` typed, BUT in order to optimize the loops, they are considered `signed char` when compared to 0. Hence the code `do { something; Y-- } while (Y >= 0);` will be implemented with a `BPL` (branch if plus) instruction, just like you would do in assembler. Beware then that if Y > 128, due to the complement-to-2 binary representation, it will be considered negative number and the loop will exit immediately.
 
 ## TODO
 
