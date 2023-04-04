@@ -60,7 +60,7 @@ impl<'a> MemoryMap<'a> {
             }
         }
 
-        debug!("Remaining: {}, {}, {}", remaining_variables, remaining_functions, remaining_variables);
+        debug!("Remaining: {}, {}, {}", remaining_variables, remaining_functions, remaining_scattered);
         MemoryMap {
             bank,
             set: HashSet::new(),
@@ -131,10 +131,10 @@ impl<'a> MemoryMap<'a> {
 
                     // Write the effective scattered data
                     gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
+                    let mut counter = 0;
                     for i in &sv {
                         gstate.write(&format!("\n{}", i.0))?;
                         let v = compiler_state.variables.get(&i.0).unwrap();
-                        gstate.write("\n\thex ")?;
                         if let Some((_, w)) = v.scattered {
                             if let VariableDefinition::Array(a) = &v.def {
                                 for j in 0..i.1 {
@@ -143,6 +143,11 @@ impl<'a> MemoryMap<'a> {
                                     } else {
                                         a[((j % w) + (j / w) * 16) as usize]
                                     };
+                                    if counter == 0 {
+                                        gstate.write("\n\thex ")?;
+                                    }
+                                    counter += 1;
+                                    if counter == 16 { counter = 0; }
                                     gstate.write(&format!("{:02x}", x & 0xff))?;
                                 }
                             }
@@ -172,6 +177,7 @@ impl<'a> MemoryMap<'a> {
                             }
                         }
                     }
+                    gstate.write("\n")?;
 
                     // Go on with filling the memory
                     return self.fill_memory(org + 0x1000, rorg + 0x1000, size - 0x1000, compiler_state, gstate, args, true); 
@@ -179,7 +185,7 @@ impl<'a> MemoryMap<'a> {
             }
             
             // Are we in a zone where 8 lines of scattered data can be stored ?
-            if org > 0x8000 && rorg & 0xfff == 0 && size >= 0x800 {
+            if rorg > 0x8000 && rorg & 0xfff == 0 && size >= 0x800 {
                 // Yes. Let's see if there is any remaining 8 lines scattered data to be stored
                 let mut scattered_8 = false;
                 for v in compiler_state.sorted_variables().iter() {
@@ -231,10 +237,10 @@ impl<'a> MemoryMap<'a> {
 
                     // Write the effective scattered data
                     gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
+                    let mut counter = 0;
                     for i in &sv {
                         gstate.write(&format!("\n{}", i.0))?;
                         let v = compiler_state.variables.get(&i.0).unwrap();
-                        gstate.write("\n\thex ")?;
                         if let Some((_, w)) = v.scattered {
                             if let VariableDefinition::Array(a) = &v.def {
                                 for j in 0..i.1 {
@@ -243,6 +249,11 @@ impl<'a> MemoryMap<'a> {
                                     } else {
                                         a[((j % w) + (j / w) * 8) as usize]
                                     };
+                                    if counter == 0 {
+                                        gstate.write("\n\thex ")?;
+                                    }
+                                    counter += 1;
+                                    if counter == 16 { counter = 0; }
                                     gstate.write(&format!("{:02x}", x & 0xff))?;
                                 }
                             }
@@ -265,13 +276,14 @@ impl<'a> MemoryMap<'a> {
                                             gstate.write("\n\thex ")?;
                                         }
                                         counter += 1;
-                                        if counter == 8 { counter = 0; }
+                                        if counter == 16 { counter = 0; }
                                         gstate.write(&format!("{:02x}", x & 0xff))?;
                                     }
                                 }
                             }
                         }
                     }
+                    gstate.write("\n")?;
 
                     // Go on with filling the memory
                     return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true); 
@@ -479,7 +491,7 @@ IRQ
                 }
             }
         }
-        debug!("*** Remaining: {}, {}, {}", self.remaining_variables, self.remaining_functions, self.remaining_variables);
+        debug!("*** Remaining: {}, {}, {}", self.remaining_variables, self.remaining_functions, self.remaining_scattered);
         
         Ok(())
     }
