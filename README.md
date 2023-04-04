@@ -58,7 +58,7 @@ This will produce `out.a`, which is a DASM compatible source code.
 
 Type `dasm out.a -f3 -v4 -oout.bin -lout.lst -sout.sym` to make `out.bin`.
 
-Now use `a7800header` to create a `.a78` file from `out.bin`.
+Now use `7800header` to create a `.a78` file from `out.bin` (with the command `save out.a78`)
 
 The `out.a78` can be executed with the `a7800` emulator by typing `a7800 a7800 -cart out.a78`, or copied directly on a
 Concerto cart.
