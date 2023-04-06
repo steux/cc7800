@@ -146,4 +146,5 @@ const unsigned char PSTIMER  = 0x9;
 const unsigned char PRANDOM  = 0xA;    // 17 bit polycounter pseudo random
 const unsigned char PSKCTL   = 0xF;    // Serial Port control
 
+char *const ROM_SELECT       = 0x8000; // SuperGame bankswitching support
 #endif // __PROSYSTEM_H__

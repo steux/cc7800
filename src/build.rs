@@ -393,9 +393,10 @@ IRQ
                 ")?;
 
                 // Generate included assembler
-                // TODO: How to estimate the size of this included code, since it's not compiled ?
                 for asm in &compiler_state.included_assembler {
+                    let nl = asm.lines().count() as u32; 
                     gstate.write(asm)?;
+                    filled += nl * 3; // 3 bytes default per line estimate.
                 }
             }
 
@@ -412,6 +413,7 @@ IRQ
                             gstate.write("\tRTS\n")?;
                             self.set.insert(f.0);
                             self.remaining_functions -= 1;
+                            filled += s + 1;
                         }
                     }
                 }
@@ -425,68 +427,89 @@ IRQ
                 if let VariableMemory::ROM(rom_bank) = v.1.memory {
                     if rom_bank == self.bank && v.1.scattered.is_none() {
                         if !self.set.contains(v.0) {
-                            self.set.insert(v.0);
-                            self.remaining_variables -= 1;
-                            match &v.1.def {
+                            // OK, we have a ROM table to insert.
+                            // Let's see if it fits
+                            let s = if filled > 0 {
+                                (((filled - 1) / v.1.alignment as u32) + 1) * v.1.alignment as u32
+                            } else { 0 };
+                            let s2 = match &v.1.def {
                                 VariableDefinition::Array(arr) => {
-                                    if v.1.alignment != 1 {
-                                        gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
-                                    }
-                                    gstate.write(v.0)?;
-                                    let mut counter = 0;
-                                    for i in arr {
-                                        if counter == 0 {
-                                            gstate.write("\n\thex ")?;
-                                        }
-                                        counter += 1;
-                                        if counter == 16 { counter = 0; }
-                                        gstate.write(&format!("{:02x}", i & 0xff))?;
-                                    } 
                                     if v.1.var_type == VariableType::ShortPtr {
+                                        arr.len() * 2
+                                    } else {
+                                        arr.len()
+                                    }
+                                },
+                                VariableDefinition::ArrayOfPointers(arr) => {
+                                    arr.len() * 2 
+                                },
+                                _ => unreachable!()
+                            } as u32;  
+                            if s + s2 <= size {
+                                // OK. It fits. Let's insert it
+                                self.set.insert(v.0);
+                                self.remaining_variables -= 1;
+                                filled = s + s2;
+                                match &v.1.def {
+                                    VariableDefinition::Array(arr) => {
+                                        if v.1.alignment != 1 {
+                                            gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
+                                        }
+                                        gstate.write(v.0)?;
+                                        let mut counter = 0;
                                         for i in arr {
                                             if counter == 0 {
                                                 gstate.write("\n\thex ")?;
                                             }
                                             counter += 1;
                                             if counter == 16 { counter = 0; }
-                                            gstate.write(&format!("{:02x}", (i >> 8) & 0xff))?;
+                                            gstate.write(&format!("{:02x}", i & 0xff))?;
                                         } 
-                                    }
-                                    gstate.write("\n")?;
-                                },
-                                VariableDefinition::ArrayOfPointers(arr) => {
-                                    if v.1.alignment != 1 {
-                                        gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
-                                    }
-                                    gstate.write(v.0)?;
+                                        if v.1.var_type == VariableType::ShortPtr {
+                                            for i in arr {
+                                                if counter == 0 {
+                                                    gstate.write("\n\thex ")?;
+                                                }
+                                                counter += 1;
+                                                if counter == 16 { counter = 0; }
+                                                gstate.write(&format!("{:02x}", (i >> 8) & 0xff))?;
+                                            } 
+                                        }
+                                        gstate.write("\n")?;
+                                    },
+                                    VariableDefinition::ArrayOfPointers(arr) => {
+                                        if v.1.alignment != 1 {
+                                            gstate.write(&format!("\n\talign {}\n", v.1.alignment))?;
+                                        }
+                                        gstate.write(v.0)?;
 
-                                    let mut counter = 0;
-                                    for i in arr {
-                                        if counter % 8 == 0 {
-                                            gstate.write("\n\t.byte ")?;
-                                        }
-                                        counter += 1;
-                                        gstate.write(&format!("<{}", i))?;
-                                        if counter % 8 != 0 {
-                                            gstate.write(", ")?;
+                                        let mut counter = 0;
+                                        for i in arr {
+                                            if counter % 8 == 0 {
+                                                gstate.write("\n\t.byte ")?;
+                                            }
+                                            counter += 1;
+                                            gstate.write(&format!("<{}", i))?;
+                                            if counter % 8 != 0 {
+                                                gstate.write(", ")?;
+                                            } 
                                         } 
-                                    } 
-                                    for i in arr {
-                                        if counter % 8 == 0 {
-                                            gstate.write("\n\t.byte ")?;
-                                        }
-                                        counter += 1;
-                                        gstate.write(&format!(">{}", i))?;
-                                        if counter % 8 != 0 && counter < 2 * arr.len() {
-                                            gstate.write(", ")?;
+                                        for i in arr {
+                                            if counter % 8 == 0 {
+                                                gstate.write("\n\t.byte ")?;
+                                            }
+                                            counter += 1;
+                                            gstate.write(&format!(">{}", i))?;
+                                            if counter % 8 != 0 && counter < 2 * arr.len() {
+                                                gstate.write(", ")?;
+                                            } 
                                         } 
-                                    } 
-                                    gstate.write("\n")?;
-                                },
-                                _ => ()
-                            };
+                                        gstate.write("\n")?;
+                                    },
+                                    _ => ()
+                                };
+                            }
                         }
-
                     }
                 }
             }
@@ -556,30 +579,78 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
 
     gstate.write("\n\tSEG.U RAM1\n\tORG $1800\n\tRORG $1800\n")?;
     // main RAM variables 
+    let mut filled = 0;
+    let mut ram1_filled = false;
+    let mut ram2_filled = false;
     for v in compiler_state.sorted_variables().iter() {
         if v.1.memory == VariableMemory::Ramchip && v.1.def == VariableDefinition::None {
-            if v.1.size > 1 {
+            let sx = if v.1.size > 1 {
                 let s = match v.1.var_type {
                     VariableType::CharPtr => 1,
                     VariableType::CharPtrPtr => 2,
                     VariableType::ShortPtr => 2,
                     _ => unreachable!()
                 };
-                gstate.write(&format!("{:23}\tds {}\n", v.0, v.1.size * s))?; 
+                v.1.size * s 
             } else {
-                let s = match v.1.var_type {
+                match v.1.var_type {
                     VariableType::Char => 1,
                     VariableType::Short => 2,
                     VariableType::CharPtr => 2,
                     VariableType::CharPtrPtr => 2,
                     VariableType::ShortPtr => 2,
-                };
-                gstate.write(&format!("{:23}\tds {}\n", v.0, s))?; 
+                }
+            };
+            filled += sx;
+            if filled > 0x240 && !ram1_filled {
+                ram1_filled = true;
+                gstate.write("\n\tSEG.U RAM2\n\tORG $2100\n\tRORG $2100\n")?;
+                filled = 0x300 + sx;
+            } else if filled > 0x340 && !ram2_filled {
+                ram2_filled = true;
+                gstate.write("\n\tSEG.U RAM3\n\tORG $2200\n\tRORG $2200\n")?;
+                filled = 0x400 + sx;
+            } 
+            if filled > 4096 {
+                return Err(Error::Configuration { error: "Memory full. Internal Atari 7800 RAM is limited to 4KB".to_string() });
             }
+            gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
         }
     }
 
-    // TODO: Immplement RAM2 to go over the zeropage and stack shadows at 0x2040 and 0x2140 (i.e. 2K + 40 bytes away)
+    // Generate veriables stored in RAM on cart (memory on chip)
+    let mut memoryonchip = false;
+    for v in compiler_state.sorted_variables().iter() {
+        if let VariableMemory::MemoryOnChip(_) = v.1.memory {
+            memoryonchip = true;
+            break;
+        }
+    }
+    if memoryonchip {
+        gstate.write("\n\tSEG.U MRMORY_ON_CHIP\n\tORG $4000\n")?;
+        for v in compiler_state.sorted_variables().iter() {
+            if let VariableMemory::MemoryOnChip(_) = v.1.memory {
+                if v.1.size > 1 {
+                    let s = match v.1.var_type {
+                        VariableType::CharPtr => 1,
+                        VariableType::CharPtrPtr => 2,
+                        VariableType::ShortPtr => 2,
+                        _ => unreachable!()
+                    };
+                    gstate.write(&format!("{:23}\tds {}\n", v.0, v.1.size * s))?; 
+                } else {
+                    let s = match v.1.var_type {
+                        VariableType::Char => 1,
+                        VariableType::Short => 2,
+                        VariableType::CharPtr => 2,
+                        VariableType::CharPtrPtr => 2,
+                        VariableType::ShortPtr => 2,
+                    };
+                    gstate.write(&format!("{:23}\tds {}\n", v.0, s))?; 
+                }
+            }
+        }
+    }
 
     for f in compiler_state.sorted_functions().iter() {
         if f.1.code.is_some() {
