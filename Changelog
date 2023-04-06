@@ -1,0 +1,7 @@
+v0.1.1 :
+    - Enhanced Holey DMA management
+    - Added bankswitching and RAM on cart support
+    - Corrected memory mapping
+
+v0.1.0 (4/4/2023) :
+    - First release
