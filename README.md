@@ -22,13 +22,13 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
   data layout.
 - X and Y registers are directly mapped to X and Y variables, just like if they were declared as unsigned char global variables.
 - All C constructs are implemented (for, if, while, goto, etc).
+- Supports SuperGame bankswitching and extra RAM on cart
 - Clean bootstrap code is automatically generated
+
 
 ## Known limitations
 
 
-- The Atari 7800 silly memory map (shadow zero page and stack in the middle of RAM) is still not fully supported. This
-  is coming, as well as bankswitching support.
 - The only data types supported are char (8-bit), short (16-bit) and char pointers (16-bits), and one dimensional arrays of these types.
 - Only global variables are supported, not local variables (no use of stack. It's so slow on 6502 and so dangerous due
     to the lack of RAM that it'd be a bad idea anyway)
@@ -37,6 +37,7 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
 - 16-bits arithmetics is severly constrained. Generated code may not work if too complex (carry propagation is not ensured).
 - No 32-bits operations, no floating point.
 - Works with one C file. No linking provided. Use `#include "other_file.c"` to cope with this.
+
 
 ## How to install
 
@@ -92,9 +93,10 @@ X and Y are `unsigned char` typed, BUT in order to optimize the loops, they are 
 
 ## TODO
 
-- [ ] Fix issues with Atari 7800 memory mapping
+- [X] Fix issues with Atari 7800 memory mapping
 - [ ] Provide more examples
-- [ ] Add bankswitching support
+- [X] Add bankswitching support
 - [ ] Add banksets support
 - [ ] Create a high level library to handle text, graphics, tiles, multisprite, etc
 - [ ] Fix 16 bits arithmetics so that it becomes more usable...
+
