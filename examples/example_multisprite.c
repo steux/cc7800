@@ -1,3 +1,4 @@
+#include "prosystem.h"
 #include "multisprite.h"
 
 char xpos, ypos;
