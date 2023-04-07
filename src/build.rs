@@ -41,7 +41,7 @@ impl<'a> MemoryMap<'a> {
     fn new(compiler_state: &'a CompilerState, bank: u32) -> MemoryMap<'a> {
         let mut remaining_functions = 0;
         for f in compiler_state.sorted_functions().iter() {
-            if f.1.bank == bank {
+            if f.1.bank == bank && f.1.code.is_some() {
                 remaining_functions += 1;
             }
         }
