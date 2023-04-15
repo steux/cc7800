@@ -1,11 +1,14 @@
 #ifndef __ATARI7800_MULTISPRITE__
 #define __ATARI7800_MULTISPRITE__
 
+#ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64
+#endif
 
 // Zeropage variables
-char *_ms_dlpnt;
 char _ms_buffer; // Double buffer state
+char _ms_dmaerror;
+char *_ms_dlpnt, *_ms_dlpnt2;
 char _ms_tmp, _ms_tmp2;
 
 ramchip char _ms_b0_dl0[_MS_DL_SIZE], _ms_b0_dl1[_MS_DL_SIZE], _ms_b0_dl2[_MS_DL_SIZE], _ms_b0_dl3[_MS_DL_SIZE], _ms_b0_dl4[_MS_DL_SIZE], _ms_b0_dl5[_MS_DL_SIZE], _ms_b0_dl6[_MS_DL_SIZE], _ms_b0_dl7[_MS_DL_SIZE], _ms_b0_dl8[_MS_DL_SIZE], _ms_b0_dl9[_MS_DL_SIZE], _ms_b0_dl10[_MS_DL_SIZE], _ms_b0_dl11[_MS_DL_SIZE];
@@ -74,8 +77,11 @@ void multisprite_flip();
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
         _ms_tmp = (y) & 0x0f; \
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 228) { \
+        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        if (_ms_dldma[X] < 0) { \
+            _ms_dmaerror = 1; \
+            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
+        } else { \
             _ms_dlpnt = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             _ms_dlpnt[Y++] = sprite; \
@@ -83,19 +89,45 @@ void multisprite_flip();
             _ms_dlpnt[Y++] = (sprite >> 8) | _ms_tmp; \
             _ms_dlpnt[Y++] = (x); \
             _ms_dlend[X] = Y; \
-        }\
+            if ((y) & 0x0f) { \
+                X++; \
+                _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+                if (_ms_dldma[X] < 0) { \
+                    _ms_dmaerror = 1; \
+                    _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
+                } else { \
+                    _ms_dlpnt = _ms_dls[X];  \
+                    Y = _ms_dlend[X]; \
+                   _ms_dlpnt[Y++] = sprite; \
+                   _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+                   _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
+                   _ms_dlpnt[Y++] = (x); \
+                   _ms_dlend[X] = Y; \
+                } \
+            }\
+        }
+
+#define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
+        _ms_tmp = (y) & 0x0f; \
+        X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        _ms_dlpnt = _ms_dls[X]; \
+        Y = _ms_dlend[X]; \
+        _ms_dlpnt[Y++] = sprite; \
+        _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+        _ms_dlpnt[Y++] = (sprite >> 8) | _ms_tmp; \
+        _ms_dlpnt[Y++] = (x); \
+        _ms_dlend[X] = Y; \
         if ((y) & 0x0f) { \
             X++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-            if (_ms_dldma[X] < 228) { \
-                _ms_dlpnt = _ms_dls[X];  \
-                Y = _ms_dlend[X]; \
-                _ms_dlpnt[Y++] = sprite; \
-                _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-                _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
-                _ms_dlpnt[Y++] = (x); \
-                _ms_dlend[X] = Y; \
-            } \
+            _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+            _ms_dlpnt = _ms_dls[X];  \
+            Y = _ms_dlend[X]; \
+            _ms_dlpnt[Y++] = sprite; \
+            _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+            _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
+            _ms_dlpnt[Y++] = (x); \
+            _ms_dlend[X] = Y; \
         }
 
 void multisprite_init()
@@ -138,25 +170,40 @@ void multisprite_clear()
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
-        _ms_dldma[X] = (23 + 7) / 2;
+        _ms_dldma[X] = (454 - 23 - 7) / 2;
         _ms_dlend_save[X] = 0;
-        _ms_dldma_save[X] = (23 + 7) / 2;
+        _ms_dldma_save[X] = (454 - 23 - 7) / 2;
     }
 }
 
 // This one should be done during VBLANK, since we are copying from write buffer to currently displayed buffer
 void multisprite_save()
 {
-    // TODO: Copy the DLs from current write buffer to all buffers
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend_save[X] = _ms_dlend[Y];
             _ms_dldma_save[X] = _ms_dldma[Y];
         }
+        // Copy the DLs from current write buffer to all buffers
+        for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
+            _ms_dlpnt = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
+            _ms_dlpnt2 = _ms_dls[X = _ms_tmp];
+            for (Y = _ms_dlend[X] - 1; Y >= 0; Y--) {
+                _ms_dlpnt2[Y] = _ms_dlpnt[Y];
+            } 
+        }
     } else {
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlend_save[X] = _ms_dlend[X];
             _ms_dldma_save[X] = _ms_dldma[X];
+        }
+        // Copy the DLs from current write buffer to all buffers
+        for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
+            _ms_dlpnt = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
+            _ms_dlpnt2 = _ms_dls[X = _ms_tmp];
+            for (Y = _ms_dlend[X] - 1; Y >= 0; Y--) {
+                _ms_dlpnt[Y] = _ms_dlpnt2[Y];
+            } 
         }
     }
 }
@@ -180,8 +227,8 @@ void multisprite_restore()
 void multisprite_flip()
 {
     if (_ms_buffer) {
-        // All DL end entry on each DL
-        for (X = _MS_DLL_ARRAY_SIZE * 2  - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
+        // Add DL end entry on each DL
+        for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
             _ms_dlpnt = _ms_dls[X];
             Y = _ms_dlend[X];
             _ms_dlpnt[++Y] = 0; 
@@ -195,7 +242,7 @@ void multisprite_flip()
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
         *DPPL = _ms_b1_dll;
     } else {
-        // All DL end entry on each DL
+        // Add DL end entry on each DL
         // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlpnt = _ms_dls[X];
