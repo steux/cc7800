@@ -171,6 +171,8 @@ void multisprite_clear()
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
         _ms_dldma[X] = (454 - 23 - 7) / 2;
+    }
+    for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
         _ms_dlend_save[X] = 0;
         _ms_dldma_save[X] = (454 - 23 - 7) / 2;
     }
@@ -235,8 +237,8 @@ void multisprite_flip()
         }
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
-            _ms_dlend[X] = _ms_dlend_save[Y];
-            _ms_dldma[X] = _ms_dldma_save[Y];
+            _ms_dlend[Y] = _ms_dlend_save[X];
+            _ms_dldma[Y] = _ms_dldma_save[X];
         }
         _ms_buffer = 0; // 0 is the current write buffer
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
