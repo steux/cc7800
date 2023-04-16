@@ -1,5 +1,4 @@
 #include "prosystem.h"
-//#define _MS_DL_SIZE 96 
 #include "multisprite.h"
 
 char i, xpos, ypos;
@@ -8,9 +7,16 @@ char i, xpos, ypos;
 ramchip short sp_xpos[NB_SPRITES], sp_ypos[NB_SPRITES];
 ramchip char sp_direction[NB_SPRITES];
 
-const signed char dx[24] = {40, 38, 34, 28, 19, 10, 0, -10, -20, -28, -34, -38, -40, -38, -34, -28, -19, -10, 0, 10, 19, 28, 34, 38};
-const signed char dy[24] = {0, 16, 32, 45, 55, 61, 64, 61, 55, 45, 32, 16, 0, -16, -31, -45, -55, -61, -64, -61, -55, -45, -32, -16};
-const char pingpong[24] = { 12, 11, 10, 9, 20, 19, 18, 17, 16, 3, 2, 1, 0, 23, 22, 21, 8, 7, 6, 5, 4, 15, 14, 13};
+#ifdef PAL
+#define YMAX 240
+#else
+#define YMAX 192
+#endif
+
+const signed char dx[24] = {127, 122, 109, 89, 63, 32, 0, -32, -63, -89, -109, -122, -127, -122, -109, -89, -63, -32, 0, 32, 63, 89, 109, 122};
+const signed short dy[24] = {0, 66, 128, 181, 221, 247, 256, 247, 221, 181, 128, 66, 0, -66, -127, -181, -221, -247, -256, -247, -221, -181, -128, -66};
+const char horizontal_pingpong[24] = { 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13 };
+const char vertical_pingpong[24] = { 0, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
 
 holeydma scattered(16, 1) char sprite[16] = { 0x3c, 0x3c, 0x42, 0x42, 0x99, 0x99, 0xa5, 0xa5, 0x81, 0x81, 0xa5, 0xa5, 0x42, 0x42, 0x3c, 0x3c };
 
@@ -31,8 +37,6 @@ void main()
     do {
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         multisprite_flip();
-        // Wait for VBLANK to end
-        while (*MSTAT & 0x80);
         for (i = 0; i != NB_SPRITES; i++) {
             X = i;
             Y = sp_direction[X];
@@ -40,8 +44,11 @@ void main()
             sp_ypos[X] += dy[Y];
             xpos = sp_xpos[X] >> 8;
             ypos = sp_ypos[X] >> 8;
-            if (xpos == 0 || xpos == 159 || ypos == 0 || ypos == 191) {
-                sp_direction[X] = pingpong[Y];
+            if (xpos == 0 || xpos == 159) {
+                sp_direction[X] = horizontal_pingpong[Y];
+            }
+            if (ypos == 0 || ypos == YMAX - 17) {
+                sp_direction[X] = vertical_pingpong[Y];
             }
             multisprite_display_sprite(xpos, ypos, sprite, 1, 0); 
         }
