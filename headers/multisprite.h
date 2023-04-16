@@ -79,31 +79,39 @@ void multisprite_flip();
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror = 1; \
+            _ms_dmaerror++; \
             _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
         } else { \
             _ms_dlpnt = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            _ms_dlpnt[Y++] = sprite; \
-            _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-            _ms_dlpnt[Y++] = (sprite >> 8) | _ms_tmp; \
-            _ms_dlpnt[Y++] = (x); \
-            _ms_dlend[X] = Y; \
-            if ((y) & 0x0f) { \
-                X++; \
-                _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                if (_ms_dldma[X] < 0) { \
-                    _ms_dmaerror = 1; \
-                    _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                } else { \
-                    _ms_dlpnt = _ms_dls[X];  \
-                    Y = _ms_dlend[X]; \
-                   _ms_dlpnt[Y++] = sprite; \
-                   _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-                   _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
-                   _ms_dlpnt[Y++] = (x); \
-                   _ms_dlend[X] = Y; \
-                } \
+            if (Y >= _MS_DL_SIZE - 6) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_dlpnt[Y++] = sprite; \
+                _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_dlpnt[Y++] = (sprite >> 8) | _ms_tmp; \
+                _ms_dlpnt[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+                if ((y) & 0x0f) { \
+                    X++; \
+                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+                    if (_ms_dldma[X] < 0) { \
+                        _ms_dmaerror = 1; \
+                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
+                    } else { \
+                        _ms_dlpnt = _ms_dls[X];  \
+                        Y = _ms_dlend[X]; \
+                        if (Y >= _MS_DL_SIZE - 6) { \
+                            _ms_dmaerror++; \
+                        } else { \
+                            _ms_dlpnt[Y++] = sprite; \
+                            _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+                            _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
+                            _ms_dlpnt[Y++] = (x); \
+                            _ms_dlend[X] = Y; \
+                        } \
+                    } \
+                }\
             }\
         }
 
