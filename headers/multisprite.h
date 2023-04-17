@@ -87,9 +87,9 @@ void multisprite_flip();
             if (Y >= _MS_DL_SIZE - 6) { \
                 _ms_dmaerror++; \
             } else { \
-                _ms_dlpnt[Y++] = sprite; \
+                _ms_dlpnt[Y++] = (gfx); \
                 _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-                _ms_dlpnt[Y++] = (sprite >> 8) | _ms_tmp; \
+                _ms_dlpnt[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_dlpnt[Y++] = (x); \
                 _ms_dlend[X] = Y; \
                 if ((y) & 0x0f) { \
@@ -104,9 +104,9 @@ void multisprite_flip();
                         if (Y >= _MS_DL_SIZE - 6) { \
                             _ms_dmaerror++; \
                         } else { \
-                            _ms_dlpnt[Y++] = sprite; \
+                            _ms_dlpnt[Y++] = (gfx); \
                             _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-                            _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
+                            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
                             _ms_dlpnt[Y++] = (x); \
                             _ms_dlend[X] = Y; \
                         } \
@@ -121,9 +121,9 @@ void multisprite_flip();
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         _ms_dlpnt = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
-        _ms_dlpnt[Y++] = sprite; \
+        _ms_dlpnt[Y++] = (gfx); \
         _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-        _ms_dlpnt[Y++] = (sprite >> 8) | _ms_tmp; \
+        _ms_dlpnt[Y++] = ((gfx) >> 8) | _ms_tmp; \
         _ms_dlpnt[Y++] = (x); \
         _ms_dlend[X] = Y; \
         if ((y) & 0x0f) { \
@@ -131,9 +131,9 @@ void multisprite_flip();
             _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
             _ms_dlpnt = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
-            _ms_dlpnt[Y++] = sprite; \
+            _ms_dlpnt[Y++] = (gfx); \
             _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-            _ms_dlpnt[Y++] = ((sprite - 0x1000) >> 8) | _ms_tmp; \
+            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
             _ms_dlpnt[Y++] = (x); \
             _ms_dlend[X] = Y; \
         }
