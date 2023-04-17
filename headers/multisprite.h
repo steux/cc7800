@@ -138,6 +138,30 @@ void multisprite_flip();
             _ms_dlend[X] = Y; \
         }
 
+#define multisprite_display_chars(x, y, chars, size, palette) \
+    X = (y); \
+    if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
+    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
+    if (_ms_dldma[X] < 0) { \
+        _ms_dmaerror++; \
+        _ms_dldma[X] += (10 + 3 + size * 9 + 1) / 2; \
+    } else { \
+        _ms_dlpnt = _ms_dls[X]; \
+        Y = _ms_dlend[X]; \
+        if (Y >= _MS_DL_SIZE - 7) { \
+            _ms_dmaerror++; \
+         } else { \
+            _ms_dlpnt[Y++] = (chars); \
+            _ms_dlpnt[Y++] = 0x60; \
+            _ms_dlpnt[Y++] = (chars) >> 8; \
+            _ms_dlpnt[Y++] = -size & 0x1f | (palette << 5); \
+            _ms_dlpnt[Y++] = (x); \
+            _ms_dlend[X] = Y; \
+        } \
+    }
+
+#define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
+
 void multisprite_init()
 {
     multisprite_clear();
@@ -170,7 +194,7 @@ void multisprite_init()
     _ms_buffer = 0; // 0 is the current write buffer
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b1_dll;
-    *CTRL = 0x40; // DMA on, Black background, 160A/B mode
+    *CTRL = 0x50; // DMA on, Black background, 160A/B mode, Two (2) byte characters mode
 }
 
 void multisprite_clear()
@@ -222,8 +246,8 @@ void multisprite_restore()
 {
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
-            _ms_dlend[X] = _ms_dlend_save[Y];
-            _ms_dldma[X] = _ms_dldma_save[Y];
+            _ms_dlend[Y] = _ms_dlend_save[X];
+            _ms_dldma[Y] = _ms_dldma_save[X];
         }
     } else {
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
@@ -244,9 +268,9 @@ void multisprite_flip()
             _ms_dlpnt[++Y] = 0; 
         }
         // Restore saved state 
-        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
-            _ms_dlend[Y] = _ms_dlend_save[X];
-            _ms_dldma[Y] = _ms_dldma_save[X];
+        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+            _ms_dlend[X] = _ms_dlend_save[X];
+            _ms_dldma[X] = _ms_dldma_save[X];
         }
         _ms_buffer = 0; // 0 is the current write buffer
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
@@ -260,6 +284,11 @@ void multisprite_flip()
             _ms_dlpnt[++Y] = 0; 
             _ms_dlend[X] = _ms_dlend_save[X];
             _ms_dldma[X] = _ms_dldma_save[X];
+        }
+        // Restore saved state 
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend[Y] = _ms_dlend_save[X];
+            _ms_dldma[Y] = _ms_dldma_save[X];
         }
         _ms_buffer = 1; // 1 is the current write buffer
         *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer

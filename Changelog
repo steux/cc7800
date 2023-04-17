@@ -1,3 +1,7 @@
+v0.1.2 (04/17/2023) :
+    - Added multisprite example (examples/example_multisprite.c)
+    - Added multisprite support through multisprite.h header
+
 v0.1.1 :
     - Enhanced Holey DMA management
     - Added bankswitching and RAM on cart support
