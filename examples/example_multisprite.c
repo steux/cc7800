@@ -3,15 +3,9 @@
 
 char i, xpos, ypos;
 
-#define NB_SPRITES 48
+#define NB_SPRITES 32 
 ramchip short sp_xpos[NB_SPRITES], sp_ypos[NB_SPRITES];
 ramchip char sp_direction[NB_SPRITES];
-
-#ifdef PAL
-#define YMAX 240
-#else
-#define YMAX 192
-#endif
 
 const signed short dx[24] = {300, 289, 259, 212, 149, 77, 0, -77, -150, -212, -259, -289, -300, -289, -259, -212, -149, -77, 0, 77, 149, 212, 259, 289};
 const signed short dy[24] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240, 124, 0, -124, -239, -339, -415, -463, -480, -463, -415, -339, -240, -124};
@@ -39,12 +33,12 @@ void main()
     }
     multisprite_save();
 
-    *P0C1 = 0x1c; // Setup Palette 0
-    *P0C2 = 0xd5; // Green
+    *P0C1 = multisprite_color(0x1c); // Setup Palette 0
+    *P0C2 = multisprite_color(0xc5); // Green
     *P0C3 = 0x0f; // White
    
-    *P1C1 = 0x65; // Dark pink
-    *P1C2 = 0x6B; // Light pink
+    *P1C1 = multisprite_color(0x55); // Dark pink
+    *P1C2 = multisprite_color(0x5B); // Light pink
 
     // Initialize sprites
     for (ypos = 0, xpos = 0, i = 0, X = 0; X != NB_SPRITES; xpos++, ypos++, X++) {
@@ -70,7 +64,7 @@ void main()
                 sp_direction[X] = horizontal_pingpong[Y];
             }
             if ((ypos < 5 && (dy[Y] >> 8) < 0) || 
-                (ypos >= YMAX - 20 && (dy[Y] >> 8) >= 0)) {
+                (ypos >= MS_YMAX - 20 && (dy[Y] >> 8) >= 0)) {
                 sp_direction[X] = vertical_pingpong[Y];
             }
             multisprite_display_sprite(xpos, ypos, bb_char1, 2, 0); 

@@ -5,21 +5,21 @@
 #define _MS_DL_SIZE 64
 #endif
 
+#define MS_YMAX 224
+
 // Zeropage variables
 char _ms_buffer; // Double buffer state
 char _ms_dmaerror;
 char *_ms_dlpnt, *_ms_dlpnt2;
 char _ms_tmp, _ms_tmp2;
+char _ms_pal_detected;
 
-ramchip char _ms_b0_dl0[_MS_DL_SIZE], _ms_b0_dl1[_MS_DL_SIZE], _ms_b0_dl2[_MS_DL_SIZE], _ms_b0_dl3[_MS_DL_SIZE], _ms_b0_dl4[_MS_DL_SIZE], _ms_b0_dl5[_MS_DL_SIZE], _ms_b0_dl6[_MS_DL_SIZE], _ms_b0_dl7[_MS_DL_SIZE], _ms_b0_dl8[_MS_DL_SIZE], _ms_b0_dl9[_MS_DL_SIZE], _ms_b0_dl10[_MS_DL_SIZE], _ms_b0_dl11[_MS_DL_SIZE];
-ramchip char _ms_b1_dl0[_MS_DL_SIZE], _ms_b1_dl1[_MS_DL_SIZE], _ms_b1_dl2[_MS_DL_SIZE], _ms_b1_dl3[_MS_DL_SIZE], _ms_b1_dl4[_MS_DL_SIZE], _ms_b1_dl5[_MS_DL_SIZE], _ms_b1_dl6[_MS_DL_SIZE], _ms_b1_dl7[_MS_DL_SIZE], _ms_b1_dl8[_MS_DL_SIZE], _ms_b1_dl9[_MS_DL_SIZE], _ms_b1_dl10[_MS_DL_SIZE], _ms_b1_dl11[_MS_DL_SIZE];
-#ifdef PAL
-#define _MS_DLL_ARRAY_SIZE 15 
-ramchip char _ms_b0_dl12[_MS_DL_SIZE], _ms_b0_dl13[_MS_DL_SIZE], _ms_b0_dl14[_MS_DL_SIZE];
-ramchip char _ms_b1_dl12[_MS_DL_SIZE], _ms_b1_dl13[_MS_DL_SIZE], _ms_b1_dl14[_MS_DL_SIZE];
+#define _MS_DLL_ARRAY_SIZE 14 
+ramchip char _ms_b0_dl0[_MS_DL_SIZE], _ms_b0_dl1[_MS_DL_SIZE], _ms_b0_dl2[_MS_DL_SIZE], _ms_b0_dl3[_MS_DL_SIZE], _ms_b0_dl4[_MS_DL_SIZE], _ms_b0_dl5[_MS_DL_SIZE], _ms_b0_dl6[_MS_DL_SIZE], _ms_b0_dl7[_MS_DL_SIZE], _ms_b0_dl8[_MS_DL_SIZE], _ms_b0_dl9[_MS_DL_SIZE], _ms_b0_dl10[_MS_DL_SIZE], _ms_b0_dl11[_MS_DL_SIZE], _ms_b0_dl12[_MS_DL_SIZE], _ms_b0_dl13[_MS_DL_SIZE];
+ramchip char _ms_b1_dl0[_MS_DL_SIZE], _ms_b1_dl1[_MS_DL_SIZE], _ms_b1_dl2[_MS_DL_SIZE], _ms_b1_dl3[_MS_DL_SIZE], _ms_b1_dl4[_MS_DL_SIZE], _ms_b1_dl5[_MS_DL_SIZE], _ms_b1_dl6[_MS_DL_SIZE], _ms_b1_dl7[_MS_DL_SIZE], _ms_b1_dl8[_MS_DL_SIZE], _ms_b1_dl9[_MS_DL_SIZE], _ms_b1_dl10[_MS_DL_SIZE], _ms_b1_dl11[_MS_DL_SIZE], _ms_b1_dl12[_MS_DL_SIZE], _ms_b1_dl13[_MS_DL_SIZE];
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13
 };
 const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
@@ -35,34 +35,11 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
     11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
     12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
-    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
-    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13
 };
 
-#else
-#define _MS_DLL_ARRAY_SIZE 12 
-const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = { 
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11
-};
-const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
-    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
-    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
-    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
-    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
-    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
-    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
-    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
-    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
-    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
-    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
-    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
-    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11
-};
-
-#endif
-ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 4) * 3];
-ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 4) * 3];
+ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
+ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
@@ -162,36 +139,77 @@ void multisprite_flip();
 
 #define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
 
+// Macro to convert NTSC colors to PAL colors
+// To be used outside of grayscale ($0x) and NTSC $Fx
+#define multisprite_color(color) (color + (_ms_pal_detected & 0x10))
+
+void multisprite_get_tv()
+{
+    while (!(*MSTAT & 0x80)); // Wait for VBLANK
+    while (*MSTAT & 0x80); // Wait for end of VBLANK
+
+    X = 0;
+    do {
+        strobe(WSYNC);
+        strobe(WSYNC);
+        X++;
+    } while (!(*MSTAT & 0x80));
+
+    if (X >= 135) _ms_pal_detected = 0xff; 
+}
+
 void multisprite_init()
 {
+    multisprite_get_tv();
     multisprite_clear();
     multisprite_save();
     _ms_dlpnt = _ms_b0_dll;
     for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
         // Build DLL
-        // 25 blank lines
-        _ms_dlpnt[Y = 0] = 0x4f;  // 16 lines
-        _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-        _ms_dlpnt[++Y] = 0x00;
-        _ms_dlpnt[++Y] = 0x48; // 9 lines
-        _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-        _ms_dlpnt[++Y] = 0x00;
+        // 69 blank lines for PAL
+        // 19 blank lines for NTSC
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_dlpnt[Y = 0] = 0x4f;  // 16 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+            // 16 blank lines
+            _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+        } else {
+            _ms_dlpnt[Y = 0] = 0x48; // 9 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+        }
         // 16 pixel high regions
         for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; X++, _ms_tmp2++) {
             _ms_dlpnt[++Y] = 0x4f; // 16 lines
             _ms_dlpnt[++Y] = _ms_dls[X] >> 8; // High address
             _ms_dlpnt[++Y] = _ms_dls[X]; // Low address
         }
-        // 26 blank lines
-        _ms_dlpnt[++Y] = 0x4f; // 16 lines
-        _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-        _ms_dlpnt[++Y] = 0x00;
-        _ms_dlpnt[++Y] = 0x49; // 10 lines
-        _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-        _ms_dlpnt[++Y] = 0x00;
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+            // 16 blank lines
+            _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+            // 5 blank lines
+            _ms_dlpnt[++Y] = 0x44;  // 5 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+        } else {
+            _ms_dlpnt[++Y] = 0x49; // 10 lines
+            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
+            _ms_dlpnt[++Y] = 0x00;
+        }
         _ms_dlpnt = _ms_b1_dll;
     }
     _ms_buffer = 0; // 0 is the current write buffer
+    _ms_dmaerror = 0;
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b1_dll;
     *CTRL = 0x50; // DMA on, Black background, 160A/B mode, Two (2) byte characters mode
