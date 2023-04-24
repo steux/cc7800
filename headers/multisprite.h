@@ -52,8 +52,8 @@ void multisprite_restore();
 void multisprite_flip();
 
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
-        _ms_tmp = (y) & 0x0f; \
-        X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+	_ms_tmp = (y) & 0x0f; \
+	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \

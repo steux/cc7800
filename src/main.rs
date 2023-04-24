@@ -65,11 +65,44 @@ fn main() -> Result<(), std::io::Error> {
     if !args.assembler_output {
         // Call DASM to produce the output file
         
-        let output = std::process::Command::new("dasm")
+        let output = match std::process::Command::new("dasm")
             .arg("out.tmp")
             .arg("-f3")
             .arg(&format!("-o{}", &args.output))
-            .output()?;
+            .output() {
+            Ok(x) => x,
+            Err(_) => {
+                match std::process::Command::new("./dasm")
+                    .arg("out.tmp")
+                    .arg("-f3")
+                    .arg(&format!("-o{}", &args.output))
+                    .output() {
+                        Ok(x) => x,
+                        Err(_) => {
+                            match std::process::Command::new("dasm.exe")
+                                .arg("out.tmp")
+                                .arg("-f3")
+                                .arg(&format!("-o{}", &args.output))
+                                .output() {
+                                    Ok(x) => x,
+                                    Err(_) => {
+                                        match std::process::Command::new(".\\dasm.exe")
+                                            .arg("out.tmp")
+                                            .arg("-f3")
+                                            .arg(&format!("-o{}", &args.output))
+                                            .output() {
+                                                Ok(x) => x,
+                                                Err(_) => {
+                                                    eprintln!("Can't find DASM. Exiting.");
+                                                    std::process::exit(1) 
+                                                }
+                                            }
+                                    }
+                                }
+                        }
+                    }
+            }
+        };
 
         if output.status.success() {
             if args.verbose {
