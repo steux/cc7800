@@ -30,7 +30,7 @@ use clap::Parser;
 mod build;
 use build::build_cartridge;
 
-fn main() {
+fn main() -> Result<(), std::io::Error> {
     env_logger::init();
     let args = Args::parse();
     if args.version {
@@ -39,38 +39,49 @@ fn main() {
         std::process::exit(0); 
     }
     
-    let mut writer = match File::create(&args.output) {
-        Ok(file) => file,
-        Err(err) => {
-            eprintln!("{}", err);
-            std::process::exit(1);
-        }
+    let filename = if args.assembler_output {
+        &args.output
+    } else {
+        "out.tmp"
     };
+
+    let mut writer = File::create(filename)?;
 
     if args.input == "stdin" {
         let reader = io::stdin().lock();
-        match compile(reader, &mut writer, &args, build_cartridge) {
-            Err(e) => {
-                eprintln!("{}", e);
-                std::process::exit(1) 
-            },
-            Ok(_) => std::process::exit(0) 
+        if let Err(e) = compile(reader, &mut writer, &args, build_cartridge) {
+            eprintln!("{}", e);
+            std::process::exit(1) 
         }
     } else {
-        let f = match File::open(&args.input) {
-            Ok(file) => file,
-            Err(err) => {
-                eprintln!("{}", err);
-                std::process::exit(1);
-            }
-        };
+        let f = File::open(&args.input)?;
         let reader = BufReader::new(f);
-        match compile(reader, &mut writer, &args, build_cartridge) {
-            Err(e) => {
-                eprintln!("{}", e);
-                std::process::exit(1) 
-            },
-            Ok(_) => std::process::exit(0) 
+        if let Err(e)  = compile(reader, &mut writer, &args, build_cartridge) {
+            eprintln!("{}", e);
+            std::process::exit(1) 
         }
+    }
+
+    if !args.assembler_output {
+        // Call DASM to produce the output file
+        
+        let output = std::process::Command::new("dasm")
+            .arg("out.tmp")
+            .arg("-f3")
+            .arg(&format!("-o{}", &args.output))
+            .output()?;
+
+        if output.status.success() {
+            if args.verbose {
+                println!("Cartridge successfully compiled with DASM");
+            }
+            std::fs::remove_file("out.tmp")?;
+            Ok(())
+        } else {
+            let err = String::from_utf8(output.stderr).unwrap();
+            Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+        }
+    } else {
+        Ok(())
     }
 }

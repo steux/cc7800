@@ -1,4 +1,5 @@
-v0.1.3 :
+v0.2.0 (04/24/2023) :
+    - Added a78 header and runs DAMS automatically now
     - Added _ms_paldetected & multisprite_get_tv to produce code independant of PAL and NTSC
     - moved all the code to 224 lines for PAL and NTSC
 

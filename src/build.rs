@@ -584,6 +584,169 @@ IRQ
     }
 }
 
+fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, output: &str) -> Result<(), Error>
+{
+    let romsize;
+    let cartb;
+    let mapper;
+    match bankswitching_scheme {
+        "32K" => {
+            romsize = 32 * 1024;
+            cartb = 4; // EXRAM 
+            mapper = 0;
+        },
+        "SuperGame" => {
+            romsize = 128 * 1024;
+            cartb = 6; // EXRAM + SuperGame
+            mapper = 1;
+        },
+        _ => return Err(Error::Unimplemented { feature: "Unknown bankswtiching scheme" })
+    };
+    gstate.write(&format!("
+    ORG $7F80
+
+ ; A78 Header v4.0
+
+.ROMSIZE = ${:x}
+
+.HEADER = .
+
+    DC.B    4                  ; 0          header major version
+    DC.B    \"ATARI7800\"        ; 1..16      header magic string - zero pad
+
+    ORG .HEADER+$11,0
+    DC.B    \"{}\"   ; 17..48     cartridge title string - zero pad
+
+    ORG .HEADER+$31,0
+    DC.B    (.ROMSIZE>>24)     ; 49..52     cartridge ROM size
+    DC.B    (.ROMSIZE>>16&$FF)
+    DC.B    (.ROMSIZE>>8&$FF)
+    DC.B    (.ROMSIZE&$FF)
+
+    ; The following 2 cartridge type bytes are deprecated as of header v4.0.
+    ; It's recommended that you still populate these bytes for support with
+    ; platforms that don't yet support v4.
+
+    DC.B    %00000000          ; 53         cartridge type A
+    DC.B    ${:02x}          ; 54           cartridge type B
+    ; _Cartridge Type A_
+    ;    bit 7 ; POKEY @ $0800 - $080F
+    ;    bit 6 ; EXRAM/M2                   (halt banked RAM)
+    ;    bit 5 ; BANKSET
+    ;    bit 4 ; SOUPER
+    ;    bit 3 ; YM2151 @ $0461 - $0462 
+    ;    bit 2 ; POKEY @ $0440 - $044F 
+    ;    bit 1 ; ABSOLUTE
+    ;    bit 0 ; ACTIVISION
+    ; _Cartridge Type B_
+    ;    bit 7 ; EXRAM/A8                   (mirror RAM)
+    ;    bit 6 ; POKEY @ $0450 - $045F 
+    ;    bit 5 ; EXRAM/X2                   (hotspot banked RAM)
+    ;    bit 4 ; EXFIX                      (2nd last bank @ $4000)
+    ;    bit 3 ; EXROM                      (ROM @ $4000)
+    ;    bit 2 ; EXRAM                      (RAM @ $4000)
+    ;    bit 1 ; SUPERGAME
+    ;    bit 0 ; POKEY @ $4000 - $7FFF
+
+    DC.B    1                  ; 55         controller 1 device type
+    DC.B    1                  ; 56         controller 2 device type
+    ;    0 = none
+    ;    1 = 7800 joystick
+    ;    2 = lightgun
+    ;    3 = paddle
+    ;    4 = trakball
+    ;    5 = 2600 joystick
+    ;    6 = 2600 driving
+    ;    7 = 2600 keypad
+    ;    8 = ST mouse
+    ;    9 = Amiga mouse
+    ;   10 = AtariVox
+    ;   11 = SNES2Atari
+
+    DC.B    %00000000          ; 57         tv type
+    ;    bits 7..2 ; reserved
+    ;    bit  1    ; 0:component,1:composite
+    ;    bit  0    ; 0:NTSC,1:PAL
+
+    DC.B    %00000000          ; 58         save peripheral
+    ;    bits 7..2 ; reserved
+    ;    bit  1    ; SaveKey/AtariVox
+    ;    bit  0    ; High Score Cart (HSC)
+
+    ; The following irq source byte is deprecated as of header v4.0.
+    ; It's recommended that you still populate this byte for support with
+    ; platforms that don't yet support v4.
+
+    ORG     .HEADER+62,0
+    DC.B    %00000000          ; 62         external irq source
+    ;    bits 7..5 ; reserved
+    ;    bit  4    ; POKEY  @ $0800 - $080F
+    ;    bit  3    ; YM2151 @ $0461 - $0462
+    ;    bit  2    ; POKEY  @ $0440 - $044F
+    ;    bit  1    ; POKEY  @ $0450 - $045F
+    ;    bit  0    ; POKEY  @ $4000 - $7FFF
+
+    DC.B    %00000000          ; 63         slot passthrough device
+    ;    bits 7..1 ; reserved
+    ;    bit  0    ; XM module
+
+    ; The following 6 bytes are v4 header specific. You should populate
+    ; them with valid info if you're not using V3ONLY, because they will
+    ; take precedence over v3 headers.
+
+    DC.B    {mapper}                  ; 64         mapper
+    ;    0 = linear
+    ;    1 = supergame
+    ;    2 = activision
+    ;    3 = absolute
+    ;    4 = souper
+
+
+    DC.B    1                  ; 65         mapper options
+    ; linear_
+    ;    bit  7      ; bankset rom
+    ;    bits 0-1    ; option @4000...
+    ;       0 = none
+    ;       1 = 16K EXRAM
+    ;       2 = 8K  EXRAM/A8
+    ;       3 = 32K EXRAM/M2
+    ; supergame_
+    ;    bit  7      ; bankset rom
+    ;    bits 0-2    ; option @4000...
+    ;       0 = none
+    ;       1 = 16K EXRAM
+    ;       2 = 8K  EXRAM/A8
+    ;       3 = 32K EXRAM/M2
+    ;       4 = 16K EXROM
+    ;       5 = EXFIX
+    ;       6 = 32K EXRAM/X2
+
+    DC.B    %00000000          ; 66         audio hi
+    DC.B    %00000000          ; 67         audio lo
+    ;    bit  4      ; covox@430
+    ;    bit  3      ; ym2151@460
+    ;    bits 0-2    ; pokey...
+    ;       0 = none
+    ;       1 = pokey@440
+    ;       2 = pokey@450
+    ;       3 = dual pokey @440+@450
+    ;       4 = pokey@800
+    ;       5 = pokey@4000
+
+    DC.B    %00000000          ; 68         interrupt hi
+    DC.B    %00000000          ; 69         interrupt lo
+    ;    bit  2    ; YM2151
+    ;    bit  1    ; pokey 2 (@440)
+    ;    bit  0    ; pokey 1 (@4000, @450, or @800)
+
+
+    ORG     .HEADER+100,0       ; 100..127  footer magic string
+    DC.B    \"ACTUAL CART DATA STARTS HERE\"
+
+        ", romsize, output, cartb))?;
+    Ok(())
+}
+
 pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, args: &Args) -> Result<(), Error> 
 {
     let mut bankswitching_scheme = "32K";
@@ -613,6 +776,8 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             }
         }
     }
+
+    write_a78_header(&mut gstate, bankswitching_scheme, &args.output)?;
 
     gstate.write("\n\tSEG.U ZEROPAGE\n\tORG $40\n\n")?;
     
@@ -737,7 +902,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         } else { (0, 0x8000, 0x8000) };
 
         let mut map = MemoryMap::new(compiler_state, bank);
-        map.fill_memory(b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true)?;
+        map.fill_memory(0x8000 + b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true)?;
         assert!(map.remaining_scattered == 0);
         assert!(map.remaining_functions == 0);
         assert!(map.remaining_variables == 0);
@@ -751,7 +916,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         .word #NMI\t; NMI
         .word #START\t; RESET
         .word #IRQ\t; IRQ
-        \n", if maxbank == 0 { 0x7ff8 } else { b * banksize + 0x3ff8 }, if maxbank == 0 { 0x87 } else { 0xc7 }))?;
+        \n", if maxbank == 0 { 0xfff8 } else { b * banksize + 0xcff8 }, if maxbank == 0 { 0x87 } else { 0xc7 }))?;
 
         }
     }
