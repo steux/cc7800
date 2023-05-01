@@ -1,6 +1,6 @@
 [package]
 name = "cc7800"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Bruno STEUX <bruno.steux@gmail.com>"]
 license = "GPL-3.0-or-later"
@@ -15,5 +15,6 @@ categories = ["command-line-utilities", "game-development", "compilers"]
 env_logger = "0.9"
 log = "0.4"
 clap = { version = "4.0", features = ["derive"] }
-cc6502 = { version = "0.4", features = ["atari7800"] }
+regex = "1.8"
+cc6502 = { version = "0.5", features = ["atari7800"] }
 #cc6502 = { path = "../cc6502", features = ["atari7800"] } 

@@ -21,11 +21,14 @@
 use cc6502::Args;
 use cc6502::compile::compile;
 
+use std::path::Path;
 use std::fs::File;
 use std::io;
 use std::io::BufReader;
 
 use clap::Parser;
+
+use regex::Regex;
 
 mod build;
 use build::build_cartridge;
@@ -39,13 +42,17 @@ fn main() -> Result<(), std::io::Error> {
         std::process::exit(0); 
     }
     
+    let prefix = Path::new(&args.output).file_stem().unwrap();
+    let mut assembler_filename = String::from(prefix.to_str().unwrap());
+    assembler_filename.push_str(".a");
+
     let filename = if args.assembler_output {
-        &args.output
+        args.output.clone()
     } else {
-        "out.tmp"
+        assembler_filename.clone()
     };
 
-    let mut writer = File::create(filename)?;
+    let mut writer = File::create(&filename)?;
 
     if args.input == "stdin" {
         let reader = io::stdin().lock();
@@ -64,55 +71,59 @@ fn main() -> Result<(), std::io::Error> {
 
     if !args.assembler_output {
         // Call DASM to produce the output file
-        
-        let output = match std::process::Command::new("dasm")
-            .arg("out.tmp")
-            .arg("-f3")
-            .arg(&format!("-o{}", &args.output))
-            .output() {
-            Ok(x) => x,
-            Err(_) => {
-                match std::process::Command::new("./dasm")
-                    .arg("out.tmp")
+        let filenames = ["dasm", "./dasm", "dasm.exe", ".\\dasm.exe"];
+        let mut output = None;
+        for f in filenames {
+            let command = if args.debug {
+                let mut lst_filename = String::from(prefix.to_str().unwrap());
+                lst_filename.push_str(".lst");
+                let mut sym_filename = String::from(prefix.to_str().unwrap());
+                sym_filename.push_str(".sym");
+                std::process::Command::new(f)
+                    .arg(assembler_filename.clone())
                     .arg("-f3")
                     .arg(&format!("-o{}", &args.output))
-                    .output() {
-                        Ok(x) => x,
-                        Err(_) => {
-                            match std::process::Command::new("dasm.exe")
-                                .arg("out.tmp")
-                                .arg("-f3")
-                                .arg(&format!("-o{}", &args.output))
-                                .output() {
-                                    Ok(x) => x,
-                                    Err(_) => {
-                                        match std::process::Command::new(".\\dasm.exe")
-                                            .arg("out.tmp")
-                                            .arg("-f3")
-                                            .arg(&format!("-o{}", &args.output))
-                                            .output() {
-                                                Ok(x) => x,
-                                                Err(_) => {
-                                                    eprintln!("Can't find DASM. Exiting.");
-                                                    std::process::exit(1) 
-                                                }
-                                            }
-                                    }
-                                }
-                        }
-                    }
+                    .arg(&format!("-l{}", &lst_filename))
+                    .arg(&format!("-s{}", &sym_filename))
+                    .output()
+            } else {
+                std::process::Command::new(f)
+                    .arg(assembler_filename.clone())
+                    .arg("-f3")
+                    .arg(&format!("-o{}", &args.output))
+                    .output()
+            };
+            match command {
+                Ok(x) => {
+                    output = Some(x);
+                    break;
+                },
+                Err(_) => ()
             }
-        };
+        }
+        if output.is_none() {
+            eprintln!("Can't find DASM. Exiting.");
+            std::process::exit(1) 
+        }
 
+        let output = output.unwrap();
         if output.status.success() {
             if args.verbose {
                 println!("Cartridge successfully compiled with DASM");
             }
-            std::fs::remove_file("out.tmp")?;
+            if !args.debug {
+                std::fs::remove_file(&assembler_filename)?;
+            }
             Ok(())
         } else {
-            let err = String::from_utf8(output.stderr).unwrap();
-            Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+            let err = String::from_utf8(output.stdout).unwrap();
+            let re = Regex::new(r"(-\d+ bytes free in bank \d)").unwrap();
+            if let Some(caps) = re.captures(&err) {
+                eprintln!("Out of memory: {}", &caps[0]);
+                std::process::exit(1) 
+            } else {
+                Err(std::io::Error::new(std::io::ErrorKind::Other, err))
+            } 
         }
     } else {
         Ok(())

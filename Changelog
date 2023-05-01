@@ -1,3 +1,6 @@
+v0.2.1 (05/01/2023) :
+    - Added generation of debug files (.lst, .sym) 
+
 v0.2.0 (04/24/2023) :
     - Added a78 header and runs DAMS automatically now
     - Added _ms_paldetected & multisprite_get_tv to produce code independant of PAL and NTSC

@@ -1,5 +1,5 @@
 #include "prosystem.h"
-#include "armyfont.h"
+#include "c64_lowercase_font.h"
 
 char i;
 unsigned char X, Y;
