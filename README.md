@@ -55,13 +55,9 @@ A few examples are available in the `examples` directory. To compile HelloWorld,
 
 `cc7800 -Iheaders examples/test_helloworld.c`
 
-This will produce `out.a`, which is a DASM compatible source code.
+This will produce `a.out`, which is an atari 7800 cartridge with .a78 header. Note that running cc7800 requires that DASM is installed in the current directory or can be found in the system's path.
 
-Type `dasm out.a -f3 -v4 -oout.bin -lout.lst -sout.sym` to make `out.bin`.
-
-Now use `7800header` to create a `.a78` file from `out.bin` (with the command `save out.a78`)
-
-The `out.a78` can be executed with the `a7800` emulator by typing `a7800 a7800 -cart out.a78`, or copied directly on a
+The `a.out` file can be executed with the `a7800` emulator by typing `a7800 a7800 -cart a.out`, or copied directly on a
 Concerto cart.
 
 ## Technical details
@@ -77,9 +73,6 @@ cc7800 supports a few intrinsics to help making ASM-like tuned code :
 - `strobe(pointer)` implements a `STA` instruction also. It's just the same as store, but accepts only pointers. Typically used for your numerous `strobe(WSYNC)` instructions in your kernel...
 
 - `asm(string)` inlines the given assembler instruction into the C code. Particularly useful to call ASM function (use `asm("jsr asm_function")`).
-
-- `csleep(int)` stands for cycle sleep. Helps to insert nops in the code. Implemented for 2 to 10 cycles.
-
 
 ### 16-bits arithmetics support
 
