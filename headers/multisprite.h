@@ -13,13 +13,16 @@ char _ms_dmaerror;
 char *_ms_dlpnt, *_ms_dlpnt2;
 char _ms_tmp, _ms_tmp2;
 char _ms_pal_detected;
+#ifdef VERTICAL_SCROLLING
+char _ms_vscroll_offset;
+#endif
 
-#define _MS_DLL_ARRAY_SIZE 14 
-ramchip char _ms_b0_dl0[_MS_DL_SIZE], _ms_b0_dl1[_MS_DL_SIZE], _ms_b0_dl2[_MS_DL_SIZE], _ms_b0_dl3[_MS_DL_SIZE], _ms_b0_dl4[_MS_DL_SIZE], _ms_b0_dl5[_MS_DL_SIZE], _ms_b0_dl6[_MS_DL_SIZE], _ms_b0_dl7[_MS_DL_SIZE], _ms_b0_dl8[_MS_DL_SIZE], _ms_b0_dl9[_MS_DL_SIZE], _ms_b0_dl10[_MS_DL_SIZE], _ms_b0_dl11[_MS_DL_SIZE], _ms_b0_dl12[_MS_DL_SIZE], _ms_b0_dl13[_MS_DL_SIZE];
-ramchip char _ms_b1_dl0[_MS_DL_SIZE], _ms_b1_dl1[_MS_DL_SIZE], _ms_b1_dl2[_MS_DL_SIZE], _ms_b1_dl3[_MS_DL_SIZE], _ms_b1_dl4[_MS_DL_SIZE], _ms_b1_dl5[_MS_DL_SIZE], _ms_b1_dl6[_MS_DL_SIZE], _ms_b1_dl7[_MS_DL_SIZE], _ms_b1_dl8[_MS_DL_SIZE], _ms_b1_dl9[_MS_DL_SIZE], _ms_b1_dl10[_MS_DL_SIZE], _ms_b1_dl11[_MS_DL_SIZE], _ms_b1_dl12[_MS_DL_SIZE], _ms_b1_dl13[_MS_DL_SIZE];
+#define _MS_DLL_ARRAY_SIZE 15
+ramchip char _ms_b0_dl0[_MS_DL_SIZE], _ms_b0_dl1[_MS_DL_SIZE], _ms_b0_dl2[_MS_DL_SIZE], _ms_b0_dl3[_MS_DL_SIZE], _ms_b0_dl4[_MS_DL_SIZE], _ms_b0_dl5[_MS_DL_SIZE], _ms_b0_dl6[_MS_DL_SIZE], _ms_b0_dl7[_MS_DL_SIZE], _ms_b0_dl8[_MS_DL_SIZE], _ms_b0_dl9[_MS_DL_SIZE], _ms_b0_dl10[_MS_DL_SIZE], _ms_b0_dl11[_MS_DL_SIZE], _ms_b0_dl12[_MS_DL_SIZE], _ms_b0_dl13[_MS_DL_SIZE], _ms_b0_dl14[_MS_DL_SIZE];
+ramchip char _ms_b1_dl0[_MS_DL_SIZE], _ms_b1_dl1[_MS_DL_SIZE], _ms_b1_dl2[_MS_DL_SIZE], _ms_b1_dl3[_MS_DL_SIZE], _ms_b1_dl4[_MS_DL_SIZE], _ms_b1_dl5[_MS_DL_SIZE], _ms_b1_dl6[_MS_DL_SIZE], _ms_b1_dl7[_MS_DL_SIZE], _ms_b1_dl8[_MS_DL_SIZE], _ms_b1_dl9[_MS_DL_SIZE], _ms_b1_dl10[_MS_DL_SIZE], _ms_b1_dl11[_MS_DL_SIZE], _ms_b1_dl12[_MS_DL_SIZE], _ms_b1_dl13[_MS_DL_SIZE], _ms_b1_dl14[_MS_DL_SIZE];
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
 };
 const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
@@ -35,8 +38,10 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
     11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
     12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
-    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
 };
+const char _ms_blank_dl[2] = {0, 0};
 
 ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
@@ -51,6 +56,74 @@ void multisprite_save();
 void multisprite_restore();
 void multisprite_flip();
 
+#ifdef VERTICAL_SCROLLING
+#define multisprite_display_sprite(x, y, gfx, width, palette) \
+        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+	_ms_tmp = _ms_tmp2 & 0x0f; \
+	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        if (_ms_dldma[X] < 0) { \
+            _ms_dmaerror++; \
+            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
+        } else { \
+            _ms_dlpnt = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_SIZE - 6) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_dlpnt[Y++] = (gfx); \
+                _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_dlpnt[Y++] = ((gfx) >> 8) | _ms_tmp; \
+                _ms_dlpnt[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+                if (_ms_tmp2 & 0x0f) { \
+                    X++; \
+                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+                    if (_ms_dldma[X] < 0) { \
+                        _ms_dmaerror++; \
+                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
+                    } else { \
+                        _ms_dlpnt = _ms_dls[X];  \
+                        Y = _ms_dlend[X]; \
+                        if (Y >= _MS_DL_SIZE - 6) { \
+                            _ms_dmaerror++; \
+                        } else { \
+                            _ms_dlpnt[Y++] = (gfx); \
+                            _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+                            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
+                            _ms_dlpnt[Y++] = (x); \
+                            _ms_dlend[X] = Y; \
+                        } \
+                    } \
+                }\
+            }\
+        }
+
+#define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
+        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp = _ms_tmp2 & 0x0f; \
+        X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        _ms_dlpnt = _ms_dls[X]; \
+        Y = _ms_dlend[X]; \
+        _ms_dlpnt[Y++] = (gfx); \
+        _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+        _ms_dlpnt[Y++] = ((gfx) >> 8) | _ms_tmp; \
+        _ms_dlpnt[Y++] = (x); \
+        _ms_dlend[X] = Y; \
+        if (_ms_tmp2 & 0x0f) { \
+            X++; \
+            _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+            _ms_dlpnt = _ms_dls[X];  \
+            Y = _ms_dlend[X]; \
+            _ms_dlpnt[Y++] = (gfx); \
+            _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
+            _ms_dlpnt[Y++] = (x); \
+            _ms_dlend[X] = Y; \
+        }
+
+#else
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
@@ -73,7 +146,7 @@ void multisprite_flip();
                     X++; \
                     _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
                     if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror = 1; \
+                        _ms_dmaerror++; \
                         _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
                     } else { \
                         _ms_dlpnt = _ms_dls[X];  \
@@ -114,6 +187,7 @@ void multisprite_flip();
             _ms_dlpnt[Y++] = (x); \
             _ms_dlend[X] = Y; \
         }
+#endif
 
 #define multisprite_display_chars(x, y, chars, size, palette) \
     X = (y); \
@@ -171,43 +245,52 @@ void multisprite_init()
         if (_ms_pal_detected) {
             // 16 blank lines
             _ms_dlpnt[Y = 0] = 0x4f;  // 16 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
             // 16 blank lines
             _ms_dlpnt[++Y] = 0x4f;  // 16 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
         } else {
             _ms_dlpnt[Y = 0] = 0x48; // 9 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
         }
         // 16 pixel high regions
-        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; X++, _ms_tmp2++) {
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 1; X++, _ms_tmp2++) {
             _ms_dlpnt[++Y] = 0x4f; // 16 lines
             _ms_dlpnt[++Y] = _ms_dls[X] >> 8; // High address
             _ms_dlpnt[++Y] = _ms_dls[X]; // Low address
         }
+        // 1 pixel high region for the last display list (for vertical scrolling)
+        _ms_dlpnt[++Y] = 0x40; // 1 line
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
         if (_ms_pal_detected) {
+            // 15 blank lines
+            _ms_dlpnt[++Y] = 0x4e;  // 15 lines
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
             // 16 blank lines
             _ms_dlpnt[++Y] = 0x4f;  // 16 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
-            // 16 blank lines
-            _ms_dlpnt[++Y] = 0x4f;  // 16 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
             // 5 blank lines
             _ms_dlpnt[++Y] = 0x44;  // 5 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
         } else {
-            _ms_dlpnt[++Y] = 0x49; // 10 lines
-            _ms_dlpnt[++Y] = 0x21; // 0x2100 = Blank DL
-            _ms_dlpnt[++Y] = 0x00;
+            _ms_dlpnt[++Y] = 0x48; // 9 lines
+            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_blank_dl;
         }
         _ms_dlpnt = _ms_b1_dll;
     }
+
+#ifdef VERTICAL_SCROLLING
+    _ms_vscroll_offset = 0;
+#endif
+
     _ms_buffer = 0; // 0 is the current write buffer
     _ms_dmaerror = 0;
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
@@ -313,6 +396,43 @@ void multisprite_flip()
         *DPPL = _ms_b0_dll;
     }
 }
+
+#ifdef VERTICAL_SCROLLING
+// Vertical scrolling
+#define multisprite_vertical_scrolling(x) X = (x); _ms_vertical_scrolling() 
+
+void _ms_vertical_scrolling()
+{
+    _ms_vscroll_offset += X;
+    if (_ms_vscroll_offset >= 16) {
+        _ms_vscroll_offset = 0;
+    }
+    if (_ms_buffer) {
+        _ms_dlpnt = _ms_b1_dll;
+    } else {
+        _ms_dlpnt = _ms_b0_dll;
+    }
+    if (_ms_pal_detected) { Y = 6; } else { Y = 3; }
+    _ms_dlpnt[Y] = (15 - _ms_vscroll_offset) | 0x40;
+    Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1);
+    if (_ms_vscroll_offset) {
+        _ms_dlpnt[Y] = (_ms_vscroll_offset - 1) | 0x40;
+        if (_ms_buffer) {
+            _ms_dlpnt[++Y] = _ms_b1_dl14 >> 8;
+            _ms_dlpnt[++Y] = _ms_b1_dl14;
+        } else {
+            _ms_dlpnt[++Y] = _ms_b0_dl14 >> 8;
+            _ms_dlpnt[++Y] = _ms_b0_dl14;
+        }
+        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+    } else {
+        _ms_dlpnt[Y] = 0x40; // 1 line
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_dlpnt[++Y] = 0x4e;  // 15 lines
+    }
+}
+#endif
 
 #endif // __ATARI7800_MULTISPRITE__
  
