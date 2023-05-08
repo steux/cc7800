@@ -1,3 +1,6 @@
+v0.2.2 (05/01/2023) :
+    - Corrected bug with scattered data layout
+    
 v0.2.1 (05/01/2023) :
     - Added generation of debug files (.lst, .sym) 
 

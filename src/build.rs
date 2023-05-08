@@ -163,9 +163,10 @@ impl<'a> MemoryMap<'a> {
 
                     // Write the effective scattered data
                     gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
-                    let mut counter = 0;
+                    let mut counter;
                     for i in &sv {
                         gstate.write(&format!("\n{}", i.0))?;
+                        counter = 0;
                         let v = compiler_state.variables.get(&i.0).unwrap();
                         if let Some((_, w)) = v.scattered {
                             if let VariableDefinition::Array(a) = &v.def {
@@ -301,9 +302,10 @@ impl<'a> MemoryMap<'a> {
 
                     // Write the effective scattered data
                     gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
-                    let mut counter = 0;
+                    let mut counter;
                     for i in &sv {
                         gstate.write(&format!("\n{}", i.0))?;
+                        counter = 0;
                         let v = compiler_state.variables.get(&i.0).unwrap();
                         if let Some((_, w)) = v.scattered {
                             if let VariableDefinition::Array(a) = &v.def {
