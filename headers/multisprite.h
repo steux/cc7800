@@ -234,6 +234,19 @@ void multisprite_flip();
         } \
     }
 
+#define multisprite_display_chars_fast(x, y, chars, size, palette) \
+    X = (y); \
+    if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
+    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
+    _ms_dlpnt = _ms_dls[X]; \
+    Y = _ms_dlend[X]; \
+    _ms_dlpnt[Y++] = (chars); \
+    _ms_dlpnt[Y++] = 0x60; \
+    _ms_dlpnt[Y++] = (chars) >> 8; \
+    _ms_dlpnt[Y++] = -size & 0x1f | (palette << 5); \
+    _ms_dlpnt[Y++] = (x); \
+    _ms_dlend[X] = Y; \
+
 #define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
 
 // Macro to convert NTSC colors to PAL colors
@@ -289,6 +302,7 @@ void multisprite_init()
         _ms_dlpnt[++Y] = 0x40; // 1 line
         _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
         _ms_dlpnt[++Y] = _ms_blank_dl;
+        X++;
         if (_ms_pal_detected) {
             // 15 blank lines
             _ms_dlpnt[++Y] = 0x4f;  // 16 lines
@@ -384,6 +398,7 @@ void multisprite_restore()
 // This one should obvisouly executed during VBLANK, since it modifies the DPPL/H pointers
 void multisprite_flip()
 {
+    while (!(*MSTAT & 0x80)); // Wait for VBLANK
     if (_ms_buffer) {
         // Add DL end entry on each DL
         for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
@@ -448,6 +463,25 @@ void _ms_vertical_scrolling()
             _ms_dlpnt[++Y] = _ms_b0_dl14;
         }
         _ms_dlpnt[++Y] = (_ms_vscroll_offset - 1) | 0x40;  // _ms_vscroll_offset lines
+        
+        if (_ms_buffer) {
+            X = 14 + 15;
+            _ms_dlpnt = _ms_b1_dl14;
+        } else {
+            X = 14;
+            _ms_dlpnt = _ms_b0_dl14;
+        }
+        Y = _ms_dlend[X]; 
+        _ms_dldma[X] -= (8 + 20 * 3 + 1); 
+        _ms_dlpnt[Y++] = _ms_hide_bottom; 
+        _ms_dlpnt[Y++] = -20 & 0x1f | (7 << 5);
+        _ms_dlpnt[Y++] = (_ms_hide_bottom >> 8) | _ms_vscroll_offset;
+        _ms_dlpnt[Y++] = 0; 
+        _ms_dlpnt[Y++] = _ms_hide_bottom; 
+        _ms_dlpnt[Y++] = -20 & 0x1f | (7 << 5);
+        _ms_dlpnt[Y++] = (_ms_hide_bottom >> 8) | _ms_vscroll_offset;
+        _ms_dlpnt[Y++] = 80; 
+        _ms_dlend[X] = Y;
     } else {
         _ms_dlpnt[Y] = 0x40; // 1 line
         _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
