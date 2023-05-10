@@ -250,8 +250,7 @@ void multisprite_flip();
 #define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
 
 // Macro to convert NTSC colors to PAL colors
-// To be used outside of grayscale ($0x) and NTSC $Fx
-#define multisprite_color(color) (color + (_ms_pal_detected & 0x10))
+#define multisprite_color(color) ((color >= 0xf0)?(0x10 + (color & 0x0f)):((color >= 0x10)?(color + (_ms_pal_detected & 0x10)):color))
 
 void multisprite_get_tv()
 {

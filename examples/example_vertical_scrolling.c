@@ -29,7 +29,7 @@ void main()
     multisprite_set_charbase(tiles);
     
     for (i = 0; i != _MS_DLL_ARRAY_SIZE; i++) {
-        // 20 characters (8 bits wide) on each line, using palette 1 (pink)
+        // 20 characters (8 pixels wide) on each line, using palette 1 (pink)
         multisprite_display_chars(0, i, background, 20, 1);
     }
     multisprite_save();

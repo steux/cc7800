@@ -18,6 +18,9 @@
     Contact info: bruno.steux@gmail.com
 */
 
+// TODO: Add verbose output (scattered data, code, etc)
+// TODO: Add error output (variable not found, function not found)
+
 use cc6502::Args;
 use cc6502::compile::compile;
 

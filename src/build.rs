@@ -385,19 +385,19 @@ impl<'a> MemoryMap<'a> {
                 // Generate startup code
                 gstate.write("
 START
-    sei                     ;Disable interrupts
-    cld                     ;Clear decimal mode
+    sei                     ; Disable interrupts
+    cld                     ; Clear decimal mode
 
 ;******** Atari recommended startup procedure
 
     lda     #$07
-    sta     INPTCTRL        ;Lock into 7800 mode
+    sta     $01        ; Lock into 7800 mode
     lda     #$7F
-    sta     CTRL            ;Disable DMA
+    sta     $3C        ; Disable DMA
     lda     #$00            
-    sta     OFFSET
-    sta     INPTCTRL
-    ldx     #$FF            ;Reset stack pointer
+    sta     $38 
+    sta     $01
+    ldx     #$FF       ; Reset stack pointer
     txs
 
 ;************** Clear zero page and hardware ******
@@ -405,46 +405,46 @@ START
     ldx     #$40
     lda     #$00
 crloop1    
-    sta     $00,x           ;Clear zero page
-    sta	$100,x		;Clear page 1
+    sta     $00,x      ; Clear zero page
+    sta	    $100,x		 ; Clear page 1
     inx
     bne     crloop1
 
 ;************* Clear RAM **************************
 
-    ldy     #$00            ;Clear Ram
-    lda     #$18            ;Start at $1800
+    ldy     #$00            ; Clear Ram
+    lda     #$18            ; Start at $1800
     sta     $81             
     lda     #$00
     sta     $80
 crloop3
     lda     #$00
-    sta     ($80),y         ;Store data
-    iny                     ;Next byte
-    bne     crloop3         ;Branch if not done page
-    inc     $81             ;Next page
+    sta     ($80),y         ; Store data
+    iny                     ; Next byte
+    bne     crloop3         ; Branch if not done page
+    inc     $81             ; Next page
     lda     $81
-    cmp     #$20            ;End at $1FFF
-    bne     crloop3         ;Branch if not
+    cmp     #$20            ; End at $1FFF
+    bne     crloop3         ; Branch if not
 
-    ldy     #$00            ;Clear Ram
-    lda     #$22            ;Start at $2200
+    ldy     #$00            ; Clear Ram
+    lda     #$22            ; Start at $2200
     sta     $81             
     lda     #$00
     sta     $80
 crloop4
     lda     #$00
-    sta     ($80),y         ;Store data
-    iny                     ;Next byte
-    bne     crloop4         ;Branch if not done page
-    inc     $81             ;Next page
+    sta     ($80),y         ; Store data
+    iny                     ; Next byte
+    bne     crloop4         ; Branch if not done page
+    inc     $81             ; Next page
     lda     $81
-    cmp     #$27            ;End at $27FF
-    bne     crloop4         ;Branch if not
+    cmp     #$27            ; End at $27FF
+    bne     crloop4         ; Branch if not
 
     ldx     #$00
     lda     #$00
-crloop5                         ;Clear 2100-213F
+crloop5                     ; Clear 2100-213F
     sta     $2100,x
     inx
     cpx     #$40

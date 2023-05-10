@@ -35,7 +35,7 @@ void main()
 
     *P0C1 = multisprite_color(0x1c); // Setup Palette 0
     *P0C2 = multisprite_color(0xc5); // Green
-    *P0C3 = 0x0f; // White
+    *P0C3 = multisprite_color(0x0f); // White
    
     *P1C1 = multisprite_color(0x55); // Dark pink
     *P1C2 = multisprite_color(0x5B); // Light pink
@@ -50,7 +50,6 @@ void main()
 
     // Main loop
     do {
-        while (!(*MSTAT & 0x80)); // Wait for VBLANK
         multisprite_flip();
         for (i = 0; i != NB_SPRITES; i++) {
             X = i;

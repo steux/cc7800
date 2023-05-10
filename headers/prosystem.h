@@ -69,6 +69,8 @@ unsigned char * const AUDF1    = 0x18;     // Audio Frequency Channel 1         
 unsigned char * const AUDV0    = 0x19;     // Audio Volume Channel    0                    write-only
 unsigned char * const AUDV1    = 0x1A;     // Audio Volume Channel    1                    write-only
 
+unsigned char * const DUMMY    = 0x1B;     // VCS GRP0. Useless
+
 // ****** 20-3F ********* MARIA REGISTERS ***************
 
 unsigned char * const BACKGRND = 0x20;     // Background Color                             write-only
