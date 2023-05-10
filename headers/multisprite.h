@@ -487,6 +487,31 @@ void multisprite_flip()
 }
 
 #ifdef VERTICAL_SCROLLING
+
+/*
+void _ms_move_dlls_up()
+{
+    if (_ms_buffer) {
+        for (X = _MS_DLL_ARRAY_SIZE; X < _MS_DLL_ARRAY_SIZE * 2 - 1; X++) {
+            _ms_dlpnt = _ms_dls[X];
+            _ms_dlpnt2 = _ms_dls[++X];
+            Y = _ms_dldma_save[X];
+            _ms_dldma_save[--X] = Y;
+            Y = _ms_dlend_save[++X];
+            _ms_dlend_save[--X] = Y;
+            Y = _ms_dlend[++X];
+            _ms_dlend[--X] = Y;
+            for (Y--; Y >= 0; Y--) { 
+                _ms_dlpnt[Y] = _ms_dlpnt2[Y];
+            }
+        }
+        _ms_dldma_save[X] = 0;
+        _ms_dlend_save[X] = 0;
+        _ms_dlend[X] = 0;
+    }
+}
+*/
+
 // Vertical scrolling
 #define multisprite_vertical_scrolling(x) _ms_tmp = (x); _ms_vertical_scrolling() 
 
@@ -497,6 +522,7 @@ void _ms_vertical_scrolling()
         _ms_vscroll_offset += 16;
     }
     if (_ms_vscroll_offset >= 16) {
+        //_ms_move_dlls_up();
         _ms_vscroll_offset -= 16;
     }
     if (_ms_buffer) {
