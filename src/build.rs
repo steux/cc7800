@@ -71,9 +71,11 @@ impl<'a> MemoryMap<'a> {
         }
     }
 
-    // TODO: Manage holey DMA and NOT Holey DMA
-    fn fill_memory(&mut self, org: u32, rorg: u32, size: u32, compiler_state: &'a CompilerState, gstate: &mut GeneratorState, args: &Args, allow_scattered: bool) -> Result<(), Error> {
-        debug!("Filling memory at ${:04x} (RORG=${:04x}), size = ${:04x}, allow_scattered={}", org, rorg, size, allow_scattered);
+    fn fill_memory(&mut self, org: u32, rorg: u32, size: u32, compiler_state: &'a CompilerState, gstate: &mut GeneratorState, args: &Args, allow_scattered: bool, v: bool) -> Result<(), Error> {
+        
+        if args.verbose && v && (self.remaining_functions > 0 || self.remaining_scattered > 0 || self.remaining_variables > 0) {
+            println!("Bank #{}: Filling memory at ${:04x} (RORG=${:04x})", self.bank, org, rorg);
+        }
 
         // Is there any scattered memory remaining ?
         if allow_scattered && self.remaining_scattered > 0 {
@@ -106,7 +108,6 @@ impl<'a> MemoryMap<'a> {
                 }
                 if scattered_16 {
                     // Great. Let's fill this 4Kb of memory with 16 lines scattered data
-                    gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
                     let mut sv = Vec::<(String, u32)>::new();
                     let mut fill = 0;
         
@@ -161,43 +162,28 @@ impl<'a> MemoryMap<'a> {
                         }
                     }
 
-                    // Write the effective scattered data
-                    gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
-                    let mut counter;
-                    for i in &sv {
-                        gstate.write(&format!("\n{}", i.0))?;
-                        counter = 0;
-                        let v = compiler_state.variables.get(&i.0).unwrap();
-                        if let Some((_, w)) = v.scattered {
-                            if let VariableDefinition::Array(a) = &v.def {
-                                for j in 0..i.1 {
-                                    let x = if v.reversed {
-                                        a[((j % w) + 15 * w + (j / w) * 16) as usize]
-                                    } else {
-                                        a[((j % w) + (j / w) * 16) as usize]
-                                    };
-                                    if counter == 0 {
-                                        gstate.write("\n\thex ")?;
-                                    }
-                                    counter += 1;
-                                    if counter == 16 { counter = 0; }
-                                    gstate.write(&format!("{:02x}", x & 0xff))?;
-                                }
-                            }
+                    if fill > 0 {
+                        // Write the effective scattered data
+                        if args.verbose {
+                            println!("Bank #{} : Putting 16 lines scattered data at ${:04x}{}. Zone filling is {}/256", self.bank, rorg, if holeydma_enabled_zone {" (Holey DMA)"} else {""}, fill);
                         }
-                    }
-                    for l in 1..16 {
-                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org + 256 * l, rorg + 256 * l))?;
-                        let mut counter = 0;
+                        gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
+                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
+                        let mut counter;
                         for i in &sv {
+                            gstate.write(&format!("\n{}", i.0))?;
+                            if args.verbose {
+                                println!(" - {}", i.0);
+                            }
+                            counter = 0;
                             let v = compiler_state.variables.get(&i.0).unwrap();
                             if let Some((_, w)) = v.scattered {
                                 if let VariableDefinition::Array(a) = &v.def {
                                     for j in 0..i.1 {
                                         let x = if v.reversed {
-                                            a[((j % w) + (15 - l) * w + (j / w) * 16) as usize]
+                                            a[((j % w) + 15 * w + (j / w) * 16) as usize]
                                         } else {
-                                            a[((j % w) + l * w + (j / w) * 16) as usize]
+                                            a[((j % w) + (j / w) * 16) as usize]
                                         };
                                         if counter == 0 {
                                             gstate.write("\n\thex ")?;
@@ -209,11 +195,35 @@ impl<'a> MemoryMap<'a> {
                                 }
                             }
                         }
+                        for l in 1..16 {
+                            gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org + 256 * l, rorg + 256 * l))?;
+                            let mut counter = 0;
+                            for i in &sv {
+                                let v = compiler_state.variables.get(&i.0).unwrap();
+                                if let Some((_, w)) = v.scattered {
+                                    if let VariableDefinition::Array(a) = &v.def {
+                                        for j in 0..i.1 {
+                                            let x = if v.reversed {
+                                                a[((j % w) + (15 - l) * w + (j / w) * 16) as usize]
+                                            } else {
+                                                a[((j % w) + l * w + (j / w) * 16) as usize]
+                                            };
+                                            if counter == 0 {
+                                                gstate.write("\n\thex ")?;
+                                            }
+                                            counter += 1;
+                                            if counter == 16 { counter = 0; }
+                                            gstate.write(&format!("{:02x}", x & 0xff))?;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        gstate.write("\n")?;
                     }
-                    gstate.write("\n")?;
 
                     // Go on with filling the memory
-                    return self.fill_memory(org + 0x1000, rorg + 0x1000, size - 0x1000, compiler_state, gstate, args, true); 
+                    return self.fill_memory(org + 0x1000, rorg + 0x1000, size - 0x1000, compiler_state, gstate, args, true, true); 
                 }
             }
             
@@ -243,7 +253,6 @@ impl<'a> MemoryMap<'a> {
                 }
                 if scattered_8 {
                     // Great. Let's fill this 4Kb of memory with 8 lines scattered data
-                    gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
         
                     // Let's select all the variables that will fit into this scattered data
                     let mut sv = Vec::<(String, u32)>::new();
@@ -299,44 +308,29 @@ impl<'a> MemoryMap<'a> {
                             }
                         }
                     }
-
-                    // Write the effective scattered data
-                    gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
-                    let mut counter;
-                    for i in &sv {
-                        gstate.write(&format!("\n{}", i.0))?;
-                        counter = 0;
-                        let v = compiler_state.variables.get(&i.0).unwrap();
-                        if let Some((_, w)) = v.scattered {
-                            if let VariableDefinition::Array(a) = &v.def {
-                                for j in 0..i.1 {
-                                    let x = if v.reversed {
-                                        a[((j % w) + 7 * w + (j / w) * 8) as usize]
-                                    } else {
-                                        a[((j % w) + (j / w) * 8) as usize]
-                                    };
-                                    if counter == 0 {
-                                        gstate.write("\n\thex ")?;
-                                    }
-                                    counter += 1;
-                                    if counter == 16 { counter = 0; }
-                                    gstate.write(&format!("{:02x}", x & 0xff))?;
-                                }
-                            }
+                    
+                    if fill > 0 {
+                        // Write the effective scattered data
+                        if args.verbose {
+                            println!("Bank #{} : Putting 8 lines scattered data at ${:04x}{}. Zone filling is {}/256", self.bank, rorg, if holeydma_enabled_zone {" (Holey DMA)"} else {""}, fill);
                         }
-                    }
-                    for l in 1..8 {
-                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org + 256 * l, rorg + 256 * l))?;
-                        let mut counter = 0;
+                        gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
+                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
+                        let mut counter;
                         for i in &sv {
+                            gstate.write(&format!("\n{}", i.0))?;
+                            if args.verbose {
+                                println!(" - {}", i.0);
+                            }
+                            counter = 0;
                             let v = compiler_state.variables.get(&i.0).unwrap();
                             if let Some((_, w)) = v.scattered {
                                 if let VariableDefinition::Array(a) = &v.def {
                                     for j in 0..i.1 {
                                         let x = if v.reversed {
-                                            a[((j % w) + (7 - l) * w + (j / w) * 8) as usize]
+                                            a[((j % w) + 7 * w + (j / w) * 8) as usize]
                                         } else {
-                                            a[((j % w) + l * w + (j / w) * 8) as usize]
+                                            a[((j % w) + (j / w) * 8) as usize]
                                         };
                                         if counter == 0 {
                                             gstate.write("\n\thex ")?;
@@ -348,18 +342,42 @@ impl<'a> MemoryMap<'a> {
                                 }
                             }
                         }
+                        for l in 1..8 {
+                            gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org + 256 * l, rorg + 256 * l))?;
+                            let mut counter = 0;
+                            for i in &sv {
+                                let v = compiler_state.variables.get(&i.0).unwrap();
+                                if let Some((_, w)) = v.scattered {
+                                    if let VariableDefinition::Array(a) = &v.def {
+                                        for j in 0..i.1 {
+                                            let x = if v.reversed {
+                                                a[((j % w) + (7 - l) * w + (j / w) * 8) as usize]
+                                            } else {
+                                                a[((j % w) + l * w + (j / w) * 8) as usize]
+                                            };
+                                            if counter == 0 {
+                                                gstate.write("\n\thex ")?;
+                                            }
+                                            counter += 1;
+                                            if counter == 16 { counter = 0; }
+                                            gstate.write(&format!("{:02x}", x & 0xff))?;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        gstate.write("\n")?;
                     }
-                    gstate.write("\n")?;
 
                     // Go on with filling the memory
-                    return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true); 
+                    return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true, true); 
                 }
             }
             if self.remaining_scattered > 0 {
                 // Well, we have scattered data, so let's try to find a place for them
-                self.fill_memory(org, rorg, 0x800, compiler_state, gstate, args, false)?;
+                self.fill_memory(org, rorg, 0x800, compiler_state, gstate, args, false, false)?;
                 if size > 0x800 {
-                    return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true);
+                    return self.fill_memory(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true, true);
                 } else {
                     return Ok(());
                 }
@@ -374,14 +392,18 @@ impl<'a> MemoryMap<'a> {
             gstate.write("\n\n; Functions definitions\n\tSEG CODE\n")?;
 
             // Prelude code for each bank
-            debug!("Generating code for bank #{}", self.bank);
+            if args.verbose {
+                println!("Bank #{}: Generating code for at ${:04x}", self.bank, rorg);
+            }
             gstate.current_bank = self.bank;
             gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
 
             if self.bank == 0 && !self.startup_code {
                 self.startup_code = true;
                 filled = 0x62; // Size of startup code
-
+                if args.verbose {
+                    println!(" - Startup code");
+                }
                 // Generate startup code
                 gstate.write("
 START
@@ -472,7 +494,6 @@ IRQ
                     if !self.set.contains(f.0) {
                         let s = gstate.functions_code.get(f.0).unwrap().size_bytes();
                         if filled + s + 1 <= size {
-                            debug!("Generating code for function #{}", f.0);
 
                             gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
                             gstate.write_function(f.0)?;
@@ -480,6 +501,10 @@ IRQ
                             self.set.insert(f.0);
                             self.remaining_functions -= 1;
                             filled += s + 1;
+                            
+                            if args.verbose {
+                                println!(" - {} function (filled {}/{})", f.0, filled, size);
+                            }
                         }
                     }
                 }
@@ -489,6 +514,10 @@ IRQ
         if self.remaining_variables > 0 {
             // Generate ROM tables
             gstate.write("\n; Tables in ROM\n")?;
+            if args.verbose {
+                println!("Bank #{}: Inserting ROM tables", self.bank);
+            }
+            
             for v in compiler_state.sorted_variables().iter() {
                 if let VariableMemory::ROM(rom_bank) = v.1.memory {
                     if rom_bank == self.bank && v.1.scattered.is_none() {
@@ -516,6 +545,9 @@ IRQ
                                 self.set.insert(v.0);
                                 self.remaining_variables -= 1;
                                 filled = s + s2;
+                                if args.verbose {
+                                    println!(" - {} array (filled {}/{})", v.0, filled, size);
+                                }
                                 match &v.1.def {
                                     VariableDefinition::Array(arr) => {
                                         if v.1.alignment != 1 {
@@ -904,7 +936,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         } else { (0, 0x8000, 0x8000) };
 
         let mut map = MemoryMap::new(compiler_state, bank);
-        map.fill_memory(0x8000 + b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true)?;
+        map.fill_memory(0x8000 + b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true, true)?;
         assert!(map.remaining_scattered == 0);
         assert!(map.remaining_functions == 0);
         assert!(map.remaining_variables == 0);
