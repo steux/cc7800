@@ -393,7 +393,7 @@ impl<'a> MemoryMap<'a> {
 
             // Prelude code for each bank
             if args.verbose {
-                println!("Bank #{}: Generating code for at ${:04x}", self.bank, rorg);
+                println!("Bank #{}: Generating code at ${:04x}", self.bank, rorg);
             }
             gstate.current_bank = self.bank;
             gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
@@ -509,6 +509,8 @@ IRQ
                     }
                 }
             }
+        } else {
+            gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
         }
 
         if self.remaining_variables > 0 {
