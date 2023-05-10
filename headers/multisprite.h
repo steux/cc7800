@@ -4,6 +4,9 @@
 #ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64
 #endif
+#ifndef _MS_DL_MALLOC
+#define _MS_DL_MALLOC(y) _MS_DL_SIZE
+#endif
 
 #define MS_YMAX 224
 
@@ -41,8 +44,8 @@ holeydma scattered(16,20) char _ms_hide_bottom[320] = {
 #endif
 
 #define _MS_DLL_ARRAY_SIZE 15
-ramchip char _ms_b0_dl0[_MS_DL_SIZE], _ms_b0_dl1[_MS_DL_SIZE], _ms_b0_dl2[_MS_DL_SIZE], _ms_b0_dl3[_MS_DL_SIZE], _ms_b0_dl4[_MS_DL_SIZE], _ms_b0_dl5[_MS_DL_SIZE], _ms_b0_dl6[_MS_DL_SIZE], _ms_b0_dl7[_MS_DL_SIZE], _ms_b0_dl8[_MS_DL_SIZE], _ms_b0_dl9[_MS_DL_SIZE], _ms_b0_dl10[_MS_DL_SIZE], _ms_b0_dl11[_MS_DL_SIZE], _ms_b0_dl12[_MS_DL_SIZE], _ms_b0_dl13[_MS_DL_SIZE], _ms_b0_dl14[_MS_DL_SIZE];
-ramchip char _ms_b1_dl0[_MS_DL_SIZE], _ms_b1_dl1[_MS_DL_SIZE], _ms_b1_dl2[_MS_DL_SIZE], _ms_b1_dl3[_MS_DL_SIZE], _ms_b1_dl4[_MS_DL_SIZE], _ms_b1_dl5[_MS_DL_SIZE], _ms_b1_dl6[_MS_DL_SIZE], _ms_b1_dl7[_MS_DL_SIZE], _ms_b1_dl8[_MS_DL_SIZE], _ms_b1_dl9[_MS_DL_SIZE], _ms_b1_dl10[_MS_DL_SIZE], _ms_b1_dl11[_MS_DL_SIZE], _ms_b1_dl12[_MS_DL_SIZE], _ms_b1_dl13[_MS_DL_SIZE], _ms_b1_dl14[_MS_DL_SIZE];
+ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
+ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0)], _ms_b1_dl1[_MS_DL_MALLOC(1)], _ms_b1_dl2[_MS_DL_MALLOC(2)], _ms_b1_dl3[_MS_DL_MALLOC(3)], _ms_b1_dl4[_MS_DL_MALLOC(4)], _ms_b1_dl5[_MS_DL_MALLOC(5)], _ms_b1_dl6[_MS_DL_MALLOC(6)], _ms_b1_dl7[_MS_DL_MALLOC(7)], _ms_b1_dl8[_MS_DL_MALLOC(8)], _ms_b1_dl9[_MS_DL_MALLOC(9)], _ms_b1_dl10[_MS_DL_MALLOC(10)], _ms_b1_dl11[_MS_DL_MALLOC(11)], _ms_b1_dl12[_MS_DL_MALLOC(12)], _ms_b1_dl13[_MS_DL_MALLOC(13)], _ms_b1_dl14[_MS_DL_MALLOC(14)];
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
     _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
     _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
@@ -113,7 +116,7 @@ void multisprite_flip();
                         } else { \
                             _ms_dlpnt[Y++] = (gfx); \
                             _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-                            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
+                            _ms_dlpnt[Y++] = (((gfx) >> 8) - 0x10) | _ms_tmp; \
                             _ms_dlpnt[Y++] = (x); \
                             _ms_dlend[X] = Y; \
                         } \
@@ -141,9 +144,18 @@ void multisprite_flip();
             Y = _ms_dlend[X]; \
             _ms_dlpnt[Y++] = (gfx); \
             _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
+            _ms_dlpnt[Y++] = (((gfx) >> 8) - 0x10) | _ms_tmp; \
             _ms_dlpnt[Y++] = (x); \
             _ms_dlend[X] = Y; \
+        }
+
+#define multisprite_reserve_dma(y, nb_sprites, width) \
+        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        if (_ms_tmp2 & 0x0f) { \
+            X++; \
+            _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
         }
 
 #else
@@ -179,7 +191,7 @@ void multisprite_flip();
                         } else { \
                             _ms_dlpnt[Y++] = (gfx); \
                             _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-                            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
+                            _ms_dlpnt[Y++] = (((gfx) >> 8) - 0x10) | _ms_tmp; \
                             _ms_dlpnt[Y++] = (x); \
                             _ms_dlend[X] = Y; \
                         } \
@@ -206,13 +218,23 @@ void multisprite_flip();
             Y = _ms_dlend[X]; \
             _ms_dlpnt[Y++] = (gfx); \
             _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-            _ms_dlpnt[Y++] = (((gfx) - 0x1000) >> 8) | _ms_tmp; \
+            _ms_dlpnt[Y++] = (((gfx) >> 8) - 0x10) | _ms_tmp;  \
             _ms_dlpnt[Y++] = (x); \
             _ms_dlend[X] = Y; \
         }
+
+#define multisprite_reserve_dma(y, nb_sprites, width) \
+        _ms_tmp = (y) & 0x0f; \
+        X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        if ((y) & 0x0f) { \
+            X++; \
+            _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        }
+
 #endif
 
-#define multisprite_display_chars(x, y, chars, size, palette) \
+#define multisprite_display_tiles(x, y, tiles, size, palette) \
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
     _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
@@ -225,27 +247,27 @@ void multisprite_flip();
         if (Y >= _MS_DL_SIZE - 7) { \
             _ms_dmaerror++; \
          } else { \
-            _ms_dlpnt[Y++] = (chars); \
+            _ms_dlpnt[Y++] = (tiles); \
             _ms_dlpnt[Y++] = 0x60; \
-            _ms_dlpnt[Y++] = (chars) >> 8; \
+            _ms_dlpnt[Y++] = (tiles) >> 8; \
             _ms_dlpnt[Y++] = -size & 0x1f | (palette << 5); \
             _ms_dlpnt[Y++] = (x); \
             _ms_dlend[X] = Y; \
         } \
     }
 
-#define multisprite_display_chars_fast(x, y, chars, size, palette) \
+#define multisprite_display_tiles_fast(x, y, tiles, size, palette) \
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
     _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
     _ms_dlpnt = _ms_dls[X]; \
     Y = _ms_dlend[X]; \
-    _ms_dlpnt[Y++] = (chars); \
+    _ms_dlpnt[Y++] = (tiles); \
     _ms_dlpnt[Y++] = 0x60; \
-    _ms_dlpnt[Y++] = (chars) >> 8; \
+    _ms_dlpnt[Y++] = (tiles) >> 8; \
     _ms_dlpnt[Y++] = -size & 0x1f | (palette << 5); \
     _ms_dlpnt[Y++] = (x); \
-    _ms_dlend[X] = Y; \
+    _ms_dlend[X] = Y; 
 
 #define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
 
