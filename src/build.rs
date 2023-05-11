@@ -952,7 +952,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         .word #NMI\t; NMI
         .word #START\t; RESET
         .word #IRQ\t; IRQ
-        \n", if maxbank == 0 { 0xfff8 } else { b * banksize + 0xcff8 }, if maxbank == 0 { 0x87 } else { 0xc7 }))?;
+        \n", if maxbank == 0 { 0xfff8 } else { b * banksize + 0xbff8 }, if maxbank == 0 { 0x87 } else { 0xc7 }))?;
 
         }
     }
