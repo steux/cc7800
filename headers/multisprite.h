@@ -1,5 +1,14 @@
+/*
+    multisprite.h : multisprite display for the Atari 7800
+    Copyleft 2023 Bruno STEUX 
+
+    This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
+*/
+
 #ifndef __ATARI7800_MULTISPRITE__
 #define __ATARI7800_MULTISPRITE__
+
+#include "prosystem.h"
 
 #ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64

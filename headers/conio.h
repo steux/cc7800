@@ -1,3 +1,16 @@
+/*
+    conio.h : a console I/O display for the Atari 7800
+    Copyleft 2023 Bruno STEUX 
+
+    This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
+*/
+
+#ifndef __CONIO_H__
+#define __CONIO_H__
+
+// Conio shares the memory with multisprite DLLs, as well as PAL/NTSC auto detection
+#include "multisprite.h"
+
 reversed scattered(8,1) char font[1024]={
 	// ................................
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 
@@ -68,3 +81,20 @@ reversed scattered(8,1) char font[1024]={
 	0xc0, 0xc0, 0x30, 0x30, 0xc0, 0xc0, 0x30, 0x30, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 
 	0x33, 0x33, 0xcc, 0xcc, 0x33, 0x33, 0xcc, 0xcc, 0x33, 0x99, 0xcc, 0x66, 0x33, 0x99, 0xcc, 0x66
 };
+
+ramchip char _conio_x, _conio_y, _conio_color;
+
+#define gotoxy(x, y) _conio_x = (x); _conio_y = (y)
+#define wherex() _conio_x
+#define wherey() _conio_y
+#define putch(c) _ms_tmp = c; _conio_putch()
+#define cputs(s) _ms_dlpnt = s; _conio_cputs()
+#define textcolor(c) _conio_color = c
+
+void clrscr()
+{
+    _conio_x = 0;
+    _conio_y = 0;
+}
+
+#endif // __CONIO_H__
