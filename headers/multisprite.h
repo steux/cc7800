@@ -463,6 +463,8 @@ void _ms_move_save_down()
         Y = _ms_dlend_save[--X];
         _ms_dlend_save[++X] = Y;
     }
+    _ms_dlend_save[X] = 0;
+    _ms_dldma_save[X] = (454 - 23 - 7) / 2;
 }
 
 void _ms_move_dlls_up()
@@ -500,6 +502,8 @@ void _ms_move_save_up()
         Y = _ms_dlend_save[++X];
         _ms_dlend_save[--X] = Y;
     }
+    _ms_dlend_save[X] = 0;
+    _ms_dldma_save[X] = (454 - 23 - 7) / 2;
 }
 #endif
 
@@ -528,7 +532,6 @@ void multisprite_flip()
         _ms_dlend[X] = Y;
     }
 #endif
-    while (!(*MSTAT & 0x80)); // Wait for VBLANK
     if (_ms_buffer) {
         // Add DL end entry on each DL
         for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
@@ -537,9 +540,12 @@ void multisprite_flip()
             _ms_dlpnt[++Y] = 0; 
         }
         _ms_buffer = 0; // 0 is the current write buffer
+        while (!(*MSTAT & 0x80)); // Wait for VBLANK
+        *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
+        *DPPL = _ms_b1_dll;
 #ifdef VERTICAL_SCROLLING
         if (_ms_move_on_next_flip) {
-            if (_ms_move_on_next_flip) {
+            if (_ms_move_on_next_flip == 1) {
                 _ms_move_dlls_down();
                 _ms_move_save_down();
             } else {
@@ -557,8 +563,6 @@ void multisprite_flip()
         // Consider the DMA penalty for the vertical scrolling shadowing lines
         _ms_dldma[X = _MS_DLL_ARRAY_SIZE - 1] -= (8 + 20 * 3 + 1);
 #endif
-        *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
-        *DPPL = _ms_b1_dll;
     } else {
         // Add DL end entry on each DL
         // Restore saved state 
@@ -570,6 +574,20 @@ void multisprite_flip()
             _ms_dldma[X] = _ms_dldma_save[X];
         }
         _ms_buffer = 1; // 1 is the current write buffer
+        while (!(*MSTAT & 0x80)); // Wait for VBLANK
+        *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer
+        *DPPL = _ms_b0_dll;
+#ifdef VERTICAL_SCROLLING
+        if (_ms_move_on_next_flip) {
+            if (_ms_move_on_next_flip == 1) {
+                _ms_move_dlls_down();
+                _ms_move_save_down();
+            } else {
+                _ms_move_dlls_up();
+                _ms_move_save_up();
+            }
+        }
+#endif
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend[Y] = _ms_dlend_save[X];
@@ -579,8 +597,6 @@ void multisprite_flip()
         // Consider the DMA penalty for the vertical scrolling shadowing lines
         _ms_dldma[X = _MS_DLL_ARRAY_SIZE * 2 - 1] -= (8 + 20 * 3 + 1);
 #endif
-        *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer
-        *DPPL = _ms_b0_dll;
     }
 }
 
