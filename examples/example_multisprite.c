@@ -3,7 +3,7 @@
 
 char i, xpos, ypos;
 
-#define NB_SPRITES 32 
+#define NB_SPRITES 64 
 ramchip short sp_xpos[NB_SPRITES], sp_ypos[NB_SPRITES];
 ramchip char sp_direction[NB_SPRITES];
 
@@ -28,7 +28,7 @@ void main()
     multisprite_set_charbase(tiles);
     
     for (i = 0; i != _MS_DLL_ARRAY_SIZE; i++) {
-        // 20 characters (8 bits wide) on each line, using palette 1 (pink)
+        // 20 characters (8 pixels wide) on each line, using palette 1 (pink)
         multisprite_display_tiles(0, i, background, 20, 1);
     }
     multisprite_save();

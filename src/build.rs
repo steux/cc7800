@@ -878,6 +878,9 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
         }
     }
+    if args.verbose {
+        println!("Atari 7800 internal RAM : {} bytes left", 4096 - filled);
+    }
 
     // Generate veriables stored in RAM on cart (memory on chip)
     let mut memoryonchip = false;

@@ -1,4 +1,5 @@
-v0.2.2 (05/11/2023) :
+v0.2.2 (05/15/2023) :
+    - Added RAM left information (with verbose option)
     - Slightly modified DASM error output
     - Corrected bug for cart info location for supergames
     - Added verbose output for memory mapping

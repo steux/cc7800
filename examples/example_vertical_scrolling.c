@@ -5,7 +5,7 @@
 #define _MS_DL_MALLOC(y) ((y == 6 || y == 7 || y == 8)?_MS_DL_SIZE * 2:_MS_DL_SIZE)
 #include "multisprite.h"
 
-char i, j, xpos, ypos;
+char i, counter, xpos, ypos;
 char *ptr;
 
 #define NB_SPRITES 32 
@@ -23,15 +23,18 @@ const char hello_world[] = { LTR('H'), LTR('E'), LTR('L'), LTR('L'), LTR('O'), L
 
 void main()
 {
+    counter = 0;
+
     multisprite_init();
     multisprite_set_charbase(tiles);
     
-    multisprite_display_tiles(0, 0, background, 20, 1);
-    multisprite_display_tiles(0, 1, background, 20, 1);
-    multisprite_display_tiles(0, 2, background + 2, 20, 1);
-    multisprite_display_tiles(0, 3, background + 2, 20, 1);
-    for (xpos = 0, i = 4; i < _MS_DLL_ARRAY_SIZE; xpos += 8, i++) {
-        multisprite_display_tiles(xpos, i, background, 6, 1);
+    for (counter = 0; counter < _MS_DLL_ARRAY_SIZE; counter++) {
+        if (counter & 2) {
+            ptr = background + 2;
+        } else {
+            ptr = background;
+        }
+        multisprite_display_tiles(0, _MS_DLL_ARRAY_SIZE - 1 - counter, ptr, 20, 1);
     }
     multisprite_save();
 
@@ -52,6 +55,17 @@ void main()
 
     // Main loop
     do {
+        // Prepare scrolling data
+        if (multisprite_vscroll_buffer_empty()) {
+            if (counter & 2) {
+                ptr = background + 2;
+            } else {
+                ptr = background;
+            }
+            multisprite_vscroll_buffer_tiles(0, ptr, 20, 1);
+            counter++;
+        }
+
         multisprite_flip();
         multisprite_vertical_scrolling(1);
         multisprite_reserve_dma(104, sizeof(hello_world), 2);
