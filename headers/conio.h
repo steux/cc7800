@@ -8,6 +8,8 @@
 #ifndef __CONIO_H__
 #define __CONIO_H__
 
+ramchip char _conio_screen[25 * 40]; 
+
 // Conio shares the memory with multisprite DLLs, as well as PAL/NTSC auto detection
 #include "multisprite.h"
 
@@ -82,19 +84,137 @@ reversed scattered(8,1) char font[1024]={
 	0x33, 0x33, 0xcc, 0xcc, 0x33, 0x33, 0xcc, 0xcc, 0x33, 0x99, 0xcc, 0x66, 0x33, 0x99, 0xcc, 0x66
 };
 
-ramchip char _conio_x, _conio_y, _conio_color;
+ramchip char _conio_x, _conio_y, _conio_palette;
+ramchip char *_conio_ptr; // Pointer to the screen RAM
 
-#define gotoxy(x, y) _conio_x = (x); _conio_y = (y)
+#define gotoxy(x, y) _conio_x = (x); _conio_y = (y); _conio_update_ptr()
 #define wherex() _conio_x
 #define wherey() _conio_y
-#define putch(c) _ms_tmp = c; _conio_putch()
-#define cputs(s) _ms_dlpnt = s; _conio_cputs()
-#define textcolor(c) _conio_color = c
+#define putch(c) _ms_tmp = (c); _conio_putch()
+#define cputs(s) _ms_dlpnt = (s); _conio_cputs()
+#define textcolor(c) _conio_palette = (c << 5)
 
 void clrscr()
 {
     _conio_x = 0;
     _conio_y = 0;
+    _conio_palette = 0;
+
+    *P0C2 = 0x07; // Grey
+    *P1C2 = multisprite_color(0x87); // Blue
+    *P2C2 = multisprite_color(0xD7); // Green
+    *P3C2 = multisprite_color(0x9C); // Cyran
+    *P4C2 = multisprite_color(0x34); // Red
+    *P5C2 = multisprite_color(0x5A); // Magenta
+    *P6C2 = multisprite_color(0x1B); // Yellow
+    *P7C2 = 0x0f; // White
+
+    multisprite_set_charbase(font);
+    multisprite_get_tv();
+    
+    Y = 1;
+    for (X = 0; X != 25; X++) {
+        _ms_dlend[X] = 0;
+        _ms_dlpnt = _ms_dls[X];
+        _ms_dlpnt[Y] = 0; // Stops the DL
+    }
+    
+    _ms_dlpnt = _ms_b0_dll;
+    // Build DLL
+    // 69 blank lines for PAL
+    // 19 blank lines for NTSC
+    if (_ms_pal_detected) {
+        // 16 blank lines
+        _ms_dlpnt[Y = 0] = 0x4f;  // 16 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        // 16 blank lines
+        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        // 14 blank lines
+        _ms_dlpnt[++Y] = 0x4d;  // 14 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+    } else {
+        _ms_dlpnt[Y = 0] = 0x4f; // 16 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        // 5 blank lines
+        _ms_dlpnt[++Y] = 0x44;  // 5 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+    }
+    // 8 pixel high regions
+    for (X = 0; X != 25; X++) {
+        _ms_dlpnt[++Y] = 0x47; // 8 lines
+        _ms_dlpnt[++Y] = _ms_dls[X] >> 8; // High address
+        _ms_dlpnt[++Y] = _ms_dls[X]; // Low address
+    }
+    if (_ms_pal_detected) {
+        // 16 blank lines
+        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        // 16 blank lines
+        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        // 15 blank lines
+        _ms_dlpnt[++Y] = 0x4e;  // 15 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+    } else {
+        _ms_dlpnt[++Y] = 0x4f; // 16 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+        // 6 blank lines
+        _ms_dlpnt[++Y] = 0x45;  // 6 lines
+        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
+        _ms_dlpnt[++Y] = _ms_blank_dl;
+    }
+    *DPPH = _ms_b0_dll >> 8; // 1 the current displayed buffer
+    *DPPL = _ms_b0_dll;
+    *CTRL = 0x43; // DMA on, Black background, 160A/B mode, Two (2) byte characters mode
+}
+
+void _conio_update_ptr()
+{
+    _conio_ptr = _conio_screen;
+    Y = _conio_y;
+    for (Y--; Y >= 0; Y--) {
+        _conio_ptr += 40;
+        Y--;
+    }
+    _conio_ptr += _conio_x;
+}
+
+// _ms_dlpnt point to the screen to display
+void _conio_cputs()
+{
+    // Compute the length of the string
+    Y = 0;
+    while (_ms_dlpnt[Y]) Y++;
+    _ms_tmp = Y; // _ms_tmp contains the string length
+    // Store the string in the screen RAM
+    _ms_dlpnt2 = _conio_ptr;
+    for (Y--; Y >= 0; Y--) {
+        _ms_dlpnt2[Y] = _ms_dlpnt[Y];
+    }
+    // And add this to the display list
+    _ms_dlpnt = _ms_dls[X = _conio_y];
+    Y = _ms_dlend[X];
+    if (Y >= _MS_DL_SIZE - 7) {
+        _ms_dmaerror++;
+    } else { \
+        _ms_dlpnt[Y++] = _conio_ptr;
+        _ms_dlpnt[Y++] = 0x60;
+        _ms_dlpnt[Y++] = _conio_ptr >> 8;
+        _ms_dlpnt[Y++] = -_ms_tmp & 0x1f | _conio_palette;
+        _ms_dlpnt[Y++] = _conio_x << 3;
+        _ms_dlend[X] = Y++;
+        _ms_dlpnt[Y] = 0;
+    }
 }
 
 #endif // __CONIO_H__
