@@ -30,8 +30,8 @@ char _ms_pal_detected;
 #ifdef VERTICAL_SCROLLING
 signed char _ms_vscroll_offset;
 char _ms_move_on_next_flip;
-char _ms_vscroll_buffer_empty;
-#define _MS_VCROLL_BUFFER (_MS_DLL_ARRAY_SIZE * 2)
+char _ms_sbuffer_size;
+char _ms_sbuffer_dma;
 
 holeydma scattered(16,20) char _ms_hide_bottom[320] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
@@ -56,22 +56,15 @@ holeydma scattered(16,20) char _ms_hide_bottom[320] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff 
 };
 ramchip char _ms_sbuffer[_MS_DL_MALLOC(-1)];
-#define _MS_VSADD 1
-#else
-#define _MS_VSADD 0
-#endif
 
 ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
 ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0)], _ms_b1_dl1[_MS_DL_MALLOC(1)], _ms_b1_dl2[_MS_DL_MALLOC(2)], _ms_b1_dl3[_MS_DL_MALLOC(3)], _ms_b1_dl4[_MS_DL_MALLOC(4)], _ms_b1_dl5[_MS_DL_MALLOC(5)], _ms_b1_dl6[_MS_DL_MALLOC(6)], _ms_b1_dl7[_MS_DL_MALLOC(7)], _ms_b1_dl8[_MS_DL_MALLOC(8)], _ms_b1_dl9[_MS_DL_MALLOC(9)], _ms_b1_dl10[_MS_DL_MALLOC(10)], _ms_b1_dl11[_MS_DL_MALLOC(11)], _ms_b1_dl12[_MS_DL_MALLOC(12)], _ms_b1_dl13[_MS_DL_MALLOC(13)], _ms_b1_dl14[_MS_DL_MALLOC(14)];
-const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2 + _MS_VSADD ] = {
+const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
     _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
     _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
-#ifdef VERTICAL_SCROLLING
-    , _ms_sbuffer
-#endif
 };
 
-const char _ms_shift4[16 * (_MS_DLL_ARRAY_SIZE + _MS_VSADD)] = {
+const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
     1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
     2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
@@ -87,17 +80,13 @@ const char _ms_shift4[16 * (_MS_DLL_ARRAY_SIZE + _MS_VSADD)] = {
     12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
     13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
     14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
-#ifdef VERTICAL_SCROLLING
-    , _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2
-    , _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2, _MS_DLL_ARRAY_SIZE * 2
-#endif
 };
 const char _ms_blank_dl[2] = {0, 0};
 
 ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
-ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2 + _MS_VSADD];
-ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2 + _MS_VSADD];
+ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
+ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
 ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
 
@@ -373,7 +362,8 @@ void multisprite_init()
 #ifdef VERTICAL_SCROLLING
     _ms_vscroll_offset = 0;
     _ms_move_on_next_flip = 0;
-    _ms_vscroll_buffer_empty = 1;
+    _ms_sbuffer_size = 0;
+    _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
 
     _ms_buffer = 0; // 0 is the current write buffer
@@ -386,7 +376,7 @@ void multisprite_init()
 void multisprite_clear()
 {
     // Reset DL ends for both buffers
-    for (X = _MS_DLL_ARRAY_SIZE * 2 - 1 + _MS_VSADD; X >= 0; X--) {
+    for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
         _ms_dldma[X] = _MS_DMA_START_VALUE;
     }
@@ -445,31 +435,26 @@ void multisprite_restore()
 
 #ifdef VERTICAL_SCROLLING
 #define multisprite_vscroll_buffer_tiles(x, tiles, size, palette) \
-    X = _MS_VCROLL_BUFFER; \
-    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
-    _ms_dlpnt = _ms_dls[X]; \
-    Y = _ms_dlend[X]; \
-    _ms_dlpnt[Y++] = (tiles); \
-    _ms_dlpnt[Y++] = 0x60; \
-    _ms_dlpnt[Y++] = (tiles) >> 8; \
-    _ms_dlpnt[Y++] = -size & 0x1f | (palette << 5); \
-    _ms_dlpnt[Y++] = (x); \
-    _ms_dlend[X] = Y; \
-    _ms_vscroll_buffer_empty = 0;
+    _ms_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    Y = _ms_sbuffer_size; \
+    _ms_sbuffer[Y++] = (tiles); \
+    _ms_sbuffer[Y++] = 0x60; \
+    _ms_sbuffer[Y++] = (tiles) >> 8; \
+    _ms_sbuffer[Y++] = -size & 0x1f | (palette << 5); \
+    _ms_sbuffer[Y++] = (x); \
+    _ms_sbuffer_size = Y;
+    
 
 #define multisprite_vscroll_buffer_sprite(x, gfx, width, palette) \
-    X = _MS_VCROLL_BUFFER; \
-    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-    _ms_dlpnt = _ms_dls[X]; \
-    Y = _ms_dlend[X]; \
-    _ms_dlpnt[Y++] = (gfx); \
-    _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
-    _ms_dlpnt[Y++] = ((gfx) >> 8); \
-    _ms_dlpnt[Y++] = (x); \
-    _ms_dlend[X] = Y; \
-    _ms_vscroll_buffer_empty = 0;
+    _ms_sbuffer_dma -= (8 + width * 3 + 1) / 2; \
+    Y = _ms_sbuffer_size; \
+    _ms_sbuffer[Y++] = (gfx); \
+    _ms_sbuffer[Y++] = -width & 0x1f | (palette << 5); \
+    _ms_sbuffer[Y++] = ((gfx) >> 8); \
+    _ms_sbuffer[Y++] = (x); \
+    _ms_sbuffer_size = Y;
 
-#define multisprite_vscroll_buffer_empty() _ms_vscroll_buffer_empty
+#define multisprite_vscroll_buffer_empty() (!_ms_sbuffer_size)
 
 void _ms_move_dlls_down()
 {
@@ -494,14 +479,12 @@ void _ms_move_dlls_down()
             }
         }
     }
-    // Copy the vscroll buffer to the first zone 
+    // Copy the scroll buffer to the first zone 
     _ms_dlpnt = _ms_dls[X];
-    _ms_tmp = X;
-    _ms_dlpnt2 = _ms_dls[X = _MS_VCROLL_BUFFER];
-    Y = _ms_dlend[X];
-    _ms_dlend[X = _ms_tmp] = Y;
+    Y = _ms_sbuffer_size;
+    _ms_dlend[X] = Y;
     for (Y--; Y >= 0; Y--) { 
-        _ms_dlpnt[Y] = _ms_dlpnt2[Y];
+        _ms_dlpnt[Y] = _ms_sbuffer[Y];
     }
 }
 
@@ -513,11 +496,10 @@ void _ms_move_save_down()
         Y = _ms_dlend_save[--X];
         _ms_dlend_save[++X] = Y;
     }
-    _ms_dlend_save[X] = _ms_dlend[Y = _MS_VCROLL_BUFFER];
-    _ms_dldma_save[X] = _ms_dldma[Y];
-    _ms_dlend[Y] = 0;
-    _ms_dldma[Y] = _MS_DMA_START_VALUE;
-    _ms_vscroll_buffer_empty = 1;
+    _ms_dlend_save[X] = _ms_sbuffer_size;
+    _ms_dldma_save[X] = _ms_sbuffer_dma;
+    _ms_sbuffer_size = 0;
+    _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 }
 
 void _ms_move_dlls_up()
@@ -543,14 +525,12 @@ void _ms_move_dlls_up()
             }
         }
     }
-    // Copy the vscroll buffer to the last zone 
+    // Copy the scroll buffer to the first zone 
     _ms_dlpnt = _ms_dls[X];
-    _ms_tmp = X;
-    _ms_dlpnt2 = _ms_dls[X = _MS_VCROLL_BUFFER];
-    Y = _ms_dlend[X];
-    _ms_dlend[X = _ms_tmp] = Y;
+    Y = _ms_sbuffer_size;
+    _ms_dlend[X] = Y;
     for (Y--; Y >= 0; Y--) { 
-        _ms_dlpnt[Y] = _ms_dlpnt2[Y];
+        _ms_dlpnt[Y] = _ms_sbuffer[Y];
     }
 }
 
@@ -562,11 +542,10 @@ void _ms_move_save_up()
         Y = _ms_dlend_save[++X];
         _ms_dlend_save[--X] = Y;
     }
-    _ms_dlend_save[X] = _ms_dlend[Y = _MS_VCROLL_BUFFER];
-    _ms_dldma_save[X] = _ms_dldma[Y];
-    _ms_dlend[Y] = 0;
-    _ms_dldma[Y] = _MS_DMA_START_VALUE;
-    _ms_vscroll_buffer_empty = 1;
+    _ms_dlend_save[X] = _ms_sbuffer_size;
+    _ms_dldma_save[X] = _ms_sbuffer_dma;
+    _ms_sbuffer_size = 0;
+    _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 }
 #endif
 
