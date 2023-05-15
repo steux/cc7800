@@ -457,6 +457,18 @@ void multisprite_restore()
     _ms_dlend[X] = Y; \
     _ms_vscroll_buffer_empty = 0;
 
+#define multisprite_vscroll_buffer_sprite(x, gfx, width, palette) \
+    X = _MS_VCROLL_BUFFER; \
+    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+    _ms_dlpnt = _ms_dls[X]; \
+    Y = _ms_dlend[X]; \
+    _ms_dlpnt[Y++] = (gfx); \
+    _ms_dlpnt[Y++] = -width & 0x1f | (palette << 5); \
+    _ms_dlpnt[Y++] = ((gfx) >> 8); \
+    _ms_dlpnt[Y++] = (x); \
+    _ms_dlend[X] = Y; \
+    _ms_vscroll_buffer_empty = 0;
+
 #define multisprite_vscroll_buffer_empty() _ms_vscroll_buffer_empty
 
 void _ms_move_dlls_down()

@@ -7,6 +7,7 @@
 
 char i, counter, xpos, ypos;
 char *ptr;
+char xchest;
 
 #define NB_SPRITES 32 
 ramchip short sp_xpos[NB_SPRITES], sp_ypos[NB_SPRITES];
@@ -27,7 +28,8 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(tiles);
-    
+   
+    // Set up a full background 
     for (counter = 0; counter < _MS_DLL_ARRAY_SIZE; counter++) {
         if (counter & 2) {
             ptr = background + 2;
@@ -38,12 +40,20 @@ void main()
     }
     multisprite_save();
 
-    *P0C1 = multisprite_color(0x1c); // Setup Palette 0
+    *P0C1 = multisprite_color(0x1c); // Setup Palette 0: Yellow
     *P0C2 = multisprite_color(0xc5); // Green
     *P0C3 = 0x0f; // White
    
     *P1C1 = multisprite_color(0x55); // Dark pink
     *P1C2 = multisprite_color(0x5B); // Light pink
+
+    *P2C1 = multisprite_color(0x32);
+    *P2C2 = multisprite_color(0x3D);
+    *P2C3 = multisprite_color(0x37);
+
+    *P3C1 = multisprite_color(0x92);
+    *P3C2 = multisprite_color(0x97);
+    *P3C3 = multisprite_color(0x9D);
 
     // Initialize sprites
     for (ypos = 0, xpos = 0, i = 0, X = 0; X != NB_SPRITES; xpos++, ypos++, X++) {
@@ -63,6 +73,8 @@ void main()
                 ptr = background;
             }
             multisprite_vscroll_buffer_tiles(0, ptr, 20, 1);
+            multisprite_vscroll_buffer_sprite(xchest, chest, 2, 3);
+            xchest += 45;
             counter++;
         }
 
@@ -89,7 +101,7 @@ void main()
         }
         for (xpos = 40, i = 0; i != sizeof(hello_world); xpos += 8, i++) {
             ptr = chars0 + hello_world[X = i];
-            multisprite_display_sprite_fast(xpos, 104, ptr, 2, 0);
+            multisprite_display_sprite_fast(xpos, 104, ptr, 2, 2);
         }
     } while(1);
 }
