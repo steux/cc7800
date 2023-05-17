@@ -91,13 +91,25 @@ ramchip char *_conio_ptr; // Pointer to the screen RAM
 #define wherex() _conio_x
 #define wherey() _conio_y
 #define putch(c) _ms_tmp = (c); _conio_putch()
-#define cputs(s) _ms_dlpnt = (s); _conio_cputs()
+#define cputs(s) _ms_dlpnt2 = (s); _conio_cputs()
 #define textcolor(c) _conio_palette = (c << 5)
 
 void clrscr()
 {
     _conio_x = 0;
     _conio_y = 0;
+    _conio_ptr = _conio_screen;
+    X = 25; 
+    _ms_dlpnt = _conio_screen;
+    do {
+        Y = 39;
+        do {
+            _ms_dlpnt[Y--] = ' ';
+        } while (Y >= 0);
+        _ms_dlpnt += 40;
+        X--;
+    } while (X != 0);
+
     _conio_palette = 0;
 
     *P0C2 = 0x07; // Grey
@@ -178,6 +190,18 @@ void clrscr()
     *CTRL = 0x43; // DMA on, Black background, 160A/B mode, Two (2) byte characters mode
 }
 
+void delline()
+{
+    _ms_dlpnt = _conio_ptr - _conio_x;   
+    Y = 39; 
+    do {
+        _ms_dlpnt[Y--] = ' ';
+    } while (Y >= 0);
+    _ms_dlend[X = _conio_y] = 0;
+    _ms_dlpnt = _ms_dls[X = _conio_y];
+    _ms_dlpnt[Y = 1] = 0;
+}
+
 void _conio_update_ptr()
 {
     _conio_ptr = _conio_screen;
@@ -189,32 +213,81 @@ void _conio_update_ptr()
     _conio_ptr += _conio_x;
 }
 
-// _ms_dlpnt point to the screen to display
-void _conio_cputs()
-{
-    // Compute the length of the string
-    Y = 0;
-    while (_ms_dlpnt[Y]) Y++;
-    _ms_tmp = Y; // _ms_tmp contains the string length
+// _ms_tmp is the size of the string, max 32   
+// _ms_dlpnt2 points to the string to display
+void _conio_cputs2()
+{    
     // Store the string in the screen RAM
-    _ms_dlpnt2 = _conio_ptr;
+    _ms_dlpnt = _conio_ptr;
     for (Y--; Y >= 0; Y--) {
-        _ms_dlpnt2[Y] = _ms_dlpnt[Y];
+        _ms_dlpnt[Y] = _ms_dlpnt2[Y];
     }
-    // And add this to the display list
+    // Check the display and look for one with the same palette
     _ms_dlpnt = _ms_dls[X = _conio_y];
+    for (Y = 3; Y < _ms_dlend[X = _conio_y]; Y += 5) {
+        if ((_ms_dlpnt[Y] & 0xe0) == _conio_palette) {
+            // Yes ! It has the same palette !
+            // Is it possible to add this string in the same dl ?
+            X = _ms_dlpnt[++Y] >> 3; // x pos 
+            if (X > _conio_x) {
+                // The new string is on the left
+                // What would be the new width of the string ?
+                X -= _conio_x - ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl
+                if (X < _ms_tmp) X = _ms_tmp;
+                if (X <= 32) {
+                    // It fits ! Yeah !
+                    _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
+                    _ms_dlpnt[Y] = _conio_x << 3;
+                    return;
+                }
+            } else { 
+                // The new string on the right
+                X -= (_ms_dlpnt[--Y] & 0x1f) | 0xe0; // The width of this dl
+                if (X < _ms_tmp + _conio_x) { // The new string lies on the right
+                                              // OK. What would be the new width ?
+                    X = -(_ms_dlpnt[Y] & 0x1f) + _ms_tmp + _conio_x - X;
+                    if (X <= 32) {
+                        // It fits ! Yeah !
+                        _ms_dlpnt[Y] = -X & 0x1f | _conio_palette;
+                        return;
+                    }
+                } else return; // No need to modify the DL. It's included in the previous one
+            }
+        }
+    }
+
+    // And add this to the display list
     Y = _ms_dlend[X];
     if (Y >= _MS_DL_SIZE - 7) {
         _ms_dmaerror++;
     } else { \
         _ms_dlpnt[Y++] = _conio_ptr;
-        _ms_dlpnt[Y++] = 0x60;
+        Y++;
         _ms_dlpnt[Y++] = _conio_ptr >> 8;
         _ms_dlpnt[Y++] = -_ms_tmp & 0x1f | _conio_palette;
         _ms_dlpnt[Y++] = _conio_x << 3;
         _ms_dlend[X] = Y++;
         _ms_dlpnt[Y] = 0;
+        Y -= 5;
+        _ms_dlpnt[Y] = 0x60;
     }
 }
 
+// _ms_dlpnt2 points to the string to display
+void _conio_cputs()
+{
+    // Compute the length of the string
+    Y = 0;
+    while (_ms_dlpnt2[Y]) Y++;
+    _ms_tmp = Y; // _ms_tmp contains the string length
+    while (_ms_tmp > 32) {
+        _ms_tmp2 = _ms_tmp - 32;
+        _ms_tmp = 32;
+        _conio_cputs2();
+        _ms_dlpnt2 += 32;
+        _ms_tmp = _ms_tmp2;
+    }
+    _conio_cputs2();
+}
+ 
 #endif // __CONIO_H__

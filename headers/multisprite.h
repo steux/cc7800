@@ -25,7 +25,7 @@
 char _ms_buffer; // Double buffer state
 char _ms_dmaerror;
 char *_ms_dlpnt, *_ms_dlpnt2;
-char _ms_tmp, _ms_tmp2;
+char _ms_tmp, _ms_tmp2, _ms_tmp3;
 char _ms_pal_detected;
 
 #ifdef VERTICAL_SCROLLING
@@ -366,6 +366,7 @@ void multisprite_init()
     _ms_move_on_next_flip = 0;
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
+    *P7C3 = 0; 
 #endif
 
     _ms_buffer = 0; // 0 is the current write buffer
