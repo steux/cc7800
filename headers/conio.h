@@ -249,12 +249,16 @@ void _conio_cputs2()
             if (X > _conio_x) {
                 // The new string is on the left
                 // What would be the new width of the string ?
-                X -= _conio_x - ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl
+                X -= _conio_x + ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl
                 if (X < _ms_tmp) X = _ms_tmp;
                 if (X <= 32) {
                     // It fits ! Yeah !
+                    Y--; Y--;
+                    _ms_dlpnt[--Y] = _conio_ptr;
+                    Y++; Y++;
+                    _ms_dlpnt[Y++] = _conio_ptr >> 8;
                     _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
-                    _ms_dlpnt[Y] = _conio_x << 3;
+                    _ms_dlpnt[Y++] = _conio_x << 2;
                     _conio_cursor_move_right();
                     return;
                 }
@@ -329,11 +333,15 @@ void _conio_putch()
             if (X > _conio_x) {
                 // The new string is on the left
                 // What would be the new width of the string ?
-                X -= _conio_x - ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl entry
+                X -= _conio_x + ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl entry
                 if (X <= 32) {
+                    Y--; Y--;
                     // It fits ! Yeah !
+                    _ms_dlpnt[--Y] = _conio_ptr;
+                    Y++; Y++;
+                    _ms_dlpnt[Y++] = _conio_ptr >> 8;
                     _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
-                    _ms_dlpnt[Y] = _conio_x << 3;
+                    _ms_dlpnt[Y] = _conio_x << 2;
                     _ms_tmp = 1;
                     _conio_cursor_move_right();
                     return;

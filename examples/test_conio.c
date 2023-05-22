@@ -3,6 +3,10 @@
 
 char i;
 
+reversed scattered(8,1) char special_char[8] = {
+    0x66, 0xff, 0xff, 0xff, 0x7e, 0x3c, 0x18, 0x00  
+};
+
 void main()
 {
     clrscr();
@@ -34,14 +38,32 @@ void main()
     }
     // Long text test
     gotoxy(0, 10);
-    cputs("This is a long text, It fits in a line.");
+    cputs("This is a long text that fits in a line.");
     
     gotoxy(10, 11);
     cputs("World!");
     gotoxy(4, 11);
     cputs("Hello");
+    
+    gotoxy(10, 12);
+    cputs("World!");
+    gotoxy(4, 12);
+    textcolor(4);
+    cputs("Hello");
 
-    // Unit tests :
+    gotoxy(0, 13);
+    for (i = 0; i != 8; i++) {
+        textcolor(i);
+        putch('!');
+    }
+
+    gotoxy(0, 14);
+    for (i = 0; i != 8; i++) {
+        textcolor(7 - i);
+        putch(128); // Special character
+    }
+
+    // Unit tests (Display lines length check) :
     assert(_ms_dlend[X = 0] == 5);
     assert(_ms_dlend[X = 1] == 10);
     assert(_ms_dlend[X = 7] == 10);
@@ -49,5 +71,8 @@ void main()
     assert(_ms_dlend[X = 9] == 5);
     assert(_ms_dlend[X = 10] == 10);
     assert(_ms_dlend[X = 11] == 5);
+    assert(_ms_dlend[X = 12] == 10);
+    assert(_ms_dlend[X = 13] == 40);
+    assert(_ms_dlend[X = 14] == 40);
     while(1);
 }
