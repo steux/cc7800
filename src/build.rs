@@ -846,6 +846,10 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     // main RAM variables 
     let mut filled = 0;
     let mut ram1_filled = false;
+    let mut ram2_filled = false;
+    if args.verbose {
+        println!("Atari 7800 internal RAM : 0x1800 onwards");
+    }
     for v in compiler_state.sorted_variables().iter() {
         if v.1.memory == VariableMemory::Ramchip && v.1.def == VariableDefinition::None {
             let sx = if v.1.size > 1 {
@@ -867,15 +871,30 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             };
             filled += sx;
             if filled > 0x840 && !ram1_filled {
-                // Skip the zeropage and stack
+                // Skip the zeropage shadow 
                 ram1_filled = true;
-                gstate.write("\n\tSEG.U RAM2\n\tORG $2200\n\tRORG $2200\n")?;
+                gstate.write("\n\tSEG.U RAM2\n\tORG $2100\n\tRORG $2200\n")?;
+                filled = 0x900 + sx;
+                if args.verbose {
+                    println!("Atari 7800 internal RAM : 0x2100 onwards (in between zeropage & stack shadows)");
+                }
+            } 
+            if filled > 0x940 && !ram2_filled {
+                // Skip the stack shadow
+                ram2_filled = true;
+                gstate.write("\n\tSEG.U RAM3\n\tORG $2200\n\tRORG $2200\n")?;
                 filled = 0xa00 + sx;
+                if args.verbose {
+                    println!("Atari 7800 internal RAM : 0x2200 onwards");
+                }
             } 
             if filled > 4096 {
                 return Err(Error::Configuration { error: "Memory full. Internal Atari 7800 RAM is limited to 4KB".to_string() });
             }
             gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
+            if args.verbose {
+                println!(" - {} ({} bytes)", v.0, sx);
+            }
         }
     }
     if args.verbose {

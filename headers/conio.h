@@ -94,6 +94,13 @@ ramchip char *_conio_ptr; // Pointer to the screen RAM
 #define cputs(s) _ms_dlpnt2 = (s); _conio_cputs()
 #define textcolor(c) _conio_palette = (c << 5)
 
+#define CONIO_HBAR 96
+#define CONIO_VBAR ('z' + 3)
+#define CONIO_TL_CORNER ('P' - '@')
+#define CONIO_BL_CORNER ('M' - '@')
+#define CONIO_TR_CORNER ('N' - '@')
+#define CONIO_BR_CORNER ('Z' + 3 - '@')
+
 void clrscr()
 {
     _conio_x = 0;
@@ -114,11 +121,11 @@ void clrscr()
 
     *P0C2 = 0x07; // Grey
     *P1C2 = multisprite_color(0x87); // Blue
-    *P2C2 = multisprite_color(0xD7); // Green
+    *P2C2 = multisprite_color(0xDA); // Green
     *P3C2 = multisprite_color(0x9C); // Cyran
-    *P4C2 = multisprite_color(0x34); // Red
-    *P5C2 = multisprite_color(0x5A); // Magenta
-    *P6C2 = multisprite_color(0x1B); // Yellow
+    *P4C2 = multisprite_color(0x32); // Red
+    *P5C2 = multisprite_color(0x36); // Brown
+    *P6C2 = multisprite_color(0x1D); // Yellow
     *P7C2 = 0x0f; // White
 
     multisprite_set_charbase(font);
@@ -187,7 +194,7 @@ void clrscr()
     }
     *DPPH = _ms_b0_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b0_dll;
-    *CTRL = 0x43; // DMA on, Black background, 160A/B mode, Two (2) byte characters mode
+    *CTRL = 0x43; // DMA on, Black background, 320A mode, 1 byte wide characters mode
 }
 
 void delline()
@@ -208,9 +215,19 @@ void _conio_update_ptr()
     Y = _conio_y;
     for (Y--; Y >= 0; Y--) {
         _conio_ptr += 40;
-        Y--;
     }
     _conio_ptr += _conio_x;
+}
+
+// _ms_tmp is the size to move right
+void _conio_cursor_move_right()
+{
+    _conio_x += _ms_tmp;
+    if (_conio_x >= 40) {
+        _conio_x -= 40;
+        _conio_y++;
+    }
+    _conio_ptr += _ms_tmp;
 }
 
 // _ms_tmp is the size of the string, max 32   
@@ -228,7 +245,7 @@ void _conio_cputs2()
         if ((_ms_dlpnt[Y] & 0xe0) == _conio_palette) {
             // Yes ! It has the same palette !
             // Is it possible to add this string in the same dl ?
-            X = _ms_dlpnt[++Y] >> 3; // x pos 
+            X = _ms_dlpnt[++Y] >> 2; // x pos 
             if (X > _conio_x) {
                 // The new string is on the left
                 // What would be the new width of the string ?
@@ -238,6 +255,7 @@ void _conio_cputs2()
                     // It fits ! Yeah !
                     _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
                     _ms_dlpnt[Y] = _conio_x << 3;
+                    _conio_cursor_move_right();
                     return;
                 }
             } else { 
@@ -245,32 +263,37 @@ void _conio_cputs2()
                 X -= (_ms_dlpnt[--Y] & 0x1f) | 0xe0; // The width of this dl
                 if (X < _ms_tmp + _conio_x) { // The new string lies on the right
                                               // OK. What would be the new width ?
-                    X = -(_ms_dlpnt[Y] & 0x1f) + _ms_tmp + _conio_x - X;
+                    X = -((_ms_dlpnt[Y] & 0x1f) | 0xe0) + _ms_tmp + _conio_x - X;
                     if (X <= 32) {
                         // It fits ! Yeah !
                         _ms_dlpnt[Y] = -X & 0x1f | _conio_palette;
+                        _conio_cursor_move_right();
                         return;
                     }
-                } else return; // No need to modify the DL. It's included in the previous one
+                } else {
+                    _conio_cursor_move_right();
+                    return; // No need to modify the DL. It's included in the previous one
+                }
             }
         }
     }
 
     // And add this to the display list
-    Y = _ms_dlend[X];
+    Y = _ms_dlend[X = _conio_y];
     if (Y >= _MS_DL_SIZE - 7) {
         _ms_dmaerror++;
-    } else { \
+    } else {
         _ms_dlpnt[Y++] = _conio_ptr;
         Y++;
         _ms_dlpnt[Y++] = _conio_ptr >> 8;
         _ms_dlpnt[Y++] = -_ms_tmp & 0x1f | _conio_palette;
-        _ms_dlpnt[Y++] = _conio_x << 3;
+        _ms_dlpnt[Y++] = _conio_x << 2;
         _ms_dlend[X] = Y++;
         _ms_dlpnt[Y] = 0;
         Y -= 5;
         _ms_dlpnt[Y] = 0x60;
     }
+    _conio_cursor_move_right();
 }
 
 // _ms_dlpnt2 points to the string to display
@@ -290,4 +313,70 @@ void _conio_cputs()
     _conio_cputs2();
 }
  
+// _ms_tmp is character to draw at current position   
+void _conio_putch()
+{    
+    // Store the string in the screen RAM
+    _ms_dlpnt = _conio_ptr;
+    _ms_dlpnt[Y = 0] = _ms_tmp;
+    // Check the display and look for one with the same palette
+    _ms_dlpnt = _ms_dls[X = _conio_y];
+    for (Y = 3; Y < _ms_dlend[X = _conio_y]; Y += 5) {
+        if ((_ms_dlpnt[Y] & 0xe0) == _conio_palette) {
+            // Yes ! It has the same palette !
+            // Is it possible to add this string in the same dl ?
+            X = _ms_dlpnt[++Y] >> 2; // x pos 
+            if (X > _conio_x) {
+                // The new string is on the left
+                // What would be the new width of the string ?
+                X -= _conio_x - ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl entry
+                if (X <= 32) {
+                    // It fits ! Yeah !
+                    _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
+                    _ms_dlpnt[Y] = _conio_x << 3;
+                    _ms_tmp = 1;
+                    _conio_cursor_move_right();
+                    return;
+                }
+            } else { 
+                // The new string is on the right
+                X -= (_ms_dlpnt[--Y] & 0x1f) | 0xe0; // Add the width of this dl entry
+                if (X < _conio_x + 1) { // The new string lies on the right
+                                        // OK. What would be the new width ?
+                    X = -((_ms_dlpnt[Y] & 0x1f) | 0xe0) + 1 + _conio_x - X;
+                    if (X <= 32) {
+                        // It fits ! Yeah !
+                        _ms_dlpnt[Y] = -X & 0x1f | _conio_palette;
+                        _ms_tmp = 1;
+                        _conio_cursor_move_right();
+                        return;
+                    }
+                } else {
+                    _ms_tmp = 1;
+                    _conio_cursor_move_right();
+                    return; // No need to modify the DL. It's included in the previous one
+                }
+            }
+        }
+    }
+
+    // And add this to the display list
+    Y = _ms_dlend[X = _conio_y];
+    if (Y >= _MS_DL_SIZE - 7) {
+        _ms_dmaerror++;
+    } else {
+        _ms_dlpnt[Y++] = _conio_ptr;
+        Y++;
+        _ms_dlpnt[Y++] = _conio_ptr >> 8;
+        _ms_dlpnt[Y++] = 0x1f | _conio_palette;
+        _ms_dlpnt[Y++] = _conio_x << 2;
+        _ms_dlend[X] = Y++;
+        _ms_dlpnt[Y] = 0;
+        Y -= 5;
+        _ms_dlpnt[Y] = 0x60;
+    }
+    _ms_tmp = 1;
+    _conio_cursor_move_right();
+}
+
 #endif // __CONIO_H__

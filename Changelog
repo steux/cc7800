@@ -1,3 +1,7 @@
+v0.2.3 (05/22/2023) :
+    - Added ramchip memory usage information
+    - Now uses the 64 available RAM bytes between zeropage and stack shadow memory 
+
 v0.2.2 (05/15/2023) :
     - Added RAM left information (with verbose option)
     - Slightly modified DASM error output
