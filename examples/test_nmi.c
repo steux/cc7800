@@ -31,8 +31,6 @@ void main()
     *P0C1 = multisprite_color(0x1c); // Setup Palette 0
     *P0C2 = multisprite_color(0xc5); // Green
     *P0C3 = multisprite_color(0x0f); // White
-
-    *P4C2 = multisprite_color(0x32); // Red
     
     // Initialize sprites
     for (ypos = 0, xpos = 0, i = 0, X = 0; X != NB_SPRITES; xpos++, ypos++, X++) {
@@ -45,8 +43,7 @@ void main()
     // Main loop
     do {
         multisprite_flip();
-        *BACKGRND = 0;
-        //*BACKGRND = 0; // Back to black background
+        *BACKGRND = 0; // Back to black background
         for (i = 0; i != NB_SPRITES; i++) {
             Y = sp_direction[X = i];
             sp_xpos[X] += dx[Y];
