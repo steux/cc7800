@@ -492,22 +492,29 @@ IRQ
             for f in compiler_state.sorted_functions().iter() {
                 if f.1.code.is_some() && !f.1.inline && f.1.bank == self.bank {
                     if !self.set.contains(f.0) {
-                        let s = gstate.functions_code.get(f.0).unwrap().size_bytes();
-                        if filled + s + 1 <= size {
-
-                            gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
-                            gstate.write_function(f.0)?;
-                            if f.1.interrupt {
-                                gstate.write("\tRTI\n")?;
-                            } else {
-                                gstate.write("\tRTS\n")?;
-                            }
+                        // Check if this one needs to be generated
+                        if f.0 != "main" && !f.1.interrupt && gstate.functions_actually_in_use.get(f.0).is_none() {
+                            // Skip this one
                             self.set.insert(f.0);
                             self.remaining_functions -= 1;
-                            filled += s + 1;
-                            
-                            if args.verbose {
-                                println!(" - {} function (filled {}/{})", f.0, filled, size);
+                        } else {
+                            let s = gstate.functions_code.get(f.0).unwrap().size_bytes();
+                            if filled + s + 1 <= size {
+
+                                gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
+                                gstate.write_function(f.0)?;
+                                if f.1.interrupt {
+                                    gstate.write("\tRTI\n")?;
+                                } else {
+                                    gstate.write("\tRTS\n")?;
+                                }
+                                self.set.insert(f.0);
+                                self.remaining_functions -= 1;
+                                filled += s + 1;
+
+                                if args.verbose {
+                                    println!(" - {} function (filled {}/{})", f.0, filled, size);
+                                }
                             }
                         }
                     }
