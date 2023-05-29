@@ -497,7 +497,11 @@ IRQ
 
                             gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
                             gstate.write_function(f.0)?;
-                            gstate.write("\tRTS\n")?;
+                            if f.1.interrupt {
+                                gstate.write("\tRTI\n")?;
+                            } else {
+                                gstate.write("\tRTS\n")?;
+                            }
                             self.set.insert(f.0);
                             self.remaining_functions -= 1;
                             filled += s + 1;
@@ -786,7 +790,8 @@ fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, out
 pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, args: &Args) -> Result<(), Error> 
 {
     let mut bankswitching_scheme = "32K";
-    
+    let mut nmi_interrupt = "NMI";
+
     // Try to figure out what is the bankswitching method
 
     let mut maxbank = 0;
@@ -846,7 +851,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     // main RAM variables 
     let mut filled = 0;
     let mut ram1_filled = false;
-    let mut ram2_filled = false;
+    //let mut ram2_filled = false;
     if args.verbose {
         println!("Atari 7800 internal RAM : 0x1800 onwards");
     }
@@ -873,6 +878,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             if filled > 0x840 && !ram1_filled {
                 // Skip the zeropage shadow 
                 ram1_filled = true;
+/*
                 gstate.write("\n\tSEG.U RAM2\n\tORG $2100\n\tRORG $2200\n")?;
                 filled = 0x900 + sx;
                 if args.verbose {
@@ -882,6 +888,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             if filled > 0x940 && !ram2_filled {
                 // Skip the stack shadow
                 ram2_filled = true;
+*/
                 gstate.write("\n\tSEG.U RAM3\n\tORG $2200\n\tRORG $2200\n")?;
                 filled = 0xa00 + sx;
                 if args.verbose {
@@ -950,6 +957,9 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             }
             gstate.check_branches(f.0);
         }
+        if f.1.interrupt{
+            nmi_interrupt = f.0;
+        }
     }
 
     // Generate code for all banks
@@ -971,7 +981,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         ORG ${:04x}
         .byte $FF ; Region verification
         .byte ${:02x} 
-        .word #NMI\t; NMI
+        .word #{nmi_interrupt}\t; NMI
         .word #START\t; RESET
         .word #IRQ\t; IRQ
         \n", if maxbank == 0 { 0xfff8 } else { b * banksize + 0xbff8 }, if maxbank == 0 { 0x87 } else { 0xc7 }))?;

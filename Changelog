@@ -1,3 +1,7 @@
+v0.2.4 (05/27/2023) :
+    - Removed usage of the 64 available RAM bytes between zeropage and stack shadow memory (apparently mapped)
+    - Added support for NMI interrupts
+
 v0.2.3 (05/22/2023) :
     - Added ramchip memory usage information
     - Now uses the 64 available RAM bytes between zeropage and stack shadow memory 

@@ -3,6 +3,8 @@
     Copyleft 2023 Bruno STEUX 
 
     This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
+    
+    v0.1: First working version
 */
 
 #ifndef __ATARI7800_MULTISPRITE__
@@ -22,11 +24,9 @@
 #define _MS_DMA_START_VALUE ((454 - 23 - 7) / 2)
 
 // Zeropage variables
-char _ms_buffer; // Double buffer state
 char _ms_dmaerror;
 char *_ms_dlpnt, *_ms_dlpnt2;
-char _ms_tmp, _ms_tmp2, _ms_tmp3;
-char _ms_pal_detected;
+char _ms_tmp, _ms_tmp2;
 
 #ifdef VERTICAL_SCROLLING
 signed char _ms_vscroll_offset;
@@ -91,6 +91,9 @@ ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
 ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
+
+ramchip char _ms_buffer; // Double buffer state
+ramchip char _ms_pal_detected;
 
 void multisprite_init();
 void multisprite_clear();
@@ -290,6 +293,9 @@ void multisprite_flip();
 // Macro to convert NTSC colors to PAL colors
 #define multisprite_color(color) ((color >= 0xf0)?(0x10 + (color & 0x0f)):((color >= 0x10)?(color + (_ms_pal_detected & 0x10)):color))
 
+#define multisprite_enable_dli(line) _ms_tmp = line; _multisprite_enable_dli()
+#define multisprite_disable_dli(line) _ms_tmp = line; _multisprite_disable_dli()
+
 void multisprite_get_tv()
 {
     while (!(*MSTAT & 0x80)); // Wait for VBLANK
@@ -373,7 +379,7 @@ void multisprite_init()
     _ms_dmaerror = 0;
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b1_dll;
-    *CTRL = 0x50; // DMA on, Black background, 160A/B mode, Two (2) byte characters mode
+    *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
 }
 
 void multisprite_clear()
@@ -615,8 +621,6 @@ void multisprite_flip()
             _ms_dlpnt = _ms_dls[X];
             Y = _ms_dlend[X];
             _ms_dlpnt[++Y] = 0; 
-            _ms_dlend[X] = _ms_dlend_save[X];
-            _ms_dldma[X] = _ms_dldma_save[X];
         }
         _ms_buffer = 1; // 1 is the current write buffer
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
@@ -690,6 +694,24 @@ void _ms_vertical_scrolling()
     }
 }
 #endif
+
+// _ms_tmp : display to list to apply DLI flag
+void _multisprite_enable_dli()
+{
+    _ms_tmp = (_ms_tmp << 2) - _ms_tmp + 3; // _ms_tmp = _ms_tmp * 3 + 3
+    if (_ms_pal_detected) _ms_tmp += 3;
+    _ms_b0_dll[X = _ms_tmp] |= 0x80;
+    _ms_b1_dll[X] |= 0x80;
+}
+
+// _ms_tmp : display to list to apply DLI flag
+void _multisprite_disable_dli()
+{
+    _ms_tmp = (_ms_tmp << 2) - _ms_tmp + 3; // _ms_tmp = _ms_tmp * 3 + 3
+    if (_ms_pal_detected) _ms_tmp += 3;
+    _ms_b0_dll[X = _ms_tmp] &= 0x7f;
+    _ms_b1_dll[X] &= 0x7f;
+}
 
 #endif // __ATARI7800_MULTISPRITE__
  
