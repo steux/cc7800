@@ -21,7 +21,7 @@
 
 #define MS_YMAX 224
 #define _MS_DLL_ARRAY_SIZE 15
-#define _MS_DMA_START_VALUE ((454 - 23 - 7) / 2)
+#define _MS_DMA_START_VALUE ((454 - 42) / 2)
 
 // Zeropage variables
 char _ms_dmaerror;
@@ -83,6 +83,7 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
     14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
 };
+const char _ms_set_wm_dl[5] = {0, 0x40, 0x21, 0xff, 0}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
 ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
@@ -324,16 +325,16 @@ void multisprite_init()
         if (_ms_pal_detected) {
             // 16 blank lines
             _ms_dlpnt[Y = 0] = 0x4f;  // 16 lines
-            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-            _ms_dlpnt[++Y] = _ms_blank_dl;
+            _ms_dlpnt[++Y] = _ms_set_wm_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_set_wm_dl;
             // 16 blank lines
             _ms_dlpnt[++Y] = 0x4f;  // 16 lines
             _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
             _ms_dlpnt[++Y] = _ms_blank_dl;
         } else {
             _ms_dlpnt[Y = 0] = 0x41; // 2 lines
-            _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-            _ms_dlpnt[++Y] = _ms_blank_dl;
+            _ms_dlpnt[++Y] = _ms_set_wm_dl >> 8;
+            _ms_dlpnt[++Y] = _ms_set_wm_dl;
         }
         // 16 pixel high regions
         for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 1; X++, _ms_tmp2++) {
