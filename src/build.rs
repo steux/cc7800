@@ -41,7 +41,7 @@ impl<'a> MemoryMap<'a> {
     fn new(compiler_state: &'a CompilerState, bank: u32) -> MemoryMap<'a> {
         let mut remaining_functions = 0;
         for f in compiler_state.sorted_functions().iter() {
-            if f.1.bank == bank && f.1.code.is_some() {
+            if f.1.bank == bank && f.1.code.is_some() && !f.1.inline {
                 remaining_functions += 1;
             }
         }
@@ -493,8 +493,9 @@ IRQ
                 if f.1.code.is_some() && !f.1.inline && f.1.bank == self.bank {
                     if !self.set.contains(f.0) {
                         // Check if this one needs to be generated
-                        if f.0 != "main" && !f.1.interrupt && gstate.functions_actually_in_use.get(f.0).is_none() {
+                        if gstate.functions_actually_in_use.get(f.0).is_none() {
                             // Skip this one
+                            debug!("Skipped function {}", f.0);
                             self.set.insert(f.0);
                             self.remaining_functions -= 1;
                         } else {
@@ -968,6 +969,8 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             nmi_interrupt = f.0;
         }
     }
+
+    gstate.compute_functions_actually_in_use()?;
 
     // Generate code for all banks
     for b in 0..=maxbank {

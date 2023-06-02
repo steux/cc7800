@@ -1,3 +1,6 @@
+v0.2.5 (06/02/2023) :
+    - Way better link algorithm by actually computing call graph (with cc6502 v0.7)
+
 v0.2.4 (05/28/2023) :
     - Link only functions actually used (with cc6502 v0.6)
     - Added implementation of itoa in stdlib.h header
