@@ -34,6 +34,10 @@ char _ms_move_on_next_flip;
 char _ms_sbuffer_size;
 char _ms_sbuffer_dma;
 
+#ifndef _MS_TOP_SCROLLING_ZONE
+#define _MS_TOP_SCROLLING_ZONE 0
+#endif
+
 holeydma scattered(16,20) char _ms_hide_bottom[320] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
@@ -469,7 +473,7 @@ void multisprite_restore()
 void _ms_move_dlls_down()
 {
     if (_ms_buffer) {
-        for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE + 1; X--) {
+        for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE + 1 + _MS_TOP_SCROLLING_ZONE; X--) {
             _ms_dlpnt = _ms_dls[X];
             _ms_dlpnt2 = _ms_dls[--X];
             Y = _ms_dlend[X];
@@ -479,7 +483,7 @@ void _ms_move_dlls_down()
             }
         }
     } else {
-        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1; X--) {
+        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1 + _MS_TOP_SCROLLING_ZONE; X--) {
             _ms_dlpnt = _ms_dls[X];
             _ms_dlpnt2 = _ms_dls[--X];
             Y = _ms_dlend[X];
@@ -500,7 +504,7 @@ void _ms_move_dlls_down()
 
 void _ms_move_save_down()
 {
-    for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1; X--) {
+    for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1 + _MS_TOP_SCROLLING_ZONE; X--) {
         Y = _ms_dldma_save[--X];
         _ms_dldma_save[++X] = Y;
         Y = _ms_dlend_save[--X];
@@ -515,7 +519,7 @@ void _ms_move_save_down()
 void _ms_move_dlls_up()
 {
     if (_ms_buffer) {
-        for (X = _MS_DLL_ARRAY_SIZE; X < _MS_DLL_ARRAY_SIZE * 2 - 1; X++) {
+        for (X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE; X < _MS_DLL_ARRAY_SIZE * 2 - 1; X++) {
             _ms_dlpnt = _ms_dls[X];
             _ms_dlpnt2 = _ms_dls[++X];
             Y = _ms_dlend[X];
@@ -525,7 +529,7 @@ void _ms_move_dlls_up()
             }
         }
     } else {
-        for (X = 0; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
+        for (X = _MS_TOP_SCROLLING_ZONE; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
             _ms_dlpnt = _ms_dls[X];
             _ms_dlpnt2 = _ms_dls[++X];
             Y = _ms_dlend[X];
@@ -546,7 +550,7 @@ void _ms_move_dlls_up()
 
 void _ms_move_save_up()
 {
-    for (X = 0; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
+    for (X = _MS_TOP_SCROLLING_ZONE ; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
         Y = _ms_dldma_save[++X];
         _ms_dldma_save[--X] = Y;
         Y = _ms_dlend_save[++X];
@@ -674,9 +678,9 @@ void _ms_vertical_scrolling()
     } else {
         _ms_dlpnt = _ms_b0_dll;
     }
-    if (_ms_pal_detected) { Y = 6; } else { Y = 3; }
+    if (_ms_pal_detected) { Y = 6 + 3 * _MS_TOP_SCROLLING_ZONE; } else { Y = 3 + 3 * _MS_TOP_SCROLLING_ZONE; }
     _ms_dlpnt[Y] = (15 - _ms_vscroll_offset) | 0x40;
-    Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1);
+    Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1 - _MS_TOP_SCROLLING_ZONE);
     if (_ms_vscroll_offset) {
         _ms_dlpnt[Y] = 0x4f; // 16 lines
         if (_ms_buffer) {
