@@ -16,8 +16,7 @@
 char _strlen()
 {
     for (Y = 0; _libc_tmpptr[Y]; Y++);
-    _libc_tmp = Y;
-    return _libc_tmp;
+    return Y;
 }
 
 #endif // __STRING_H__
