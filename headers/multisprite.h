@@ -11,6 +11,7 @@
 #define __ATARI7800_MULTISPRITE__
 
 #include "prosystem.h"
+#include "stdlib.h"
 
 #ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64
@@ -25,14 +26,16 @@
 
 // Zeropage variables
 char _ms_dmaerror;
-char *_ms_dlpnt, *_ms_dlpnt2;
-char _ms_tmp, _ms_tmp2;
+#define _ms_dlpnt _libc_tmpptr
+#define _ms_dlpnt2 _libc_tmpptr2
+#define _ms_tmp _libc_tmp
+#define _ms_tmp2 _libc_tmp2
 
 #ifdef VERTICAL_SCROLLING
-signed char _ms_vscroll_offset;
-char _ms_move_on_next_flip;
-char _ms_sbuffer_size;
-char _ms_sbuffer_dma;
+ramchip signed char _ms_vscroll_offset;
+ramchip char _ms_move_on_next_flip;
+ramchip char _ms_sbuffer_size;
+ramchip char _ms_sbuffer_dma;
 
 #ifndef _MS_TOP_SCROLLING_ZONE
 #define _MS_TOP_SCROLLING_ZONE 0

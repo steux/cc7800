@@ -8,9 +8,10 @@
 #ifndef __STDLIB_H__
 #define __STDLIB_H__
 
-char _libc_tmp;
+char _libc_tmp, _libc_tmp2;
 short _libc_tmpshort;
-char *_libc_tmpptr;
+char *_libc_tmpptr, *_libc_tmpptr2;
+char _save_x, _save_y;
 
 #define itoa(val,str,radix) \
     _libc_tmpshort = val; \
@@ -20,6 +21,8 @@ char *_libc_tmpptr;
 
 void _libc_itoa()
 {
+    _save_x = X;
+    _save_y = Y;
     Y = 0;
     X = 0;
     if (_libc_tmpshort < 0) {
@@ -75,6 +78,8 @@ void _libc_itoa()
     }
     _libc_tmpptr[Y++] = '0' + _libc_tmp;
     _libc_tmpptr[Y] = 0;
+    X = _save_x;
+    Y = _save_y;
 }
 
 #endif // __STDLIB_H__
