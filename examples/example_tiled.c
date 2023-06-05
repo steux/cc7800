@@ -1,9 +1,10 @@
 #include "stdlib.h"
 #include "string.h"
 #include "prosystem.h"
-#define VERTICAL_SCROLLING
+#define BIDIR_VERTICAL_SCROLLING
 #define _MS_TOP_SCROLLING_ZONE 1
 #include "multisprite.h"
+#include "joystick.h"
 
 holeydma reversed scattered(16,2) char bb_char1[32] = {
 	0x01, 0x00, 0x01, 0x40, 0x0a, 0x94, 0x2a, 0x90, 0x3b, 0xa0, 0xc8, 0xe5, 0xc8, 0xe4, 0xc8, 0xd0,
@@ -109,6 +110,7 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(tiles);
+    joystick_init();
    
     // Set up a full background 
     for (ptr = tilemap + 1, i = 1; i != _MS_DLL_ARRAY_SIZE; i++) {
@@ -131,7 +133,17 @@ void main()
     // Main loop
     do {
         multisprite_flip();
-        score++;
+        
+        multisprite_display_sprite(76, 100, bb_char1, 2, 0);
+
+        joystick_update();
+        if (joystick[0] & JOYSTICK_UP) {
+            multisprite_vertical_scrolling(1);
+        } else if (joystick[0] & JOYSTICK_DOWN) {
+            multisprite_vertical_scrolling(-1);
+        }
+
+        score = joystick[0];
         display_score_update();
     } while(1);
 }

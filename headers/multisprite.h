@@ -31,11 +31,24 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 
+#ifdef BIDIR_VERTICAL_SCROLLING
+#ifndef VERTICAL_SCROLLING
+#define VERTICAL_SCROLLING
+#endif
+#endif
+
 #ifdef VERTICAL_SCROLLING
 ramchip signed char _ms_vscroll_offset;
 ramchip char _ms_move_on_next_flip;
+#ifdef BIDIR_VERTICAL_SCROLLING
+ramchip char _ms_top_sbuffer_size;
+ramchip char _ms_top_sbuffer_dma;
+ramchip char _ms_bottom_sbuffer_size;
+ramchip char _ms_bottom_sbuffer_dma;
+#else
 ramchip char _ms_sbuffer_size;
 ramchip char _ms_sbuffer_dma;
+#endif
 
 #ifndef _MS_TOP_SCROLLING_ZONE
 #define _MS_TOP_SCROLLING_ZONE 0
@@ -63,7 +76,12 @@ holeydma scattered(16,20) char _ms_hide_bottom[320] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff 
 };
+#ifdef BIDIR_VERTICAL_SCROLLING
+ramchip char _ms_top_sbuffer[_MS_DL_MALLOC(-1)];
+ramchip char _ms_bottom_sbuffer[_MS_DL_MALLOC(-2)];
+#else
 ramchip char _ms_sbuffer[_MS_DL_MALLOC(-1)];
+#endif
 #endif
 
 ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
@@ -378,8 +396,15 @@ void multisprite_init()
 #ifdef VERTICAL_SCROLLING
     _ms_vscroll_offset = 0;
     _ms_move_on_next_flip = 0;
+#ifdef BIDIR_VERTICAL_SCROLLING
+    _ms_top_sbuffer_size = 0;
+    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_bottom_sbuffer_size = 0;
+    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
+#else
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
+#endif
     *P7C3 = 0; 
 #endif
 
@@ -451,6 +476,49 @@ void multisprite_restore()
 }
 
 #ifdef VERTICAL_SCROLLING
+#ifdef BIDIR_VERTICAL_SCROLLING
+#define multisprite_top_vscroll_buffer_tiles(x, tiles, size, palette) \
+    _ms_top_buffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    Y = _ms_top_sbuffer_size; \
+    _ms_top_buffer[Y++] = (tiles); \
+    _ms_top_buffer[Y++] = 0x60; \
+    _ms_top_buffer[Y++] = (tiles) >> 8; \
+    _ms_top_buffer[Y++] = -size & 0x1f | (palette << 5); \
+    _ms_top_buffer[Y++] = (x); \
+    _ms_top_sbuffer_size = Y;
+
+#define multisprite_top_vscroll_buffer_sprite(x, gfx, width, palette) \
+    _ms_top_buffer_dma -= (8 + width * 3 + 1) / 2; \
+    Y = _ms_top_sbuffer_size; \
+    _ms_top_buffer[Y++] = (gfx); \
+    _ms_top_buffer[Y++] = -width & 0x1f | (palette << 5); \
+    _ms_top_buffer[Y++] = ((gfx) >> 8); \
+    _ms_top_buffer[Y++] = (x); \
+    _ms_top_sbuffer_size = Y;
+
+#define multisprite_top_vscroll_buffer_empty() (!_ms_top_sbuffer_size)
+
+#define multisprite_bottom_vscroll_buffer_tiles(x, tiles, size, palette) \
+    _ms_bottom_buffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    Y = _ms_bottom_sbuffer_size; \
+    _ms_bottom_buffer[Y++] = (tiles); \
+    _ms_bottom_buffer[Y++] = 0x60; \
+    _ms_bottom_buffer[Y++] = (tiles) >> 8; \
+    _ms_bottom_buffer[Y++] = -size & 0x1f | (palette << 5); \
+    _ms_bottom_buffer[Y++] = (x); \
+    _ms_bottom_sbuffer_size = Y;
+
+#define multisprite_bottom_vscroll_buffer_sprite(x, gfx, width, palette) \
+    _ms_bottom_buffer_dma -= (8 + width * 3 + 1) / 2; \
+    Y = _ms_bottom_sbuffer_size; \
+    _ms_bottom_buffer[Y++] = (gfx); \
+    _ms_bottom_buffer[Y++] = -width & 0x1f | (palette << 5); \
+    _ms_bottom_buffer[Y++] = ((gfx) >> 8); \
+    _ms_bottom_buffer[Y++] = (x); \
+    _ms_bottom_sbuffer_size = Y;
+
+#define multisprite_bottom_vscroll_buffer_empty() (!_ms_bottom_sbuffer_size)
+#else
 #define multisprite_vscroll_buffer_tiles(x, tiles, size, palette) \
     _ms_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
     Y = _ms_sbuffer_size; \
@@ -460,7 +528,6 @@ void multisprite_restore()
     _ms_sbuffer[Y++] = -size & 0x1f | (palette << 5); \
     _ms_sbuffer[Y++] = (x); \
     _ms_sbuffer_size = Y;
-    
 
 #define multisprite_vscroll_buffer_sprite(x, gfx, width, palette) \
     _ms_sbuffer_dma -= (8 + width * 3 + 1) / 2; \
@@ -472,6 +539,7 @@ void multisprite_restore()
     _ms_sbuffer_size = Y;
 
 #define multisprite_vscroll_buffer_empty() (!_ms_sbuffer_size)
+#endif
 
 void _ms_move_dlls_down()
 {
@@ -498,10 +566,18 @@ void _ms_move_dlls_down()
     }
     // Copy the scroll buffer to the first zone 
     _ms_dlpnt = _ms_dls[X];
+#ifdef BIDIR_VERTICAL_SCROLLING
+    Y = _ms_top_sbuffer_size;
+#else
     Y = _ms_sbuffer_size;
+#endif
     _ms_dlend[X] = Y;
     for (Y--; Y >= 0; Y--) { 
+#ifdef BIDIR_VERTICAL_SCROLLING
+        _ms_dlpnt[Y] = _ms_top_sbuffer[Y];
+#else
         _ms_dlpnt[Y] = _ms_sbuffer[Y];
+#endif
     }
 }
 
@@ -513,10 +589,17 @@ void _ms_move_save_down()
         Y = _ms_dlend_save[--X];
         _ms_dlend_save[++X] = Y;
     }
+#ifdef BIDIR_VERTICAL_SCROLLING
+    _ms_dlend_save[X] = _ms_top_sbuffer_size;
+    _ms_dldma_save[X] = _ms_top_sbuffer_dma;
+    _ms_top_sbuffer_size = 0;
+    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
+#else
     _ms_dlend_save[X] = _ms_sbuffer_size;
     _ms_dldma_save[X] = _ms_sbuffer_dma;
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
+#endif
 }
 
 void _ms_move_dlls_up()
@@ -544,10 +627,18 @@ void _ms_move_dlls_up()
     }
     // Copy the scroll buffer to the first zone 
     _ms_dlpnt = _ms_dls[X];
+#ifdef BIDIR_VERTICAL_SCROLLING
+    Y = _ms_bottom_sbuffer_size;
+#else
     Y = _ms_sbuffer_size;
+#endif
     _ms_dlend[X] = Y;
     for (Y--; Y >= 0; Y--) { 
+#ifdef BIDIR_VERTICAL_SCROLLING
+        _ms_dlpnt[Y] = _ms_bottom_sbuffer[Y];
+#else
         _ms_dlpnt[Y] = _ms_sbuffer[Y];
+#endif
     }
 }
 
@@ -559,10 +650,17 @@ void _ms_move_save_up()
         Y = _ms_dlend_save[++X];
         _ms_dlend_save[--X] = Y;
     }
+#ifdef BIDIR_VERTICAL_SCROLLING
+    _ms_dlend_save[X] = _ms_bottom_sbuffer_size;
+    _ms_dldma_save[X] = _ms_bottom_sbuffer_dma;
+    _ms_bottom_sbuffer_size = 0;
+    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
+#else
     _ms_dlend_save[X] = _ms_sbuffer_size;
     _ms_dldma_save[X] = _ms_sbuffer_dma;
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
+#endif
 }
 #endif
 
@@ -612,6 +710,7 @@ void multisprite_flip()
                 _ms_move_save_up();
             }
         }
+        _ms_move_on_next_flip = 0;
 #endif
         // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
@@ -644,6 +743,7 @@ void multisprite_flip()
                 _ms_move_save_up();
             }
         }
+        _ms_move_on_next_flip = 0;
 #endif
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
