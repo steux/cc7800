@@ -130,20 +130,28 @@ void main()
     *P1C2 = multisprite_color(0x9D);
     *P1C3 = multisprite_color(0x97);
 
+    i = 1;
     // Main loop
     do {
+        *BACKGRND = 0;
         multisprite_flip();
         
         multisprite_display_sprite(76, 100, bb_char1, 2, 0);
-
+        
         joystick_update();
         if (joystick[0] & JOYSTICK_UP) {
-            multisprite_vertical_scrolling(1);
+            if (i) {
+                multisprite_vertical_scrolling(1);
+                //i = 0;
+            }
         } else if (joystick[0] & JOYSTICK_DOWN) {
-            multisprite_vertical_scrolling(-1);
-        }
+            if (i) {
+                multisprite_vertical_scrolling(-1);
+                //i = 0;
+            }
+        } else i = 1;
 
-        score = joystick[0];
+        score = _ms_vscroll_offset;
         display_score_update();
     } while(1);
 }

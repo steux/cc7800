@@ -664,6 +664,8 @@ void _ms_move_save_up()
 }
 #endif
 
+void _ms_vertical_scrolling_adjust_bottom_of_screen();
+
 // This one should obvisouly executed during VBLANK, since it modifies the DPPL/H pointers
 void multisprite_flip()
 {
@@ -700,17 +702,21 @@ void multisprite_flip()
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
         *DPPL = _ms_b1_dll;
+#ifdef DEBUG
+        *BACKGRND = 0x0f;
+#endif
 #ifdef VERTICAL_SCROLLING
         if (_ms_move_on_next_flip) {
             if (_ms_move_on_next_flip == 1) {
                 _ms_move_dlls_down();
                 _ms_move_save_down();
-            } else {
+            } else if (_ms_move_on_next_flip == 2) {
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
+            _ms_vertical_scrolling_adjust_bottom_of_screen();
+            _ms_move_on_next_flip = 0;
         }
-        _ms_move_on_next_flip = 0;
 #endif
         // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
@@ -723,7 +729,6 @@ void multisprite_flip()
 #endif
     } else {
         // Add DL end entry on each DL
-        // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlpnt = _ms_dls[X];
             Y = _ms_dlend[X];
@@ -733,17 +738,21 @@ void multisprite_flip()
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer
         *DPPL = _ms_b0_dll;
+#ifdef DEBUG
+        *BACKGRND = 0x0f;
+#endif
 #ifdef VERTICAL_SCROLLING
         if (_ms_move_on_next_flip) {
             if (_ms_move_on_next_flip == 1) {
                 _ms_move_dlls_down();
                 _ms_move_save_down();
-            } else {
+            } else if (_ms_move_on_next_flip == 2) {
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
+            _ms_vertical_scrolling_adjust_bottom_of_screen();
+            _ms_move_on_next_flip = 0;
         }
-        _ms_move_on_next_flip = 0;
 #endif
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
@@ -762,20 +771,8 @@ void multisprite_flip()
 // Vertical scrolling
 #define multisprite_vertical_scrolling(x) _ms_tmp = (x); _ms_vertical_scrolling() 
 
-void _ms_vertical_scrolling()
+void _ms_vertical_scrolling_adjust_bottom_of_screen()
 {
-    _ms_vscroll_offset -= _ms_tmp;
-    if (_ms_vscroll_offset < 0) {
-        _ms_move_dlls_down();
-        _ms_vscroll_offset += 16;
-        _ms_move_on_next_flip = 1;
-    } else if (_ms_vscroll_offset >= 16) {
-        _ms_move_dlls_up();
-        _ms_vscroll_offset -= 16;
-        _ms_move_on_next_flip = 2;
-    } else {
-        _ms_move_on_next_flip = 0;
-    }
     if (_ms_buffer) {
         _ms_dlpnt = _ms_b1_dll;
     } else {
@@ -800,6 +797,23 @@ void _ms_vertical_scrolling()
         _ms_dlpnt[++Y] = _ms_blank_dl;
         _ms_dlpnt[++Y] = 0x4f;  // 16 lines
     }
+}
+
+void _ms_vertical_scrolling()
+{
+    _ms_vscroll_offset -= _ms_tmp;
+    if (_ms_vscroll_offset < 0) {
+        _ms_move_dlls_down();
+        _ms_vscroll_offset += 16;
+        _ms_move_on_next_flip = 1;
+    } else if (_ms_vscroll_offset >= 16) {
+        _ms_move_dlls_up();
+        _ms_vscroll_offset -= 16;
+        _ms_move_on_next_flip = 2;
+    } else {
+        _ms_move_on_next_flip = 3;
+    }
+    _ms_vertical_scrolling_adjust_bottom_of_screen();
 }
 #endif
 
