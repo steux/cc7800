@@ -45,6 +45,9 @@ ramchip char _ms_top_sbuffer_size;
 ramchip char _ms_top_sbuffer_dma;
 ramchip char _ms_bottom_sbuffer_size;
 ramchip char _ms_bottom_sbuffer_dma;
+ramchip char _ms_scroll_buffers_refill;
+#define MS_SCROLL_UP    1
+#define MS_SCROLL_DOWN  2
 #else
 ramchip char _ms_sbuffer_size;
 ramchip char _ms_sbuffer_dma;
@@ -401,6 +404,7 @@ void multisprite_init()
     _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_scroll_buffers_refill = 0;
 #else
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
@@ -478,46 +482,46 @@ void multisprite_restore()
 #ifdef VERTICAL_SCROLLING
 #ifdef BIDIR_VERTICAL_SCROLLING
 #define multisprite_top_vscroll_buffer_tiles(x, tiles, size, palette) \
-    _ms_top_buffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    _ms_top_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
     Y = _ms_top_sbuffer_size; \
-    _ms_top_buffer[Y++] = (tiles); \
-    _ms_top_buffer[Y++] = 0x60; \
-    _ms_top_buffer[Y++] = (tiles) >> 8; \
-    _ms_top_buffer[Y++] = -size & 0x1f | (palette << 5); \
-    _ms_top_buffer[Y++] = (x); \
+    _ms_top_sbuffer[Y++] = (tiles); \
+    _ms_top_sbuffer[Y++] = 0x60; \
+    _ms_top_sbuffer[Y++] = (tiles) >> 8; \
+    _ms_top_sbuffer[Y++] = -size & 0x1f | (palette << 5); \
+    _ms_top_sbuffer[Y++] = (x); \
     _ms_top_sbuffer_size = Y;
 
 #define multisprite_top_vscroll_buffer_sprite(x, gfx, width, palette) \
-    _ms_top_buffer_dma -= (8 + width * 3 + 1) / 2; \
+    _ms_top_sbuffer_dma -= (8 + width * 3 + 1) / 2; \
     Y = _ms_top_sbuffer_size; \
-    _ms_top_buffer[Y++] = (gfx); \
-    _ms_top_buffer[Y++] = -width & 0x1f | (palette << 5); \
-    _ms_top_buffer[Y++] = ((gfx) >> 8); \
-    _ms_top_buffer[Y++] = (x); \
+    _ms_top_sbuffer[Y++] = (gfx); \
+    _ms_top_sbuffer[Y++] = -width & 0x1f | (palette << 5); \
+    _ms_top_sbuffer[Y++] = ((gfx) >> 8); \
+    _ms_top_sbuffer[Y++] = (x); \
     _ms_top_sbuffer_size = Y;
 
-#define multisprite_top_vscroll_buffer_empty() (!_ms_top_sbuffer_size)
-
 #define multisprite_bottom_vscroll_buffer_tiles(x, tiles, size, palette) \
-    _ms_bottom_buffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    _ms_bottom_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
     Y = _ms_bottom_sbuffer_size; \
-    _ms_bottom_buffer[Y++] = (tiles); \
-    _ms_bottom_buffer[Y++] = 0x60; \
-    _ms_bottom_buffer[Y++] = (tiles) >> 8; \
-    _ms_bottom_buffer[Y++] = -size & 0x1f | (palette << 5); \
-    _ms_bottom_buffer[Y++] = (x); \
+    _ms_bottom_sbuffer[Y++] = (tiles); \
+    _ms_bottom_sbuffer[Y++] = 0x60; \
+    _ms_bottom_sbuffer[Y++] = (tiles) >> 8; \
+    _ms_bottom_sbuffer[Y++] = -size & 0x1f | (palette << 5); \
+    _ms_bottom_sbuffer[Y++] = (x); \
     _ms_bottom_sbuffer_size = Y;
 
 #define multisprite_bottom_vscroll_buffer_sprite(x, gfx, width, palette) \
-    _ms_bottom_buffer_dma -= (8 + width * 3 + 1) / 2; \
+    _ms_bottom_sbuffer_dma -= (8 + width * 3 + 1) / 2; \
     Y = _ms_bottom_sbuffer_size; \
-    _ms_bottom_buffer[Y++] = (gfx); \
-    _ms_bottom_buffer[Y++] = -width & 0x1f | (palette << 5); \
-    _ms_bottom_buffer[Y++] = ((gfx) >> 8); \
-    _ms_bottom_buffer[Y++] = (x); \
+    _ms_bottom_sbuffer[Y++] = (gfx); \
+    _ms_bottom_sbuffer[Y++] = -width & 0x1f | (palette << 5); \
+    _ms_bottom_sbuffer[Y++] = ((gfx) >> 8); \
+    _ms_bottom_sbuffer[Y++] = (x); \
     _ms_bottom_sbuffer_size = Y;
 
-#define multisprite_bottom_vscroll_buffer_empty() (!_ms_bottom_sbuffer_size)
+#define multisprite_vscroll_buffers_refill_status() (_ms_scroll_buffers_refill)
+#define multisprite_vscroll_buffers_refilled() _ms_scroll_buffers_refill = 0
+
 #else
 #define multisprite_vscroll_buffer_tiles(x, tiles, size, palette) \
     _ms_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
@@ -592,8 +596,11 @@ void _ms_move_save_down()
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_top_sbuffer_size;
     _ms_dldma_save[X] = _ms_top_sbuffer_dma;
+    _ms_bottom_sbuffer_size = 0;
+    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_top_sbuffer_size = 0;
     _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_scroll_buffers_refill = MS_SCROLL_UP;
 #else
     _ms_dlend_save[X] = _ms_sbuffer_size;
     _ms_dldma_save[X] = _ms_sbuffer_dma;
@@ -655,6 +662,9 @@ void _ms_move_save_up()
     _ms_dldma_save[X] = _ms_bottom_sbuffer_dma;
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_top_sbuffer_size = 0;
+    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_scroll_buffers_refill = MS_SCROLL_DOWN;
 #else
     _ms_dlend_save[X] = _ms_sbuffer_size;
     _ms_dldma_save[X] = _ms_sbuffer_dma;

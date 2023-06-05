@@ -87,6 +87,7 @@ const char tilemap[1057] = {
 char i;
 char *ptr;
 
+ramchip char *top_tiles, *bottom_tiles;
 ramchip int score;
 ramchip char display_score_str[5];
 ramchip char display_score_ascii[6];
@@ -113,10 +114,13 @@ void main()
     joystick_init();
    
     // Set up a full background 
-    for (ptr = tilemap + 1, i = 1; i != _MS_DLL_ARRAY_SIZE; i++) {
+    top_tiles = tilemap + 1;
+    for (ptr = top_tiles, i = 1; i != _MS_DLL_ARRAY_SIZE; i++) {
         multisprite_display_tiles(0, i, ptr, 20, 1);
         ptr += TILEMAP_WIDTH + 1;
     }
+    bottom_tiles = ptr;
+
     // Score display
     display_score_update();
     multisprite_display_tiles(0, 0, display_score_str, 5, 0);
@@ -130,9 +134,29 @@ void main()
     *P1C2 = multisprite_color(0x9D);
     *P1C3 = multisprite_color(0x97);
 
-    i = 1;
     // Main loop
     do {
+        if (multisprite_vscroll_buffers_refill_status()) {
+            switch (multisprite_vscroll_buffers_refill_status()) {
+            case MS_SCROLL_UP:
+                top_tiles -= TILEMAP_WIDTH + 1;
+                bottom_tiles -= TILEMAP_WIDTH + 1;
+                break;
+            case MS_SCROLL_DOWN:
+                top_tiles += TILEMAP_WIDTH + 1;
+                bottom_tiles += TILEMAP_WIDTH + 1;
+            }
+            ptr = tilemap + (TILEMAP_WIDTH + 1) * TILEMAP_HEIGHT;
+            if (top_tiles > tilemap && top_tiles < ptr) {
+                multisprite_top_vscroll_buffer_tiles(0, top_tiles, 20, 1);
+            }
+            if (bottom_tiles > tilemap && bottom_tiles < ptr) {
+                multisprite_bottom_vscroll_buffer_tiles(0, bottom_tiles, 20, 1);
+            }
+
+            multisprite_vscroll_buffers_refilled();
+        }    
+        
         *BACKGRND = 0;
         multisprite_flip();
         
@@ -140,18 +164,12 @@ void main()
         
         joystick_update();
         if (joystick[0] & JOYSTICK_UP) {
-            if (i) {
-                multisprite_vertical_scrolling(1);
-                //i = 0;
-            }
+            multisprite_vertical_scrolling(1);
         } else if (joystick[0] & JOYSTICK_DOWN) {
-            if (i) {
-                multisprite_vertical_scrolling(-1);
-                //i = 0;
-            }
-        } else i = 1;
+            multisprite_vertical_scrolling(-1);
+        }
 
-        score = _ms_vscroll_offset;
+        score++;
         display_score_update();
     } while(1);
 }
