@@ -103,6 +103,8 @@ ramchip char *_conio_ptr; // Pointer to the screen RAM
 
 void clrscr()
 {
+    *BACKGRND = 0;
+
     _conio_x = 0;
     _conio_y = 0;
     _conio_ptr = _conio_screen;

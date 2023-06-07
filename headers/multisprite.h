@@ -31,6 +31,11 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 
+#ifdef TILED_SCROLLING
+#define BIDIR_VERTICAL_SCROLLING
+#define HORIZONTAL_SCROLLING
+#endif
+
 #ifdef BIDIR_VERTICAL_SCROLLING
 #ifndef VERTICAL_SCROLLING
 #define VERTICAL_SCROLLING
@@ -39,7 +44,7 @@ char _ms_dmaerror;
 
 #ifdef VERTICAL_SCROLLING
 ramchip signed char _ms_vscroll_offset;
-ramchip char _ms_move_on_next_flip;
+ramchip char _ms_delayed_vscroll;
 #ifdef BIDIR_VERTICAL_SCROLLING
 ramchip char _ms_top_sbuffer_size;
 ramchip char _ms_top_sbuffer_dma;
@@ -87,6 +92,11 @@ ramchip char _ms_sbuffer[_MS_DL_MALLOC(-1)];
 #endif
 #endif
 
+#ifdef HORIZONTAL_SCROLLING
+ramchip signed char _ms_hscroll;
+ramchip signed char _ms_delayed_hscroll;
+#endif
+
 ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
 ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0)], _ms_b1_dl1[_MS_DL_MALLOC(1)], _ms_b1_dl2[_MS_DL_MALLOC(2)], _ms_b1_dl3[_MS_DL_MALLOC(3)], _ms_b1_dl4[_MS_DL_MALLOC(4)], _ms_b1_dl5[_MS_DL_MALLOC(5)], _ms_b1_dl6[_MS_DL_MALLOC(6)], _ms_b1_dl7[_MS_DL_MALLOC(7)], _ms_b1_dl8[_MS_DL_MALLOC(8)], _ms_b1_dl9[_MS_DL_MALLOC(9)], _ms_b1_dl10[_MS_DL_MALLOC(10)], _ms_b1_dl11[_MS_DL_MALLOC(11)], _ms_b1_dl12[_MS_DL_MALLOC(12)], _ms_b1_dl13[_MS_DL_MALLOC(13)], _ms_b1_dl14[_MS_DL_MALLOC(14)];
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
@@ -111,7 +121,7 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
     14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
 };
-const char _ms_set_wm_dl[5] = {0, 0x40, 0x21, 0xff, 0}; // Write mode 0
+const char _ms_set_wm_dl[5] = {0, 0x40, 0x21, 0xff, 160}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
 ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
@@ -342,9 +352,12 @@ void multisprite_get_tv()
 
 void multisprite_init()
 {
+    *BACKGRND = 0x0;
+    
     multisprite_get_tv();
     multisprite_clear();
     multisprite_save();
+
     _ms_dlpnt = _ms_b0_dll;
     for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
         // Build DLL
@@ -398,18 +411,22 @@ void multisprite_init()
 
 #ifdef VERTICAL_SCROLLING
     _ms_vscroll_offset = 0;
-    _ms_move_on_next_flip = 0;
+    _ms_delayed_vscroll = 0;
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_top_sbuffer_size = 0;
     _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
-    _ms_scroll_buffers_refill = 0;
+    _ms_scroll_buffers_refill = 3;
 #else
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
     *P7C3 = 0; 
+#endif
+    
+#ifdef HORIZONTAL_SCROLLING
+    _ms_delayed_hscroll = 0;
 #endif
 
     _ms_buffer = 0; // 0 is the current write buffer
@@ -675,6 +692,7 @@ void _ms_move_save_up()
 #endif
 
 void _ms_vertical_scrolling_adjust_bottom_of_screen();
+void _ms_horizontal_scrolling();
 
 // This one should obvisouly executed during VBLANK, since it modifies the DPPL/H pointers
 void multisprite_flip()
@@ -709,6 +727,9 @@ void multisprite_flip()
             _ms_dlpnt[++Y] = 0; 
         }
         _ms_buffer = 0; // 0 is the current write buffer
+#ifdef DEBUG
+        *BACKGRND = 0x0;
+#endif
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
         *DPPL = _ms_b1_dll;
@@ -716,16 +737,16 @@ void multisprite_flip()
         *BACKGRND = 0x0f;
 #endif
 #ifdef VERTICAL_SCROLLING
-        if (_ms_move_on_next_flip) {
-            if (_ms_move_on_next_flip == 1) {
+        if (_ms_delayed_vscroll) {
+            if (_ms_delayed_vscroll == 1) {
                 _ms_move_dlls_down();
                 _ms_move_save_down();
-            } else if (_ms_move_on_next_flip == 2) {
+            } else if (_ms_delayed_vscroll == 2) {
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
             _ms_vertical_scrolling_adjust_bottom_of_screen();
-            _ms_move_on_next_flip = 0;
+            _ms_delayed_vscroll = 0;
         }
 #endif
         // Restore saved state 
@@ -745,6 +766,9 @@ void multisprite_flip()
             _ms_dlpnt[++Y] = 0; 
         }
         _ms_buffer = 1; // 1 is the current write buffer
+#ifdef DEBUG
+        *BACKGRND = 0x0;
+#endif
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer
         *DPPL = _ms_b0_dll;
@@ -752,16 +776,16 @@ void multisprite_flip()
         *BACKGRND = 0x0f;
 #endif
 #ifdef VERTICAL_SCROLLING
-        if (_ms_move_on_next_flip) {
-            if (_ms_move_on_next_flip == 1) {
+        if (_ms_delayed_vscroll) {
+            if (_ms_delayed_vscroll == 1) {
                 _ms_move_dlls_down();
                 _ms_move_save_down();
-            } else if (_ms_move_on_next_flip == 2) {
+            } else if (_ms_delayed_vscroll == 2) {
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
             _ms_vertical_scrolling_adjust_bottom_of_screen();
-            _ms_move_on_next_flip = 0;
+            _ms_delayed_vscroll = 0;
         }
 #endif
         // Restore saved state 
@@ -774,6 +798,12 @@ void multisprite_flip()
         _ms_dldma[X = _MS_DLL_ARRAY_SIZE * 2 - 1] -= (8 + 20 * 3 + 1) / 2;
 #endif
     }
+#ifdef HORIZONTAL_SCROLLING
+    if (_ms_delayed_hscroll) {
+        _ms_horizontal_scrolling();
+        _ms_delayed_hscroll = 0;
+    }
+#endif
 }
 
 #ifdef VERTICAL_SCROLLING
@@ -815,15 +845,49 @@ void _ms_vertical_scrolling()
     if (_ms_vscroll_offset < 0) {
         _ms_move_dlls_down();
         _ms_vscroll_offset += 16;
-        _ms_move_on_next_flip = 1;
+        _ms_delayed_vscroll = 1;
     } else if (_ms_vscroll_offset >= 16) {
         _ms_move_dlls_up();
         _ms_vscroll_offset -= 16;
-        _ms_move_on_next_flip = 2;
+        _ms_delayed_vscroll = 2;
     } else {
-        _ms_move_on_next_flip = 3;
+        _ms_delayed_vscroll = 3;
     }
     _ms_vertical_scrolling_adjust_bottom_of_screen();
+}
+#endif
+
+#ifdef HORIZONTAL_SCROLLING
+// Horizontal scrolling
+#define multisprite_horizontal_tiles_scrolling(offset, y, value) \
+    _ms_hscroll = (value); \
+    X = (y); \
+    if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
+    _ms_dlpnt = _ms_dls[X]; \
+    Y = (offset) + 3; \
+    _ms_horizontal_tiles_scrolling()
+
+void _ms_horizontal_tiles_scrolling()
+{
+    // Get the width of this tileset
+    _ms_tmp = -(_ms_dlpnt[Y++] & 0x1f);
+    _ms_dlpnt[Y] -= _ms_hscroll;
+}
+
+#define multisprite_horizontal_scrolling(x) _ms_delayed_hscroll = (x); _ms_horizontal_scrolling() 
+
+void _ms_horizontal_scrolling()
+{
+    for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+        multisprite_horizontal_tiles_scrolling(0, _ms_tmp2, _ms_delayed_hscroll);
+    }
+#ifdef VERTICAL_SCROLLING
+    _ms_bottom_sbuffer_size = 0;
+    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_top_sbuffer_size = 0;
+    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_scroll_buffers_refill = 3;
+#endif
 }
 #endif
 

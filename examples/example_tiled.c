@@ -1,7 +1,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "prosystem.h"
-#define BIDIR_VERTICAL_SCROLLING
+#define TILED_SCROLLING
 #define _MS_TOP_SCROLLING_ZONE 1
 #include "multisprite.h"
 #include "joystick.h"
@@ -84,7 +84,7 @@ const char tilemap[1057] = {
 #define TILEMAP_WIDTH 32
 #define TILEMAP_HEIGHT 32
 
-char i;
+char i, xpos;
 char *ptr;
 
 ramchip char *top_tiles, *bottom_tiles;
@@ -108,18 +108,19 @@ void display_score_update()
 void main()
 {
     score = 0;
+    xpos = 0;
 
     multisprite_init();
     multisprite_set_charbase(tiles);
     joystick_init();
    
     // Set up a full background 
-    top_tiles = tilemap + 1;
-    for (ptr = top_tiles, i = 1; i != _MS_DLL_ARRAY_SIZE; i++) {
-        multisprite_display_tiles(0, i, ptr, 20, 1);
+    for (ptr = tilemap, i = 1; i != _MS_DLL_ARRAY_SIZE; i++) {
+        multisprite_display_tiles(-8, i, ptr, 21, 1); // 21 chars (168 pixels) for horizontal scrolling, out of screen on the left
         ptr += TILEMAP_WIDTH + 1;
     }
     bottom_tiles = ptr;
+    top_tiles = tilemap - (TILEMAP_WIDTH + 1);
 
     // Score display
     display_score_update();
@@ -147,17 +148,18 @@ void main()
                 bottom_tiles += TILEMAP_WIDTH + 1;
             }
             ptr = tilemap + (TILEMAP_WIDTH + 1) * TILEMAP_HEIGHT;
-            if (top_tiles > tilemap && top_tiles < ptr) {
-                multisprite_top_vscroll_buffer_tiles(0, top_tiles, 20, 1);
+            xpos -= 8;
+            if (top_tiles >= tilemap && top_tiles < ptr) {
+                multisprite_top_vscroll_buffer_tiles(xpos, top_tiles, 21, 1);
             }
-            if (bottom_tiles > tilemap && bottom_tiles < ptr) {
-                multisprite_bottom_vscroll_buffer_tiles(0, bottom_tiles, 20, 1);
+            if (bottom_tiles >= tilemap && bottom_tiles < ptr) {
+                multisprite_bottom_vscroll_buffer_tiles(xpos, bottom_tiles, 21, 1);
             }
+            xpos += 8;
 
             multisprite_vscroll_buffers_refilled();
         }    
         
-        *BACKGRND = 0;
         multisprite_flip();
         
         multisprite_display_sprite(76, 100, bb_char1, 2, 0);
@@ -167,6 +169,22 @@ void main()
             multisprite_vertical_scrolling(1);
         } else if (joystick[0] & JOYSTICK_DOWN) {
             multisprite_vertical_scrolling(-1);
+        } else if (joystick[0] & JOYSTICK_LEFT) {
+            multisprite_horizontal_scrolling(-1);
+            xpos++;
+            if (xpos == 8) {
+                top_tiles--;
+                bottom_tiles--;
+                xpos = 0;
+            }
+        } else if (joystick[0] & JOYSTICK_RIGHT) {
+            multisprite_horizontal_scrolling(1);
+            xpos--;
+            if (xpos < 0) {
+                top_tiles++;
+                bottom_tiles++;
+                xpos = 7;
+            }
         }
 
         score++;
