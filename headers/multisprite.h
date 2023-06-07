@@ -692,7 +692,7 @@ void _ms_move_save_up()
 #endif
 
 void _ms_vertical_scrolling_adjust_bottom_of_screen();
-void _ms_horizontal_scrolling();
+void _ms_horizontal_scrolling_visible();
 
 // This one should obvisouly executed during VBLANK, since it modifies the DPPL/H pointers
 void multisprite_flip()
@@ -736,6 +736,12 @@ void multisprite_flip()
 #ifdef DEBUG
         *BACKGRND = 0x0f;
 #endif
+#ifdef HORIZONTAL_SCROLLING
+        if (_ms_delayed_hscroll) {
+            _ms_horizontal_scrolling_visible();
+            _ms_delayed_hscroll = 0;
+        }
+#endif
 #ifdef VERTICAL_SCROLLING
         if (_ms_delayed_vscroll) {
             if (_ms_delayed_vscroll == 1) {
@@ -775,6 +781,12 @@ void multisprite_flip()
 #ifdef DEBUG
         *BACKGRND = 0x0f;
 #endif
+#ifdef HORIZONTAL_SCROLLING
+        if (_ms_delayed_hscroll) {
+            _ms_horizontal_scrolling_visible();
+            _ms_delayed_hscroll = 0;
+        }
+#endif
 #ifdef VERTICAL_SCROLLING
         if (_ms_delayed_vscroll) {
             if (_ms_delayed_vscroll == 1) {
@@ -798,12 +810,6 @@ void multisprite_flip()
         _ms_dldma[X = _MS_DLL_ARRAY_SIZE * 2 - 1] -= (8 + 20 * 3 + 1) / 2;
 #endif
     }
-#ifdef HORIZONTAL_SCROLLING
-    if (_ms_delayed_hscroll) {
-        _ms_horizontal_scrolling();
-        _ms_delayed_hscroll = 0;
-    }
-#endif
 }
 
 #ifdef VERTICAL_SCROLLING
@@ -876,19 +882,27 @@ void _ms_horizontal_tiles_scrolling()
 
 #define multisprite_horizontal_scrolling(x) _ms_delayed_hscroll = (x); _ms_horizontal_scrolling() 
 
-void _ms_horizontal_scrolling()
+void _ms_horizontal_scrolling_visible()
 {
     for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
         multisprite_horizontal_tiles_scrolling(0, _ms_tmp2, _ms_delayed_hscroll);
     }
-#ifdef VERTICAL_SCROLLING
-    _ms_bottom_sbuffer_size = 0;
-    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
-    _ms_top_sbuffer_size = 0;
-    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
-    _ms_scroll_buffers_refill = 3;
+}
+
+void _ms_horizontal_scrolling()
+{
+    _ms_horizontal_scrolling_visible();
+#ifdef BIDIR_VERTICAL_SCROLLING
+        // Scroll also the preloaded scrolling bands
+        _ms_dlpnt = _ms_top_sbuffer;
+        Y = 3; 
+        _ms_horizontal_tiles_scrolling();
+        _ms_dlpnt = _ms_bottom_sbuffer;
+        Y = 3; 
+        _ms_horizontal_tiles_scrolling();
 #endif
 }
+
 #endif
 
 // _ms_tmp : display to list to apply DLI flag

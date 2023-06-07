@@ -165,11 +165,7 @@ void main()
         multisprite_display_sprite(76, 100, bb_char1, 2, 0);
         
         joystick_update();
-        if (joystick[0] & JOYSTICK_UP) {
-            multisprite_vertical_scrolling(1);
-        } else if (joystick[0] & JOYSTICK_DOWN) {
-            multisprite_vertical_scrolling(-1);
-        } else if (joystick[0] & JOYSTICK_LEFT) {
+        if (joystick[0] & JOYSTICK_LEFT) {
             multisprite_horizontal_scrolling(-1);
             xpos++;
             if (xpos == 8) {
@@ -186,7 +182,11 @@ void main()
                 xpos = 7;
             }
         }
-
+        if (joystick[0] & JOYSTICK_UP) {
+            multisprite_vertical_scrolling(1);
+        } else if (joystick[0] & JOYSTICK_DOWN) {
+            multisprite_vertical_scrolling(-1);
+        }
         score++;
         display_score_update();
     } while(1);
