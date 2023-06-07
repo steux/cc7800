@@ -876,8 +876,39 @@ void _ms_vertical_scrolling()
 void _ms_horizontal_tiles_scrolling()
 {
     // Get the width of this tileset
-    _ms_tmp = -(_ms_dlpnt[Y++] & 0x1f);
-    _ms_dlpnt[Y] -= _ms_hscroll;
+    //_ms_tmp = -(_ms_dlpnt[Y++] & 0x1f);
+    _ms_tmp = _ms_dlpnt[++Y]; // X position
+    _ms_tmp -= _ms_hscroll;
+    _ms_dlpnt[Y] = _ms_tmp;
+    if (_ms_hscroll > 0) {
+        if (_ms_tmp < -8) {
+            // We have reached the left border of the screen
+            // Advance the pointer
+            _ms_dlpnt[Y] = _ms_tmp + 8;
+            Y -= 4;
+            _ms_dlpnt[Y]++;
+            if (_ms_dlpnt[Y] == 0) {
+                // Crossing page boundary
+                Y++; Y++;
+                _ms_dlpnt[Y]++;
+            }
+        } else {
+            _ms_dlpnt[Y] = _ms_tmp;
+        }
+    } else {
+        if (_ms_tmp >= 0) {
+            _ms_dlpnt[Y] = _ms_tmp - 8;
+            Y -= 4;
+            _ms_dlpnt[Y]--;
+            if (_ms_dlpnt[Y] == 0xff) {
+                // Crossing page boundary
+                Y++; Y++;
+                _ms_dlpnt[Y]--;
+            }
+        } else {
+            _ms_dlpnt[Y] = _ms_tmp;
+        }
+    } 
 }
 
 #define multisprite_horizontal_scrolling(x) _ms_delayed_hscroll = (x); _ms_horizontal_scrolling() 
@@ -891,15 +922,17 @@ void _ms_horizontal_scrolling_visible()
 
 void _ms_horizontal_scrolling()
 {
-    _ms_horizontal_scrolling_visible();
+    for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+        multisprite_horizontal_tiles_scrolling(0, _ms_tmp2, _ms_delayed_hscroll);
+    }
 #ifdef BIDIR_VERTICAL_SCROLLING
-        // Scroll also the preloaded scrolling bands
-        _ms_dlpnt = _ms_top_sbuffer;
-        Y = 3; 
-        _ms_horizontal_tiles_scrolling();
-        _ms_dlpnt = _ms_bottom_sbuffer;
-        Y = 3; 
-        _ms_horizontal_tiles_scrolling();
+    // Scroll also the preloaded scrolling bands
+    _ms_dlpnt = _ms_top_sbuffer;
+    Y = 3; 
+    _ms_horizontal_tiles_scrolling();
+    _ms_dlpnt = _ms_bottom_sbuffer;
+    Y = 3; 
+    _ms_horizontal_tiles_scrolling();
 #endif
 }
 

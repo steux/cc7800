@@ -84,7 +84,7 @@ const char tilemap[1057] = {
 #define TILEMAP_WIDTH 32
 #define TILEMAP_HEIGHT 32
 
-char i, xpos;
+char i, xoffset;
 char *ptr;
 
 ramchip char *top_tiles, *bottom_tiles;
@@ -108,7 +108,7 @@ void display_score_update()
 void main()
 {
     score = 0;
-    xpos = 0;
+    xoffset = 0;
 
     multisprite_init();
     multisprite_set_charbase(tiles);
@@ -148,14 +148,14 @@ void main()
                 bottom_tiles += TILEMAP_WIDTH + 1;
             }
             ptr = tilemap + (TILEMAP_WIDTH + 1) * TILEMAP_HEIGHT;
-            xpos -= 8;
+            xoffset -= 8;
             if (top_tiles >= tilemap && top_tiles < ptr) {
-                multisprite_top_vscroll_buffer_tiles(xpos, top_tiles, 21, 1);
+                multisprite_top_vscroll_buffer_tiles(xoffset, top_tiles, 21, 1);
             }
             if (bottom_tiles >= tilemap && bottom_tiles < ptr) {
-                multisprite_bottom_vscroll_buffer_tiles(xpos, bottom_tiles, 21, 1);
+                multisprite_bottom_vscroll_buffer_tiles(xoffset, bottom_tiles, 21, 1);
             }
-            xpos += 8;
+            xoffset += 8;
 
             multisprite_vscroll_buffers_refilled();
         }    
@@ -167,19 +167,19 @@ void main()
         joystick_update();
         if (joystick[0] & JOYSTICK_LEFT) {
             multisprite_horizontal_scrolling(-1);
-            xpos++;
-            if (xpos == 8) {
+            xoffset++;
+            if (xoffset == 8) {
                 top_tiles--;
                 bottom_tiles--;
-                xpos = 0;
+                xoffset = 0;
             }
         } else if (joystick[0] & JOYSTICK_RIGHT) {
             multisprite_horizontal_scrolling(1);
-            xpos--;
-            if (xpos < 0) {
+            xoffset--;
+            if (xoffset < 0) {
                 top_tiles++;
                 bottom_tiles++;
-                xpos = 7;
+                xoffset = 7;
             }
         }
         if (joystick[0] & JOYSTICK_UP) {
