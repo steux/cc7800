@@ -2,6 +2,7 @@
 #include "string.h"
 #include "prosystem.h"
 #define TILED_SCROLLING
+#define TILES_CHECK_BOUNDARIES
 #define _MS_TOP_SCROLLING_ZONE 1
 #include "multisprite.h"
 #include "joystick.h"
