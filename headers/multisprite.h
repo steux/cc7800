@@ -877,9 +877,8 @@ void _ms_horizontal_tiles_scrolling()
 {
     _ms_tmp = _ms_dlpnt[++Y]; // X position
     _ms_tmp -= _ms_hscroll;
-    _ms_dlpnt[Y] = _ms_tmp;
     if (_ms_hscroll > 0) {
-        if (_ms_tmp < -8) {
+        if (_ms_tmp > 160 && _ms_tmp < 256 - 8) {
             // We have reached the left border of the screen
             // Advance the pointer
             _ms_dlpnt[Y] = _ms_tmp + 8;
@@ -919,6 +918,35 @@ void _ms_horizontal_tiles_scrolling()
     } else {
         if (_ms_tmp >= 0) {
             _ms_dlpnt[Y] = _ms_tmp - 8;
+#ifdef TILES_CHECK_BOUNDARIES
+            Y -= 4;
+            _ms_dlpnt2 = _ms_dlpnt[Y];
+            Y++; Y++;
+            _ms_dlpnt2 |= (_ms_dlpnt[Y] << 8);
+            _ms_dlpnt2--;
+            _ms_tmp = Y;
+            if (_ms_dlpnt2[Y = 0] == 0xff) { // This is a boundary
+                _ms_dlpnt2++; // Go back to previous pointer
+                // Move to the right
+                Y = _ms_tmp;
+                Y++; Y++;
+                _ms_dlpnt[Y] += 8;
+            } else {
+                // Extend the width up to 21
+                Y = _ms_tmp;
+                Y++;
+                X = -(_ms_dlpnt[Y] | 0xe0);
+                if (X < 21) {
+                    X++;
+                    X = (-X) & 0x1f;
+                    _ms_dlpnt[Y] = _ms_dlpnt[Y] & 0xe0 | X; 
+                }
+            }
+            Y = _ms_tmp;
+            _ms_dlpnt[Y] = _ms_dlpnt2 >> 8;
+            Y--; Y--;
+            _ms_dlpnt[Y] = _ms_dlpnt2;
+#else
             Y -= 4;
             _ms_dlpnt[Y]--;
             if (_ms_dlpnt[Y] == 0xff) {
@@ -926,6 +954,7 @@ void _ms_horizontal_tiles_scrolling()
                 Y++; Y++;
                 _ms_dlpnt[Y]--;
             }
+#endif
         } else {
             _ms_dlpnt[Y] = _ms_tmp;
         }
