@@ -916,9 +916,10 @@ void _ms_horizontal_tiles_scrolling()
             _ms_dlpnt[Y] = _ms_tmp;
         }
     } else {
+        _ms_dlpnt[Y] = _ms_tmp;
         if (_ms_tmp >= 0) {
-            _ms_dlpnt[Y] = _ms_tmp - 8;
 #ifdef TILES_CHECK_BOUNDARIES
+            X = _ms_tmp;
             Y -= 4;
             _ms_dlpnt2 = _ms_dlpnt[Y];
             Y++; Y++;
@@ -927,14 +928,12 @@ void _ms_horizontal_tiles_scrolling()
             _ms_tmp = Y;
             if (_ms_dlpnt2[Y = 0] == 0xff) { // This is a boundary
                 _ms_dlpnt2++; // Go back to previous pointer
-                // Move to the right
-                Y = _ms_tmp;
-                Y++; Y++;
-                _ms_dlpnt[Y] += 8;
             } else {
                 // Extend the width up to 21
                 Y = _ms_tmp;
-                Y++;
+                Y++; Y++;
+                _ms_dlpnt[Y] = X - 8;
+                Y--;
                 X = -(_ms_dlpnt[Y] | 0xe0);
                 if (X < 21) {
                     X++;
@@ -947,6 +946,7 @@ void _ms_horizontal_tiles_scrolling()
             Y--; Y--;
             _ms_dlpnt[Y] = _ms_dlpnt2;
 #else
+            _ms_dlpnt[Y] = _ms_tmp - 8;
             Y -= 4;
             _ms_dlpnt[Y]--;
             if (_ms_dlpnt[Y] == 0xff) {
@@ -955,8 +955,6 @@ void _ms_horizontal_tiles_scrolling()
                 _ms_dlpnt[Y]--;
             }
 #endif
-        } else {
-            _ms_dlpnt[Y] = _ms_tmp;
         }
     } 
 }
