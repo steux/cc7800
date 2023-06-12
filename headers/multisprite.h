@@ -22,7 +22,7 @@
 
 #define MS_YMAX 224
 #define _MS_DLL_ARRAY_SIZE 15
-#define _MS_DMA_START_VALUE ((454 - 42) / 2)
+#define _MS_DMA_START_VALUE (402 / 2)
 
 // Zeropage variables
 char _ms_dmaerror;
@@ -30,11 +30,6 @@ char _ms_dmaerror;
 #define _ms_dlpnt2 _libc_tmpptr2
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
-
-#ifdef TILED_SCROLLING
-#define BIDIR_VERTICAL_SCROLLING
-#define HORIZONTAL_SCROLLING
-#endif
 
 #ifdef BIDIR_VERTICAL_SCROLLING
 #ifndef VERTICAL_SCROLLING
@@ -499,7 +494,7 @@ void multisprite_restore()
 #ifdef VERTICAL_SCROLLING
 #ifdef BIDIR_VERTICAL_SCROLLING
 #define multisprite_top_vscroll_buffer_tiles(x, tiles, size, palette) \
-    _ms_top_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    _ms_top_sbuffer_dma -= (10 + 3 + 21 * 9 + 1) / 2; \
     Y = _ms_top_sbuffer_size; \
     _ms_top_sbuffer[Y++] = (tiles); \
     _ms_top_sbuffer[Y++] = 0x60; \
@@ -518,7 +513,7 @@ void multisprite_restore()
     _ms_top_sbuffer_size = Y;
 
 #define multisprite_bottom_vscroll_buffer_tiles(x, tiles, size, palette) \
-    _ms_bottom_sbuffer_dma -= (10 + 3 + size * 9 + 1) / 2; \
+    _ms_bottom_sbuffer_dma -= (10 + 3 + 21 * 9 + 1) / 2; \
     Y = _ms_bottom_sbuffer_size; \
     _ms_bottom_sbuffer[Y++] = (tiles); \
     _ms_bottom_sbuffer[Y++] = 0x60; \
@@ -870,13 +865,12 @@ void _ms_vertical_scrolling()
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
     _ms_dlpnt = _ms_dls[X]; \
-    Y = (offset) + 3; \
+    Y = (offset) + 4; \
     _ms_horizontal_tiles_scrolling()
 
 void _ms_horizontal_tiles_scrolling()
 {
-    _ms_tmp = _ms_dlpnt[++Y]; // X position
-    _ms_tmp -= _ms_hscroll;
+    _ms_tmp = _ms_dlpnt[Y] - _ms_hscroll; // X position
     if (_ms_hscroll > 0) {
         if (_ms_tmp > 160 && _ms_tmp < 256 - 8) {
             // We have reached the left border of the screen
@@ -976,17 +970,17 @@ void _ms_horizontal_scrolling()
 #ifdef BIDIR_VERTICAL_SCROLLING
     // Scroll also the preloaded scrolling bands
     _ms_dlpnt = _ms_top_sbuffer;
-    Y = 3; 
+    Y = 4; 
     _ms_horizontal_tiles_scrolling();
     _ms_dlpnt = _ms_bottom_sbuffer;
-    Y = 3; 
+    Y = 4; 
     _ms_horizontal_tiles_scrolling();
 #endif
 }
 
 #endif
 
-// _ms_tmp : display to list to apply DLI flag
+// _ms_tmp : display list entry to apply DLI flag
 void _multisprite_enable_dli()
 {
     _ms_tmp = (_ms_tmp << 2) - _ms_tmp + 3; // _ms_tmp = _ms_tmp * 3 + 3
@@ -995,7 +989,7 @@ void _multisprite_enable_dli()
     _ms_b1_dll[X] |= 0x80;
 }
 
-// _ms_tmp : display to list to apply DLI flag
+// _ms_tmp : display list entry to apply DLI flag
 void _multisprite_disable_dli()
 {
     _ms_tmp = (_ms_tmp << 2) - _ms_tmp + 3; // _ms_tmp = _ms_tmp * 3 + 3

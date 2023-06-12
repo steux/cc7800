@@ -1,3 +1,8 @@
+v0.2.6 (06/12/2023) :
+    - Added MS_BIDIR_VERTICAL_SCROLLING and MS_HORIZONTAL_SCROLLING support
+    - Added examples/exmaples_tiles.c
+    - Added headers/joystick.h for joystick support
+
 v0.2.5 (06/04/2023) :
     - Added memcpy function in string.h
     - multisprite.h v0.2 : Added _MS_TOP_SCROLLING_ZONE define option (for part screen scrolling only)

@@ -908,7 +908,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             }
             gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
             if args.verbose {
-                println!(" - {} ({} bytes)", v.0, sx);
+                println!(" - {} ({} byte{})", v.0, sx, if sx > 1 {"s"} else {""});
             }
         }
     }
