@@ -129,6 +129,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
 
 ramchip char _ms_buffer; // Double buffer state
 ramchip char _ms_pal_detected;
+ramchip char _ms_pal_frame_skip_counter;
 
 void multisprite_init();
 void multisprite_clear();
@@ -344,6 +345,18 @@ void multisprite_get_tv()
     } while (!(*MSTAT & 0x80));
 
     if (X >= 135) _ms_pal_detected = 0xff; 
+    _ms_pal_frame_skip_counter = 0;
+}
+
+char multisprite_pal_frame_skip()
+{
+    if (!_ms_pal_detected) return 0;
+    _ms_pal_frame_skip_counter++;
+    if (_ms_pal_frame_skip_counter >= 5) {
+        _ms_pal_frame_skip_counter = 0;
+        return 1;
+    }
+    return 0;
 }
 
 void multisprite_init()

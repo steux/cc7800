@@ -1196,5 +1196,13 @@ void main()
             }
         }
         prevjoy = joystick[0];
+        
+        // Wait for VBLANK
+        if (*MSTAT & 0x80) { // If in VBLANK
+            sfx_play();
+            if (multisprite_pal_frame_skip())
+                sfx_play(); // Advance twice every 5 frames (to cope with 60Hz instead of 50Hz)
+            while (*MSTAT & 0x80); // Wait for end of VBLANK
+        }
     } while (1);
 }
