@@ -1,19 +1,28 @@
+#include "conio.h"
+#include "joystick.h"
+#include "stdlib.h"
+#include "sfx.h"
+
+// SFX converted from 7800basic (soundtest.bas example file) with basic2cc7800 (from tools7800) :
+// All sounds are copyright Mike Saarna (msaarna), aka RevEng, and I guess most of them have been generated using his
+// tool sound2tia
+
 const char *array_name[117] = {
-	"sfx_salvolasershot", "sfx_spaceinvshoot", "sfx_berzerkrobotdeath", "sfx_echo1", "sfx_echo2", "sfx_jumpman", "sfx_cavalry", "sfx_alientrill1",
-	"sfx_alientrill2", "sfx_pitfalljump", "sfx_advpickup", "sfx_advdrop", "sfx_advbite", "sfx_advdragonslain", "sfx_bling", "sfx_dropmedium",
-	"sfx_electrobump", "sfx_explosion", "sfx_humanoid", "sfx_transporter", "sfx_twinkle", "sfx_electroswitch", "sfx_nonobounce", "sfx_70stvcomputer",
-	"sfx_alienlife", "sfx_chirp", "sfx_plonk", "sfx_spawn", "sfx_maser", "sfx_rubbermallet", "sfx_alienkitty", "sfx_electropunch",
-	"sfx_drip", "sfx_ribbit", "sfx_wolfwhistle", "sfx_cabwhistle", "sfx_jumpo", "sfx_pulsecannon", "sfx_spring", "sfx_buzzbomb",
-	"sfx_bassbump", "sfx_hophop", "sfx_distressed", "sfx_ouch", "sfx_laserrecoil", "sfx_electrosplosion", "sfx_hophip", "sfx_hophipquick",
-	"sfx_bassbump2", "sfx_pickupprize", "sfx_distressed2", "sfx_pewpew", "sfx_denied", "sfx_teleported", "sfx_alienklaxon", "sfx_crystalchimes",
-	"sfx_oneup", "sfx_babywah", "sfx_gotthecoin", "sfx_babyribbit", "sfx_squeek", "sfx_whoa", "sfx_gotthering", "sfx_yahoo",
-	"sfx_warcry", "sfx_downthepipe", "sfx_powerup", "sfx_falling", "sfx_eek", "sfx_uhoh", "sfx_anotherup", "sfx_bubbleup",
-	"sfx_jump1", "sfx_plainlaser", "sfx_aliencoo", "sfx_simplebuzz", "sfx_jump2", "sfx_jump3", "sfx_dunno", "sfx_snore",
-	"sfx_uncovered", "sfx_doorpound", "sfx_distressed3", "sfx_eek2", "sfx_rubberhammer", "sfx_alienbuzz", "sfx_anotherjumpman", "sfx_anotherjumpdies",
-	"sfx_longgongsilver", "sfx_strum", "sfx_dropped", "sfx_alienaggressor", "sfx_electroswitch2", "sfx_gooditem", "sfx_babyribbithop", "sfx_distressed4",
-	"sfx_hahaha", "sfx_yeah", "sfx_arfarf", "sfx_activate", "sfx_hahaha2", "sfx_wilhelm", "sfx_poof1", "sfx_poof2",
-	"sfx_dragit", "sfx_roarcheep", "sfx_roarroar", "sfx_deeproar", "sfx_echobang", "sfx_tom", "sfx_clopclop", "sfx_museboom",
-	"sfx_bigboom", "sfx_thud", "sfx_bump", "sfx_shouty", "sfx_quack"
+	"sfx-salvolasershot", "sfx-spaceinvshoot", "sfx-berzerkrobotdeath", "sfx-echo1", "sfx-echo2", "sfx-jumpman", "sfx-cavalry", "sfx-alientrill1",
+	"sfx-alientrill2", "sfx-pitfalljump", "sfx-advpickup", "sfx-advdrop", "sfx-advbite", "sfx-advdragonslain", "sfx-bling", "sfx-dropmedium",
+	"sfx-electrobump", "sfx-explosion", "sfx-humanoid", "sfx-transporter", "sfx-twinkle", "sfx-electroswitch", "sfx-nonobounce", "sfx-70stvcomputer",
+	"sfx-alienlife", "sfx-chirp", "sfx-plonk", "sfx-spawn", "sfx-maser", "sfx-rubbermallet", "sfx-alienkitty", "sfx-electropunch",
+	"sfx-drip", "sfx-ribbit", "sfx-wolfwhistle", "sfx-cabwhistle", "sfx-jumpo", "sfx-pulsecannon", "sfx-spring", "sfx-buzzbomb",
+	"sfx-bassbump", "sfx-hophop", "sfx-distressed", "sfx-ouch", "sfx-laserrecoil", "sfx-electrosplosion", "sfx-hophip", "sfx-hophipquick",
+	"sfx-bassbump2", "sfx-pickupprize", "sfx-distressed2", "sfx-pewpew", "sfx-denied", "sfx-teleported", "sfx-alienklaxon", "sfx-crystalchimes",
+	"sfx-oneup", "sfx-babywah", "sfx-gotthecoin", "sfx-babyribbit", "sfx-squeek", "sfx-whoa", "sfx-gotthering", "sfx-yahoo",
+	"sfx-warcry", "sfx-downthepipe", "sfx-powerup", "sfx-falling", "sfx-eek", "sfx-uhoh", "sfx-anotherup", "sfx-bubbleup",
+	"sfx-jump1", "sfx-plainlaser", "sfx-aliencoo", "sfx-simplebuzz", "sfx-jump2", "sfx-jump3", "sfx-dunno", "sfx-snore",
+	"sfx-uncovered", "sfx-doorpound", "sfx-distressed3", "sfx-eek2", "sfx-rubberhammer", "sfx-alienbuzz", "sfx-anotherjumpman", "sfx-anotherjumpdies",
+	"sfx-longgongsilver", "sfx-strum", "sfx-dropped", "sfx-alienaggressor", "sfx-electroswitch2", "sfx-gooditem", "sfx-babyribbithop", "sfx-distressed4",
+	"sfx-hahaha", "sfx-yeah", "sfx-arfarf", "sfx-activate", "sfx-hahaha2", "sfx-wilhelm", "sfx-poof1", "sfx-poof2",
+	"sfx-dragit", "sfx-roarcheep", "sfx-roarroar", "sfx-deeproar", "sfx-echobang", "sfx-tom", "sfx-clopclop", "sfx-museboom",
+	"sfx-bigboom", "sfx-thud", "sfx-bump", "sfx-shouty", "sfx-quack"
 };
 
 const char sfx_salvolasershot[72] = {
@@ -1109,3 +1118,83 @@ const char *array_data[117] = {
 	sfx_bigboom, sfx_thud, sfx_bump, sfx_shouty, sfx_quack
 };
 
+char page, choice, index;
+char *name;
+ramchip char i, j, string[10];
+ramchip char prevjoy;
+
+#define MAXPAGES ((sizeof(array_data) / 2 / 20) + 1)
+
+void display_page()
+{
+    clrscr();
+    textcolor(0);
+    gotoxy(0, 0);
+    itoa(page, string, 10);
+    cputs(string);
+    putch('/');
+    itoa(MAXPAGES, string, 10);
+    cputs(string);
+    textcolor(2);
+    gotoxy(6, 0);
+    cputs("SFX Examples");
+    textcolor(7);
+    for (i = 0, X = 1; X < page; X++) {
+        i += 20;
+    }
+    for (j = 0; j < 20; j++) {
+        Y = i + j;
+        if (Y < sizeof(array_data) / 2) {
+            name = array_name[Y];
+            gotoxy(2, j + 2);
+            cputs(name);
+        }
+    }
+    
+    textcolor(3); gotoxy(0, choice + 2); putch('>');
+}
+
+void main()
+{
+    page = 1;
+    choice = 0;
+    index = 0;
+    prevjoy = 0;
+
+    joystick_init();
+    display_page();
+
+    do {
+        joystick_update();
+        if (joystick[0] != prevjoy) {
+            if (joystick[0] & JOYSTICK_UP) {
+                if (choice > 0) {
+                    textcolor(3); gotoxy(0, choice + 2); putch(' ');
+                    choice--; index--;
+                    gotoxy(0, choice + 2); putch('>');
+                }
+            } else if (joystick[0] & JOYSTICK_DOWN) {
+                if (choice < 19 && index < sizeof(array_data) / 2 - 1) {
+                    textcolor(3); gotoxy(0, choice + 2); putch(' ');
+                    choice++; index++;
+                    gotoxy(0, choice + 2); putch('>');
+                }
+            } else if (joystick[0] & JOYSTICK_RIGHT) {
+                if (page < MAXPAGES) {
+                    page++; index += 20;
+                    display_page();
+                }
+            } else if (joystick[0] & JOYSTICK_LEFT) {
+                if (page > 1) {
+                    page--; index -= 20;
+                    display_page();
+                }
+            } else if (joystick[0] & JOYSTICK_BUTTON1) {
+                if (index < sizeof(array_data) / 2) {
+                    sfx_schedule(array_data[index]);
+                }
+            }
+        }
+        prevjoy = joystick[0];
+    } while (1);
+}

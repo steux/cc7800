@@ -91,7 +91,7 @@ ramchip char *_conio_ptr; // Pointer to the screen RAM
 #define wherex() _conio_x
 #define wherey() _conio_y
 #define putch(c) _ms_tmp = (c); _conio_putch()
-#define cputs(s) _ms_dlpnt2 = (s); _conio_cputs()
+#define cputs(s) _ms_tmpptr2 = (s); _conio_cputs()
 #define textcolor(c) _conio_palette = (c << 5)
 
 #define CONIO_HBAR 96
@@ -109,13 +109,13 @@ void clrscr()
     _conio_y = 0;
     _conio_ptr = _conio_screen;
     X = 25; 
-    _ms_dlpnt = _conio_screen;
+    _ms_tmpptr = _conio_screen;
     do {
         Y = 39;
         do {
-            _ms_dlpnt[Y--] = ' ';
+            _ms_tmpptr[Y--] = ' ';
         } while (Y >= 0);
-        _ms_dlpnt += 40;
+        _ms_tmpptr += 40;
         X--;
     } while (X != 0);
 
@@ -136,63 +136,63 @@ void clrscr()
     Y = 1;
     for (X = 0; X != 25; X++) {
         _ms_dlend[X] = 0;
-        _ms_dlpnt = _ms_dls[X];
-        _ms_dlpnt[Y] = 0; // Stops the DL
+        _ms_tmpptr = _ms_dls[X];
+        _ms_tmpptr[Y] = 0; // Stops the DL
     }
     
-    _ms_dlpnt = _ms_b0_dll;
+    _ms_tmpptr = _ms_b0_dll;
     // Build DLL
     // 69 blank lines for PAL
     // 19 blank lines for NTSC
     if (_ms_pal_detected) {
         // 16 blank lines
-        _ms_dlpnt[Y = 0] = 0x4f;  // 16 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[Y = 0] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         // 16 blank lines
-        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         // 14 blank lines
-        _ms_dlpnt[++Y] = 0x4d;  // 14 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x4d;  // 14 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
     } else {
-        _ms_dlpnt[Y = 0] = 0x4f; // 16 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[Y = 0] = 0x4f; // 16 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         // 5 blank lines
-        _ms_dlpnt[++Y] = 0x44;  // 5 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x44;  // 5 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
     }
     // 8 pixel high regions
     for (X = 0; X != 25; X++) {
-        _ms_dlpnt[++Y] = 0x47; // 8 lines
-        _ms_dlpnt[++Y] = _ms_dls[X] >> 8; // High address
-        _ms_dlpnt[++Y] = _ms_dls[X]; // Low address
+        _ms_tmpptr[++Y] = 0x47; // 8 lines
+        _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
+        _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
     }
     if (_ms_pal_detected) {
         // 16 blank lines
-        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         // 16 blank lines
-        _ms_dlpnt[++Y] = 0x4f;  // 16 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         // 15 blank lines
-        _ms_dlpnt[++Y] = 0x4e;  // 15 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x4e;  // 15 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
     } else {
-        _ms_dlpnt[++Y] = 0x4f; // 16 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x4f; // 16 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         // 6 blank lines
-        _ms_dlpnt[++Y] = 0x45;  // 6 lines
-        _ms_dlpnt[++Y] = _ms_blank_dl >> 8;
-        _ms_dlpnt[++Y] = _ms_blank_dl;
+        _ms_tmpptr[++Y] = 0x45;  // 6 lines
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
     }
     *DPPH = _ms_b0_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b0_dll;
@@ -201,14 +201,14 @@ void clrscr()
 
 void delline()
 {
-    _ms_dlpnt = _conio_ptr - _conio_x;   
+    _ms_tmpptr = _conio_ptr - _conio_x;   
     Y = 39; 
     do {
-        _ms_dlpnt[Y--] = ' ';
+        _ms_tmpptr[Y--] = ' ';
     } while (Y >= 0);
     _ms_dlend[X = _conio_y] = 0;
-    _ms_dlpnt = _ms_dls[X = _conio_y];
-    _ms_dlpnt[Y = 1] = 0;
+    _ms_tmpptr = _ms_dls[X = _conio_y];
+    _ms_tmpptr[Y = 1] = 0;
 }
 
 void _conio_update_ptr()
@@ -233,46 +233,46 @@ void _conio_cursor_move_right()
 }
 
 // _ms_tmp is the size of the string, max 32   
-// _ms_dlpnt2 points to the string to display
+// _ms_tmpptr2 points to the string to display
 void _conio_cputs2()
 {    
     // Store the string in the screen RAM
-    _ms_dlpnt = _conio_ptr;
+    _ms_tmpptr = _conio_ptr;
     for (Y--; Y >= 0; Y--) {
-        _ms_dlpnt[Y] = _ms_dlpnt2[Y];
+        _ms_tmpptr[Y] = _ms_tmpptr2[Y];
     }
     // Check the display and look for one with the same palette
-    _ms_dlpnt = _ms_dls[X = _conio_y];
+    _ms_tmpptr = _ms_dls[X = _conio_y];
     for (Y = 3; Y < _ms_dlend[X = _conio_y]; Y += 5) {
-        if ((_ms_dlpnt[Y] & 0xe0) == _conio_palette) {
+        if ((_ms_tmpptr[Y] & 0xe0) == _conio_palette) {
             // Yes ! It has the same palette !
             // Is it possible to add this string in the same dl ?
-            X = _ms_dlpnt[++Y] >> 2; // x pos 
+            X = _ms_tmpptr[++Y] >> 2; // x pos 
             if (X > _conio_x) {
                 // The new string is on the left
                 // What would be the new width of the string ?
-                X -= _conio_x + ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl
+                X -= _conio_x + ((_ms_tmpptr[--Y] & 0x1f) | 0xe0); // The width of this dl
                 if (X < _ms_tmp) X = _ms_tmp;
                 if (X <= 32) {
                     // It fits ! Yeah !
                     Y--; Y--;
-                    _ms_dlpnt[--Y] = _conio_ptr;
+                    _ms_tmpptr[--Y] = _conio_ptr;
                     Y++; Y++;
-                    _ms_dlpnt[Y++] = _conio_ptr >> 8;
-                    _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
-                    _ms_dlpnt[Y++] = _conio_x << 2;
+                    _ms_tmpptr[Y++] = _conio_ptr >> 8;
+                    _ms_tmpptr[Y++] = -X & 0x1f | _conio_palette;
+                    _ms_tmpptr[Y++] = _conio_x << 2;
                     _conio_cursor_move_right();
                     return;
                 }
             } else { 
                 // The new string on the right
-                X -= (_ms_dlpnt[--Y] & 0x1f) | 0xe0; // The width of this dl
+                X -= (_ms_tmpptr[--Y] & 0x1f) | 0xe0; // The width of this dl
                 if (X < _ms_tmp + _conio_x) { // The new string lies on the right
                                               // OK. What would be the new width ?
-                    X = -((_ms_dlpnt[Y] & 0x1f) | 0xe0) + _ms_tmp + _conio_x - X;
+                    X = -((_ms_tmpptr[Y] & 0x1f) | 0xe0) + _ms_tmp + _conio_x - X;
                     if (X <= 32) {
                         // It fits ! Yeah !
-                        _ms_dlpnt[Y] = -X & 0x1f | _conio_palette;
+                        _ms_tmpptr[Y] = -X & 0x1f | _conio_palette;
                         _conio_cursor_move_right();
                         return;
                     }
@@ -289,31 +289,31 @@ void _conio_cputs2()
     if (Y >= _MS_DL_SIZE - 7) {
         _ms_dmaerror++;
     } else {
-        _ms_dlpnt[Y++] = _conio_ptr;
+        _ms_tmpptr[Y++] = _conio_ptr;
         Y++;
-        _ms_dlpnt[Y++] = _conio_ptr >> 8;
-        _ms_dlpnt[Y++] = -_ms_tmp & 0x1f | _conio_palette;
-        _ms_dlpnt[Y++] = _conio_x << 2;
+        _ms_tmpptr[Y++] = _conio_ptr >> 8;
+        _ms_tmpptr[Y++] = -_ms_tmp & 0x1f | _conio_palette;
+        _ms_tmpptr[Y++] = _conio_x << 2;
         _ms_dlend[X] = Y++;
-        _ms_dlpnt[Y] = 0;
+        _ms_tmpptr[Y] = 0;
         Y -= 5;
-        _ms_dlpnt[Y] = 0x60;
+        _ms_tmpptr[Y] = 0x60;
     }
     _conio_cursor_move_right();
 }
 
-// _ms_dlpnt2 points to the string to display
+// _ms_tmpptr2 points to the string to display
 void _conio_cputs()
 {
     // Compute the length of the string
     Y = 0;
-    while (_ms_dlpnt2[Y]) Y++;
+    while (_ms_tmpptr2[Y]) Y++;
     _ms_tmp = Y; // _ms_tmp contains the string length
     while (_ms_tmp > 32) {
         _ms_tmp2 = _ms_tmp - 32;
         _ms_tmp = 32;
         _conio_cputs2();
-        _ms_dlpnt2 += 32;
+        _ms_tmpptr2 += 32;
         _ms_tmp = _ms_tmp2;
     }
     _conio_cputs2();
@@ -323,40 +323,40 @@ void _conio_cputs()
 void _conio_putch()
 {    
     // Store the string in the screen RAM
-    _ms_dlpnt = _conio_ptr;
-    _ms_dlpnt[Y = 0] = _ms_tmp;
+    _ms_tmpptr = _conio_ptr;
+    _ms_tmpptr[Y = 0] = _ms_tmp;
     // Check the display and look for one with the same palette
-    _ms_dlpnt = _ms_dls[X = _conio_y];
+    _ms_tmpptr = _ms_dls[X = _conio_y];
     for (Y = 3; Y < _ms_dlend[X = _conio_y]; Y += 5) {
-        if ((_ms_dlpnt[Y] & 0xe0) == _conio_palette) {
+        if ((_ms_tmpptr[Y] & 0xe0) == _conio_palette) {
             // Yes ! It has the same palette !
             // Is it possible to add this string in the same dl ?
-            X = _ms_dlpnt[++Y] >> 2; // x pos 
+            X = _ms_tmpptr[++Y] >> 2; // x pos 
             if (X > _conio_x) {
                 // The new string is on the left
                 // What would be the new width of the string ?
-                X -= _conio_x + ((_ms_dlpnt[--Y] & 0x1f) | 0xe0); // The width of this dl entry
+                X -= _conio_x + ((_ms_tmpptr[--Y] & 0x1f) | 0xe0); // The width of this dl entry
                 if (X <= 32) {
                     Y--; Y--;
                     // It fits ! Yeah !
-                    _ms_dlpnt[--Y] = _conio_ptr;
+                    _ms_tmpptr[--Y] = _conio_ptr;
                     Y++; Y++;
-                    _ms_dlpnt[Y++] = _conio_ptr >> 8;
-                    _ms_dlpnt[Y++] = -X & 0x1f | _conio_palette;
-                    _ms_dlpnt[Y] = _conio_x << 2;
+                    _ms_tmpptr[Y++] = _conio_ptr >> 8;
+                    _ms_tmpptr[Y++] = -X & 0x1f | _conio_palette;
+                    _ms_tmpptr[Y] = _conio_x << 2;
                     _ms_tmp = 1;
                     _conio_cursor_move_right();
                     return;
                 }
             } else { 
                 // The new string is on the right
-                X -= (_ms_dlpnt[--Y] & 0x1f) | 0xe0; // Add the width of this dl entry
+                X -= (_ms_tmpptr[--Y] & 0x1f) | 0xe0; // Add the width of this dl entry
                 if (X < _conio_x + 1) { // The new string lies on the right
                                         // OK. What would be the new width ?
-                    X = -((_ms_dlpnt[Y] & 0x1f) | 0xe0) + 1 + _conio_x - X;
+                    X = -((_ms_tmpptr[Y] & 0x1f) | 0xe0) + 1 + _conio_x - X;
                     if (X <= 32) {
                         // It fits ! Yeah !
-                        _ms_dlpnt[Y] = -X & 0x1f | _conio_palette;
+                        _ms_tmpptr[Y] = -X & 0x1f | _conio_palette;
                         _ms_tmp = 1;
                         _conio_cursor_move_right();
                         return;
@@ -375,15 +375,15 @@ void _conio_putch()
     if (Y >= _MS_DL_SIZE - 7) {
         _ms_dmaerror++;
     } else {
-        _ms_dlpnt[Y++] = _conio_ptr;
+        _ms_tmpptr[Y++] = _conio_ptr;
         Y++;
-        _ms_dlpnt[Y++] = _conio_ptr >> 8;
-        _ms_dlpnt[Y++] = 0x1f | _conio_palette;
-        _ms_dlpnt[Y++] = _conio_x << 2;
+        _ms_tmpptr[Y++] = _conio_ptr >> 8;
+        _ms_tmpptr[Y++] = 0x1f | _conio_palette;
+        _ms_tmpptr[Y++] = _conio_x << 2;
         _ms_dlend[X] = Y++;
-        _ms_dlpnt[Y] = 0;
+        _ms_tmpptr[Y] = 0;
         Y -= 5;
-        _ms_dlpnt[Y] = 0x60;
+        _ms_tmpptr[Y] = 0x60;
     }
     _ms_tmp = 1;
     _conio_cursor_move_right();
