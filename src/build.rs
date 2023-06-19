@@ -399,10 +399,33 @@ impl<'a> MemoryMap<'a> {
             gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
 
             if self.bank == 0 && !self.startup_code {
+                // Generate included assembler
+                for asm in &compiler_state.included_assembler {
+                    gstate.write(&asm.0)?;
+                    let name;
+                    if let Some(n) = &asm.1 {
+                        name = n.as_str();
+                    } else {
+                        name = "Unknown";
+                    }
+                    if let Some(size) = asm.2 {
+                        filled += size as u32;
+                        if args.verbose {
+                            println!(" - Assembler {} code (filled {}/{})", name, filled, size);
+                        }
+                    } else {
+                        let nl = asm.0.lines().count() as u32; 
+                        filled += nl * 3; // 3 bytes default per line estimate.
+                        if args.verbose {
+                            println!(" - Assembler {} code (filled {}/{} - estimated)", name, filled, size);
+                        }
+                    }
+                }
+
                 self.startup_code = true;
-                filled = 0x62; // Size of startup code
+                filled += 0x62; // Size of startup code
                 if args.verbose {
-                    println!(" - Startup code");
+                    println!(" - Startup code (filled {}/{})", filled, size);
                 }
                 // Generate startup code
                 gstate.write("
@@ -480,12 +503,6 @@ IRQ
     RTI
                 ")?;
 
-                // Generate included assembler
-                for asm in &compiler_state.included_assembler {
-                    let nl = asm.lines().count() as u32; 
-                    gstate.write(asm)?;
-                    filled += nl * 3; // 3 bytes default per line estimate.
-                }
             }
 
             // Generate functions code
@@ -632,10 +649,10 @@ IRQ
     }
 }
 
-fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, output: &str) -> Result<(), Error>
+fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState, bankswitching_scheme: &str, output: &str) -> Result<(), Error>
 {
     let romsize;
-    let cartb;
+    let mut cartb;
     let mapper;
     match bankswitching_scheme {
         "32K" => {
@@ -649,6 +666,12 @@ fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, out
             mapper = 1;
         },
         _ => return Err(Error::Unimplemented { feature: "Unknown bankswtiching scheme" })
+    };
+    let pokey = if compiler_state.variables.get("POKEY").is_some() {
+        cartb |= 64;
+        1
+    } else {
+        0
     };
     gstate.write(&format!("
     ORG $7F80
@@ -726,7 +749,7 @@ fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, out
     ; platforms that don't yet support v4.
 
     ORG     .HEADER+62,0
-    DC.B    %00000000          ; 62         external irq source
+    DC.B    ${:02x}          ; 62         external irq source
     ;    bits 7..5 ; reserved
     ;    bit  4    ; POKEY  @ $0800 - $080F
     ;    bit  3    ; YM2151 @ $0461 - $0462
@@ -770,7 +793,7 @@ fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, out
     ;       6 = 32K EXRAM/X2
 
     DC.B    %00000000          ; 66         audio hi
-    DC.B    %00000000          ; 67         audio lo
+    DC.B    {}          ; 67         audio lo
     ;    bit  4      ; covox@430
     ;    bit  3      ; ym2151@460
     ;    bits 0-2    ; pokey...
@@ -782,7 +805,7 @@ fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, out
     ;       5 = pokey@4000
 
     DC.B    %00000000          ; 68         interrupt hi
-    DC.B    %00000000          ; 69         interrupt lo
+    DC.B    {pokey}            ; 69         interrupt lo
     ;    bit  2    ; YM2151
     ;    bit  1    ; pokey 2 (@440)
     ;    bit  0    ; pokey 1 (@4000, @450, or @800)
@@ -791,7 +814,7 @@ fn write_a78_header(gstate: &mut GeneratorState, bankswitching_scheme: &str, out
     ORG     .HEADER+100,0       ; 100..127  footer magic string
     DC.B    \"ACTUAL CART DATA STARTS HERE\"
 
-        ", romsize, output, cartb))?;
+        ", romsize, output, cartb, pokey * 2, pokey * 2))?;
     Ok(())
 }
 
@@ -826,7 +849,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         }
     }
 
-    write_a78_header(&mut gstate, bankswitching_scheme, &args.output)?;
+    write_a78_header(compiler_state, &mut gstate, bankswitching_scheme, &args.output)?;
 
     gstate.write("\n\tSEG.U ZEROPAGE\n\tORG $40\n\n")?;
     

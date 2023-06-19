@@ -1,3 +1,6 @@
+v0.2.7 (06/19/2023) :
+    - Added sfx and RMTracker (Pokey music) examples
+
 v0.2.6 (06/12/2023) :
     - Added MS_BIDIR_VERTICAL_SCROLLING and MS_HORIZONTAL_SCROLLING support
     - Added examples/exmaples_tiles.c
