@@ -45,9 +45,7 @@ checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
 
 [[package]]
 name = "cc6502"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1c1b006348cce7ca48a886a591cd9d1b75be79b5bb654c19e2cd22b3024acc7"
+version = "0.8.1"
 dependencies = [
  "clap",
  "env_logger",

@@ -1,3 +1,6 @@
+v0.2.8 (06/27/2023) :
+    - Moved Pokey location to 0x4000 to make it work on real hardware
+
 v0.2.7 (06/19/2023) :
     - Added sfx and RMTracker (Pokey music) examples
 

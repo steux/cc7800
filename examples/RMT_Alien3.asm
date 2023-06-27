@@ -1,4 +1,4 @@
-;RMTA - This line is required for 7800basic autodetection. Don't remove.
+; codesize: 2609
 ;#### Alien 3 Title.rmta - converted by 7800rmt2asm 0.1 Jun 19 2023 16:37:31
 
 RMTSTART SET .

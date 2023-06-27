@@ -649,30 +649,39 @@ IRQ
     }
 }
 
-fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState, bankswitching_scheme: &str, output: &str) -> Result<(), Error>
+fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState, bankswitching_scheme: &str, output: &str, memoryonchip: bool) -> Result<(), Error>
 {
     let romsize;
     let mut cartb;
     let mapper;
+    let mut mapper_options = 0;
+    let mut audio = 0;
     match bankswitching_scheme {
         "32K" => {
             romsize = 32 * 1024;
-            cartb = 4; // EXRAM 
+            cartb = 0; 
             mapper = 0;
         },
         "SuperGame" => {
             romsize = 128 * 1024;
-            cartb = 6; // EXRAM + SuperGame
+            cartb = 2; // SuperGame
             mapper = 1;
         },
         _ => return Err(Error::Unimplemented { feature: "Unknown bankswtiching scheme" })
     };
-    let pokey = if compiler_state.variables.get("POKEY").is_some() {
-        cartb |= 64;
-        1
-    } else {
-        0
-    };
+    if memoryonchip {
+        cartb |= 4;
+        mapper_options |= 1;
+    }
+    if compiler_state.variables.get("POKEY").is_some() {
+        if memoryonchip {
+            cartb |= 64;
+            audio = 2;
+        } else {
+            cartb |= 1;
+            audio = 5;
+        }
+    }
     gstate.write(&format!("
     ORG $7F80
 
@@ -749,7 +758,7 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
     ; platforms that don't yet support v4.
 
     ORG     .HEADER+62,0
-    DC.B    ${:02x}          ; 62         external irq source
+    DC.B    $0          ; 62         external irq source
     ;    bits 7..5 ; reserved
     ;    bit  4    ; POKEY  @ $0800 - $080F
     ;    bit  3    ; YM2151 @ $0461 - $0462
@@ -773,7 +782,7 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
     ;    4 = souper
 
 
-    DC.B    1                  ; 65         mapper options
+    DC.B    {mapper_options}           ; 65         mapper options
     ; linear_
     ;    bit  7      ; bankset rom
     ;    bits 0-1    ; option @4000...
@@ -793,7 +802,7 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
     ;       6 = 32K EXRAM/X2
 
     DC.B    %00000000          ; 66         audio hi
-    DC.B    {}          ; 67         audio lo
+    DC.B    {audio}          ; 67         audio lo
     ;    bit  4      ; covox@430
     ;    bit  3      ; ym2151@460
     ;    bits 0-2    ; pokey...
@@ -805,7 +814,7 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
     ;       5 = pokey@4000
 
     DC.B    %00000000          ; 68         interrupt hi
-    DC.B    {pokey}            ; 69         interrupt lo
+    DC.B    $0            ; 69         interrupt lo
     ;    bit  2    ; YM2151
     ;    bit  1    ; pokey 2 (@440)
     ;    bit  0    ; pokey 1 (@4000, @450, or @800)
@@ -814,7 +823,7 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
     ORG     .HEADER+100,0       ; 100..127  footer magic string
     DC.B    \"ACTUAL CART DATA STARTS HERE\"
 
-        ", romsize, output, cartb, pokey * 2, pokey * 2))?;
+        ", romsize, output, cartb))?;
     Ok(())
 }
 
@@ -848,8 +857,16 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             }
         }
     }
+    
+    let mut memoryonchip = false;
+    for v in compiler_state.sorted_variables().iter() {
+        if let VariableMemory::MemoryOnChip(_) = v.1.memory {
+            memoryonchip = true;
+            break;
+        }
+    }
 
-    write_a78_header(compiler_state, &mut gstate, bankswitching_scheme, &args.output)?;
+    write_a78_header(compiler_state, &mut gstate, bankswitching_scheme, &args.output, memoryonchip)?;
 
     gstate.write("\n\tSEG.U ZEROPAGE\n\tORG $40\n\n")?;
     
@@ -940,36 +957,43 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     }
 
     // Generate veriables stored in RAM on cart (memory on chip)
-    let mut memoryonchip = false;
-    for v in compiler_state.sorted_variables().iter() {
-        if let VariableMemory::MemoryOnChip(_) = v.1.memory {
-            memoryonchip = true;
-            break;
-        }
-    }
     if memoryonchip {
+        if args.verbose {
+            println!("Cart RAM : 0x4000 onwards");
+        }
+        let mut filled = 0;
         gstate.write("\n\tSEG.U MEMORY_ON_CHIP\n\tORG $4000\n")?;
         for v in compiler_state.sorted_variables().iter() {
             if let VariableMemory::MemoryOnChip(_) = v.1.memory {
-                if v.1.size > 1 {
+                let sx = if v.1.size > 1 {
                     let s = match v.1.var_type {
                         VariableType::CharPtr => 1,
                         VariableType::CharPtrPtr => 2,
                         VariableType::ShortPtr => 2,
                         _ => unreachable!()
                     };
-                    gstate.write(&format!("{:23}\tds {}\n", v.0, v.1.size * s))?; 
+                    v.1.size * s 
                 } else {
-                    let s = match v.1.var_type {
+                    match v.1.var_type {
                         VariableType::Char => 1,
                         VariableType::Short => 2,
                         VariableType::CharPtr => 2,
                         VariableType::CharPtrPtr => 2,
                         VariableType::ShortPtr => 2,
-                    };
-                    gstate.write(&format!("{:23}\tds {}\n", v.0, s))?; 
+                    }
+                };
+                filled += sx;
+                if filled > 0x4000 {
+                    return Err(Error::Configuration { error: "Memory full. Cart RAM is limited to 16KB".to_string() });
+                }
+                gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
+                if args.verbose {
+                    println!(" - {} ({} byte{})", v.0, sx, if sx > 1 {"s"} else {""});
                 }
             }
+        }
+        if args.verbose {
+            println!("Cart RAM : {} bytes left", 0x4000 - filled);
         }
     }
 

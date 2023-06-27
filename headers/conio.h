@@ -87,7 +87,7 @@ reversed scattered(8,1) char font[1024]={
 ramchip char _conio_x, _conio_y, _conio_palette;
 ramchip char *_conio_ptr; // Pointer to the screen RAM
 
-#define gotoxy(x, y) _conio_x = (x); _conio_y = (y); _conio_update_ptr()
+#define gotoxy(x, y) _libc_tmp = (x); _libc_tmp2 = (y); _conio_update_ptr()
 #define wherex() _conio_x
 #define wherey() _conio_y
 #define putch(c) _ms_tmp = (c); _conio_putch()
@@ -213,12 +213,30 @@ void delline()
 
 void _conio_update_ptr()
 {
-    _conio_ptr = _conio_screen;
-    Y = _conio_y;
-    for (Y--; Y >= 0; Y--) {
-        _conio_ptr += 40;
+    _conio_ptr -= _conio_x;
+    _conio_ptr += _libc_tmp;
+    if (_conio_y == _libc_tmp2) {
+         _conio_x = _libc_tmp;
+         _conio_y = _libc_tmp2;
+         return;
+    } else if (_libc_tmp2 >= _conio_y) {
+         Y = _libc_tmp2 - _conio_y;
+         do {
+             _conio_ptr += 40;
+             Y--;
+         } while (Y != 0);
+         _conio_x = _libc_tmp;
+         _conio_y = _libc_tmp2;
+         return;
+    } else {
+         Y = _conio_y - _libc_tmp2;
+         do {
+             _conio_ptr -= 40;
+             Y--;
+         } while (Y != 0);
+         _conio_x = _libc_tmp;
+         _conio_y = _libc_tmp2;
     }
-    _conio_ptr += _conio_x;
 }
 
 // _ms_tmp is the size to move right

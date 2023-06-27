@@ -10,7 +10,7 @@
 
 const char RMT = 1;
 const char POKEY = 1;
-char *const pokeyaddress = 0x450; 
+char *const pokeyaddress = 0x4000; 
 
 char *p_instrstable, *p_trackslbstable, *p_trackshbstable, *p_song;
 #define p_tis p_instrstable
