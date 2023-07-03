@@ -1,3 +1,6 @@
+v0.2.9 (07/02/2023) :
+    - Moved to cc6502 v0.9
+
 v0.2.8 (06/27/2023) :
     - Moved Pokey location to 0x4000 to make it work on real hardware
 

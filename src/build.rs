@@ -180,17 +180,19 @@ impl<'a> MemoryMap<'a> {
                             if let Some((_, w)) = v.scattered {
                                 if let VariableDefinition::Array(a) = &v.def {
                                     for j in 0..i.1 {
-                                        let x = if v.reversed {
-                                            a[((j % w) + 15 * w + (j / w) * 16) as usize]
+                                        let xx = if v.reversed {
+                                            &a[((j % w) + 15 * w + (j / w) * 16) as usize]
                                         } else {
-                                            a[((j % w) + (j / w) * 16) as usize]
+                                            &a[((j % w) + (j / w) * 16) as usize]
                                         };
-                                        if counter == 0 {
-                                            gstate.write("\n\thex ")?;
+                                        if let VariableValue::Int(x) = xx {
+                                            if counter == 0 {
+                                                gstate.write("\n\thex ")?;
+                                            }
+                                            counter += 1;
+                                            if counter == 16 { counter = 0; }
+                                            gstate.write(&format!("{:02x}", x & 0xff))?;
                                         }
-                                        counter += 1;
-                                        if counter == 16 { counter = 0; }
-                                        gstate.write(&format!("{:02x}", x & 0xff))?;
                                     }
                                 }
                             }
@@ -203,17 +205,19 @@ impl<'a> MemoryMap<'a> {
                                 if let Some((_, w)) = v.scattered {
                                     if let VariableDefinition::Array(a) = &v.def {
                                         for j in 0..i.1 {
-                                            let x = if v.reversed {
-                                                a[((j % w) + (15 - l) * w + (j / w) * 16) as usize]
+                                            let xx = if v.reversed {
+                                                &a[((j % w) + (15 - l) * w + (j / w) * 16) as usize]
                                             } else {
-                                                a[((j % w) + l * w + (j / w) * 16) as usize]
+                                                &a[((j % w) + l * w + (j / w) * 16) as usize]
                                             };
-                                            if counter == 0 {
-                                                gstate.write("\n\thex ")?;
+                                            if let VariableValue::Int(x) = xx {
+                                                if counter == 0 {
+                                                    gstate.write("\n\thex ")?;
+                                                }
+                                                counter += 1;
+                                                if counter == 16 { counter = 0; }
+                                                gstate.write(&format!("{:02x}", x & 0xff))?;
                                             }
-                                            counter += 1;
-                                            if counter == 16 { counter = 0; }
-                                            gstate.write(&format!("{:02x}", x & 0xff))?;
                                         }
                                     }
                                 }
@@ -327,17 +331,19 @@ impl<'a> MemoryMap<'a> {
                             if let Some((_, w)) = v.scattered {
                                 if let VariableDefinition::Array(a) = &v.def {
                                     for j in 0..i.1 {
-                                        let x = if v.reversed {
-                                            a[((j % w) + 7 * w + (j / w) * 8) as usize]
+                                        let xx = if v.reversed {
+                                            &a[((j % w) + 7 * w + (j / w) * 8) as usize]
                                         } else {
-                                            a[((j % w) + (j / w) * 8) as usize]
+                                            &a[((j % w) + (j / w) * 8) as usize]
                                         };
-                                        if counter == 0 {
-                                            gstate.write("\n\thex ")?;
+                                        if let VariableValue::Int(x) = xx {
+                                            if counter == 0 {
+                                                gstate.write("\n\thex ")?;
+                                            }
+                                            counter += 1;
+                                            if counter == 16 { counter = 0; }
+                                            gstate.write(&format!("{:02x}", x & 0xff))?;
                                         }
-                                        counter += 1;
-                                        if counter == 16 { counter = 0; }
-                                        gstate.write(&format!("{:02x}", x & 0xff))?;
                                     }
                                 }
                             }
@@ -350,17 +356,19 @@ impl<'a> MemoryMap<'a> {
                                 if let Some((_, w)) = v.scattered {
                                     if let VariableDefinition::Array(a) = &v.def {
                                         for j in 0..i.1 {
-                                            let x = if v.reversed {
-                                                a[((j % w) + (7 - l) * w + (j / w) * 8) as usize]
+                                            let xx = if v.reversed {
+                                                &a[((j % w) + (7 - l) * w + (j / w) * 8) as usize]
                                             } else {
-                                                a[((j % w) + l * w + (j / w) * 8) as usize]
+                                                &a[((j % w) + l * w + (j / w) * 8) as usize]
                                             };
-                                            if counter == 0 {
-                                                gstate.write("\n\thex ")?;
+                                            if let VariableValue::Int(x) = xx {
+                                                if counter == 0 {
+                                                    gstate.write("\n\thex ")?;
+                                                }
+                                                counter += 1;
+                                                if counter == 16 { counter = 0; }
+                                                gstate.write(&format!("{:02x}", x & 0xff))?;
                                             }
-                                            counter += 1;
-                                            if counter == 16 { counter = 0; }
-                                            gstate.write(&format!("{:02x}", x & 0xff))?;
                                         }
                                     }
                                 }
@@ -586,22 +594,44 @@ IRQ
                                         }
                                         gstate.write(v.0)?;
                                         let mut counter = 0;
-                                        for i in arr {
-                                            if counter == 0 {
-                                                gstate.write("\n\thex ")?;
-                                            }
-                                            counter += 1;
-                                            if counter == 16 { counter = 0; }
-                                            gstate.write(&format!("{:02x}", i & 0xff))?;
+                                        for vx in arr {
+                                            match vx {
+                                                VariableValue::Int(i) => {
+                                                    if counter == 0 {
+                                                        gstate.write("\n\thex ")?;
+                                                    }
+                                                    counter += 1;
+                                                    if counter == 16 { counter = 0; }
+                                                    gstate.write(&format!("{:02x}", i & 0xff))
+                                                },
+                                                VariableValue::LowPtr((s, offset)) => {
+                                                    counter = 0;
+                                                    if *offset != 0 {
+                                                        gstate.write(&format!("\n\t.byte <({} + {})", s, offset))
+                                                    } else {
+                                                        gstate.write(&format!("\n\t.byte <{}", s))
+                                                    }
+                                                },
+                                                VariableValue::HiPtr((s, offset)) => {
+                                                    counter = 0;
+                                                    if *offset != 0 {
+                                                        gstate.write(&format!("\n\t.byte >({} + {})", s, offset))
+                                                    } else {
+                                                        gstate.write(&format!("\n\t.byte >{}", s))
+                                                    }
+                                                },
+                                            }?;
                                         } 
                                         if v.1.var_type == VariableType::ShortPtr {
-                                            for i in arr {
+                                            for vx in arr {
                                                 if counter == 0 {
                                                     gstate.write("\n\thex ")?;
                                                 }
                                                 counter += 1;
                                                 if counter == 16 { counter = 0; }
-                                                gstate.write(&format!("{:02x}", (i >> 8) & 0xff))?;
+                                                if let VariableValue::Int(i) = vx {
+                                                    gstate.write(&format!("{:02x}", (i >> 8) & 0xff))?;
+                                                }
                                             } 
                                         }
                                         gstate.write("\n")?;
@@ -618,7 +648,11 @@ IRQ
                                                 gstate.write("\n\t.byte ")?;
                                             }
                                             counter += 1;
-                                            gstate.write(&format!("<{}", i))?;
+                                            if i.1 != 0 {
+                                                gstate.write(&format!("<({} + {})", i.0, i.1))?;
+                                            } else {
+                                                gstate.write(&format!("<{}", i.0))?;
+                                            }
                                             if counter % 8 != 0 {
                                                 gstate.write(", ")?;
                                             } 
@@ -628,7 +662,11 @@ IRQ
                                                 gstate.write("\n\t.byte ")?;
                                             }
                                             counter += 1;
-                                            gstate.write(&format!(">{}", i))?;
+                                            if i.1 != 0 {
+                                                gstate.write(&format!(">({} + {})", i.0, i.1))?;
+                                            } else {
+                                                gstate.write(&format!(">{}", i.0))?;
+                                            }
                                             if counter % 8 != 0 && counter < 2 * arr.len() {
                                                 gstate.write(", ")?;
                                             } 
@@ -852,12 +890,24 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     
     for v in compiler_state.sorted_variables().iter() {
         if v.1.var_const  {
-            if let VariableDefinition::Value(val) = &v.1.def  {
-                gstate.write(&format!("{:23}\tEQU ${:x}\n", v.0, val))?;
+            if let VariableDefinition::Value(vx) = &v.1.def  {
+                match vx {
+                    VariableValue::Int(val) => gstate.write(&format!("{:23}\tEQU ${:x}\n", v.0, val)),
+                    VariableValue::LowPtr((s, offset)) => if *offset != 0 {
+                        gstate.write(&format!("{:23}\tEQU <({} + {})\n", v.0, s, offset))
+                    } else {
+                        gstate.write(&format!("{:23}\tEQU <{}\n", v.0, s))
+                    },
+                    VariableValue::HiPtr((s, offset)) => if *offset != 0 {
+                        gstate.write(&format!("{:23}\tEQU >({} + {})\n", v.0, s, offset))
+                    } else {
+                        gstate.write(&format!("{:23}\tEQU >{}\n", v.0, s))
+                    },
+                }?;
             }
         }
     }
-    
+
     let mut memoryonchip = false;
     for v in compiler_state.sorted_variables().iter() {
         if let VariableMemory::MemoryOnChip(_) = v.1.memory {
