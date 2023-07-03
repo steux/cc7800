@@ -90,7 +90,7 @@ const char tilemap_30_2[3] = {18, 18, 18};
 const char tilemap_30_data[] = {4, 0, tilemap_30_0, 0x60, tilemap_30_0 >> 8, (1 << 5) | ((-5) & 0x1f), 29, 24, 13, tilemap_30_1, 0x60, tilemap_30_1 >> 8, (0 << 5) | ((-12) & 0x1f), 60, 27, 25, tilemap_30_2, 0x60, tilemap_30_2 >> 8, (0 << 5) | ((-3) & 0x1f), 20, 0x7f, 0xff};
 const char tilemap_31_0[6] = {0, 0, 0, 0, 0, 0};
 const char tilemap_31_data[] = {5, 0, tilemap_31_0, 0x60, tilemap_31_0 >> 8, (1 << 5) | ((-6) & 0x1f), 33, 0x7f, 0xff};
-const char *tilemap_data[32] = {tilemap_0_data, tilemap_1_data, tilemap_2_data, tilemap_3_data, tilemap_4_data, tilemap_5_data, tilemap_6_data, tilemap_7_data, tilemap_8_data, tilemap_9_data, tilemap_10_data, tilemap_11_data, tilemap_12_data, tilemap_13_data, tilemap_14_data, tilemap_15_data, tilemap_16_data, tilemap_17_data, tilemap_18_data, tilemap_19_data, tilemap_20_data, tilemap_21_data, tilemap_22_data, tilemap_23_data, tilemap_24_data, tilemap_25_data, tilemap_26_data, tilemap_27_data, tilemap_28_data, tilemap_29_data, tilemap_30_data, tilemap_31_data};
+const char tilemap_data[64] = {tilemap_0_data & 0xff, tilemap_0_data >> 8, tilemap_1_data & 0xff, tilemap_1_data >> 8, tilemap_2_data & 0xff, tilemap_2_data >> 8, tilemap_3_data & 0xff, tilemap_3_data >> 8, tilemap_4_data & 0xff, tilemap_4_data >> 8, tilemap_5_data & 0xff, tilemap_5_data >> 8, tilemap_6_data & 0xff, tilemap_6_data >> 8, tilemap_7_data & 0xff, tilemap_7_data >> 8, tilemap_8_data & 0xff, tilemap_8_data >> 8, tilemap_9_data & 0xff, tilemap_9_data >> 8, tilemap_10_data & 0xff, tilemap_10_data >> 8, tilemap_11_data & 0xff, tilemap_11_data >> 8, tilemap_12_data & 0xff, tilemap_12_data >> 8, tilemap_13_data & 0xff, tilemap_13_data >> 8, tilemap_14_data & 0xff, tilemap_14_data >> 8, tilemap_15_data & 0xff, tilemap_15_data >> 8, tilemap_16_data & 0xff, tilemap_16_data >> 8, tilemap_17_data & 0xff, tilemap_17_data >> 8, tilemap_18_data & 0xff, tilemap_18_data >> 8, tilemap_19_data & 0xff, tilemap_19_data >> 8, tilemap_20_data & 0xff, tilemap_20_data >> 8, tilemap_21_data & 0xff, tilemap_21_data >> 8, tilemap_22_data & 0xff, tilemap_22_data >> 8, tilemap_23_data & 0xff, tilemap_23_data >> 8, tilemap_24_data & 0xff, tilemap_24_data >> 8, tilemap_25_data & 0xff, tilemap_25_data >> 8, tilemap_26_data & 0xff, tilemap_26_data >> 8, tilemap_27_data & 0xff, tilemap_27_data >> 8, tilemap_28_data & 0xff, tilemap_28_data >> 8, tilemap_29_data & 0xff, tilemap_29_data >> 8, tilemap_30_data & 0xff, tilemap_30_data >> 8, tilemap_31_data & 0xff, tilemap_31_data >> 8};
 
 #define TILING_HEIGHT 32
 #define TILING_WIDTH 32
@@ -174,9 +174,11 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(tiles);
+    tiling_init(tilemap_data);
     joystick_init();
     multisprite_display_tiles(0, 0, display_score_str, 5, 0);
     multisprite_save();
+    
 
     *P0C1 = multisprite_color(0x1c); // Setup Palette 0: Yellow
     *P0C2 = multisprite_color(0xc5); // Green

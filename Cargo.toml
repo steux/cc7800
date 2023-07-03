@@ -12,7 +12,7 @@ keywords = ["cli", "atari7800", "compiler", "gamedev"]
 categories = ["command-line-utilities", "game-development", "compilers"]
 
 [dependencies]
-env_logger = "0.9"
+env_logger = "0.10"
 log = "0.4"
 clap = { version = "4", features = ["derive"] }
 regex = "1"

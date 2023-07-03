@@ -11,8 +11,11 @@
 #define VERTICAL_SCROLLING
 #include "multisprite.h"
 
-char *_tiling_ptr, _tiling_data[5], _tiling_Y;
+char *_tiling_ptr, _tiling_data[5], _tiling_Y, _tiling_tmp;
+ramchip char *_tilemap_data_ptr;
 ramchip signed char _tiling_xpos, _tiling_ypos, _tiling_xoffset, _tiling_yoffset, _tiling_left, _tiling_right;
+
+#define tiling_init(ptr) _tilemap_data_ptr = (ptr)
 
 #define tiling_goto(x, y) \
     _ms_tmp = x; \
@@ -43,7 +46,7 @@ void _tiling_goto()
         _ms_tmp2 = 0;
     }
 #define bottom _ms_tmp3
-    if (_tiling_ypos + _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE - TILING_HEIGHT >= 0) {
+    if (_tiling_ypos + (_MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE - TILING_HEIGHT) >= 0) {
         bottom = _MS_TOP_SCROLLING_ZONE + TILING_HEIGHT - _tiling_ypos;
     } else {
         bottom = _MS_DLL_ARRAY_SIZE;
@@ -54,7 +57,12 @@ void _tiling_goto()
     }
     _tiling_right = _tiling_xpos + TILING_WIDTH - 2;
     for (X = _ms_tmp; X < bottom; _ms_tmp2++) {
-        _tiling_ptr = tilemap_data[Y = _ms_tmp2];
+        Y = _ms_tmp2 << 1;
+        //_tiling_ptr = tilemap_data[Y++];
+        //_tiling_ptr |= tilemap_data[Y] << 8;
+        //_tiling_ptr = tilemap_data[Y] | (tilemap_data[++Y] << 8);
+        _tiling_tmp = tilemap_data[Y++];
+        _tiling_ptr = _tiling_tmp | (tilemap_data[Y] << 8);   
         _ms_tmpptr = _ms_dls[X];
         // Find the first visible tileset on this line, if any
         Y = 0;
