@@ -16,5 +16,5 @@ env_logger = "0.10"
 log = "0.4"
 clap = { version = "4", features = ["derive"] }
 regex = "1"
-#cc6502 = { version = "0.8", features = ["atari7800"] }
-cc6502 = { path = "../cc6502", features = ["atari7800"] } 
+cc6502 = { version = "0.9", features = ["atari7800"] }
+#cc6502 = { path = "../cc6502", features = ["atari7800"] } 

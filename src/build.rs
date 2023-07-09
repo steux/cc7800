@@ -969,7 +969,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
 
     gstate.write("\nLOCAL_VARIABLES\n\n")?;
     for f in compiler_state.sorted_functions().iter() {
-        if gstate.functions_actually_in_use.get(f.0).is_some() {
+        if gstate.functions_actually_in_use.get(f.0).is_some() && f.1.local_variables.len() != 0 {
             gstate.write("\tORG LOCAL_VARIABLES\n")?;
             for vx in &f.1.local_variables {
                 if let Some(v) = compiler_state.variables.get(vx) {
