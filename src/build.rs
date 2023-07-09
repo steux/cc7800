@@ -915,6 +915,28 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             break;
         }
     }
+    
+    for f in compiler_state.sorted_functions().iter() {
+        if f.1.code.is_some() {
+            gstate.local_label_counter_for = 0;
+            gstate.local_label_counter_if = 0;
+
+            gstate.functions_code.insert(f.0.clone(), AssemblyCode::new());
+            gstate.current_function = Some(f.0.clone());
+            gstate.generate_statement(f.1.code.as_ref().unwrap())?;
+            gstate.current_function = None;
+
+            if args.optimization_level > 0 {
+                gstate.optimize_function(f.0);
+            }
+            gstate.check_branches(f.0);
+        }
+        if f.1.interrupt{
+            nmi_interrupt = f.0;
+        }
+    }
+
+    gstate.compute_functions_actually_in_use()?;
 
     write_a78_header(compiler_state, &mut gstate, bankswitching_scheme, &args.output, memoryonchip)?;
 
@@ -923,7 +945,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     // Generate variables code
     gstate.write("cctmp                  \tds 1\n")?; 
     for v in compiler_state.sorted_variables().iter() {
-        if v.1.memory == VariableMemory::Zeropage && v.1.def == VariableDefinition::None {
+        if v.1.memory == VariableMemory::Zeropage && v.1.def == VariableDefinition::None && v.1.global {
             if v.1.size > 1 {
                 let s = match v.1.var_type {
                     VariableType::CharPtr => 1,
@@ -941,6 +963,37 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
                     VariableType::ShortPtr => 2,
                 };
                 gstate.write(&format!("{:23}\tds {}\n", v.0, s))?; 
+            }
+        }
+    }
+
+    gstate.write("\nLOCAL_VARIABLES\n\n")?;
+    for f in compiler_state.sorted_functions().iter() {
+        if gstate.functions_actually_in_use.get(f.0).is_some() {
+            gstate.write("\tORG LOCAL_VARIABLES\n")?;
+            for vx in &f.1.local_variables {
+                if let Some(v) = compiler_state.variables.get(vx) {
+                    if v.memory == VariableMemory::Zeropage && v.def == VariableDefinition::None {
+                        if v.size > 1 {
+                            let s = match v.var_type {
+                                VariableType::CharPtr => 1,
+                                VariableType::CharPtrPtr => 2,
+                                VariableType::ShortPtr => 2,
+                                _ => unreachable!()
+                            };
+                            gstate.write(&format!("{:23}\tds {}\n", vx, v.size * s))?; 
+                        } else {
+                            let s = match v.var_type {
+                                VariableType::Char => 1,
+                                VariableType::Short => 2,
+                                VariableType::CharPtr => 2,
+                                VariableType::CharPtrPtr => 2,
+                                VariableType::ShortPtr => 2,
+                            };
+                            gstate.write(&format!("{:23}\tds {}\n", vx, s))?; 
+                        }
+                    }
+                }
             }
         }
     }
@@ -1046,28 +1099,6 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             println!("Cart RAM : {} bytes left", 0x4000 - filled);
         }
     }
-
-    for f in compiler_state.sorted_functions().iter() {
-        if f.1.code.is_some() {
-            gstate.local_label_counter_for = 0;
-            gstate.local_label_counter_if = 0;
-
-            gstate.functions_code.insert(f.0.clone(), AssemblyCode::new());
-            gstate.current_function = Some(f.0.clone());
-            gstate.generate_statement(f.1.code.as_ref().unwrap())?;
-            gstate.current_function = None;
-
-            if args.optimization_level > 0 {
-                gstate.optimize_function(f.0);
-            }
-            gstate.check_branches(f.0);
-        }
-        if f.1.interrupt{
-            nmi_interrupt = f.0;
-        }
-    }
-
-    gstate.compute_functions_actually_in_use()?;
 
     // Generate code for all banks
     for b in 0..=maxbank {

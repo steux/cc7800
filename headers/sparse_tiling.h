@@ -58,9 +58,6 @@ void _tiling_goto()
     _tiling_right = _tiling_xpos + TILING_WIDTH - 2;
     for (X = _ms_tmp; X < bottom; _ms_tmp2++) {
         Y = _ms_tmp2 << 1;
-        //_tiling_ptr = tilemap_data[Y++];
-        //_tiling_ptr |= tilemap_data[Y] << 8;
-        //_tiling_ptr = tilemap_data[Y] | (tilemap_data[++Y] << 8);
         _tiling_tmp = tilemap_data[Y++];
         _tiling_ptr = _tiling_tmp | (tilemap_data[Y] << 8);   
         _ms_tmpptr = _ms_dls[X];
