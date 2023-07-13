@@ -17,10 +17,10 @@ void main()
         putch('1' + i);
     }
 
-    asm("LDX #<RMTSTART"); // Give pointer to RMT music
-    asm("LDY #>RMTSTART");
+    asm("LDX #<RMTSTART", 2); // Give pointer to RMT music
+    asm("LDY #>RMTSTART", 2);
     load(0); // Song line in A register 
-    asm("JSR rmt_init");
+    asm("JSR rmt_init", 3);
 
     textcolor(1);
 

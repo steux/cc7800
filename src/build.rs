@@ -20,7 +20,7 @@
 
 use std::io::Write;
 use log::debug;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 use cc6502::error::Error;
 use cc6502::compile::*;
@@ -967,35 +967,69 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         }
     }
 
-    gstate.write("\nLOCAL_VARIABLES\n\n")?;
+    // Compute in the call tree the level of each function
+    let mut function_levels: Vec<Vec<String>> = Vec::new();
     for f in compiler_state.sorted_functions().iter() {
-        if gstate.functions_actually_in_use.get(f.0).is_some() && f.1.local_variables.len() != 0 {
-            gstate.write("\tORG LOCAL_VARIABLES\n")?;
-            for vx in &f.1.local_variables {
-                if let Some(v) = compiler_state.variables.get(vx) {
-                    if v.memory == VariableMemory::Zeropage && v.def == VariableDefinition::None {
-                        if v.size > 1 {
-                            let s = match v.var_type {
-                                VariableType::CharPtr => 1,
-                                VariableType::CharPtrPtr => 2,
-                                VariableType::ShortPtr => 2,
-                                _ => unreachable!()
-                            };
-                            gstate.write(&format!("{:23}\tds {}\n", vx, v.size * s))?; 
-                        } else {
-                            let s = match v.var_type {
-                                VariableType::Char => 1,
-                                VariableType::Short => 2,
-                                VariableType::CharPtr => 2,
-                                VariableType::CharPtrPtr => 2,
-                                VariableType::ShortPtr => 2,
-                            };
-                            gstate.write(&format!("{:23}\tds {}\n", vx, s))?; 
+        let lev = if f.0 == "main" { Some(0) } else {
+            compute_function_level(f.0, "main", 1, &gstate.functions_call_tree, 0)
+        };
+        if let Some(level) = lev {
+            let l = function_levels.get_mut(level);
+            if let Some(a) = l {
+                a.push(f.0.clone())
+            } else {
+                function_levels.resize(level + 1, Vec::new());
+                function_levels[level].push(f.0.clone());
+            }
+        }
+    }
+    
+    let mut level = 0;
+    for l in function_levels {
+        gstate.write(&format!("\nLOCAL_VARIABLES_{}\n\n", level))?;
+        let mut maxbsize = 0;
+        let mut bsize = 0;
+        for fx in l {
+            if let Some(f) = compiler_state.functions.get(&fx) {
+                if gstate.functions_actually_in_use.get(&fx).is_some() && f.local_variables.len() != 0 {
+                    bsize = 0;
+                    gstate.write(&format!("\tORG LOCAL_VARIABLES_{}\n", level))?;
+                    for vx in &f.local_variables {
+                        if let Some(v) = compiler_state.variables.get(vx) {
+                            if v.memory == VariableMemory::Zeropage && v.def == VariableDefinition::None {
+                                if v.size > 1 {
+                                    let s = match v.var_type {
+                                        VariableType::CharPtr => 1,
+                                        VariableType::CharPtrPtr => 2,
+                                        VariableType::ShortPtr => 2,
+                                        _ => unreachable!()
+                                    };
+                                    gstate.write(&format!("{:23}\tds {}\n", vx, v.size * s))?; 
+                                    bsize += v.size * 2;
+                                } else {
+                                    let s = match v.var_type {
+                                        VariableType::Char => 1,
+                                        VariableType::Short => 2,
+                                        VariableType::CharPtr => 2,
+                                        VariableType::CharPtrPtr => 2,
+                                        VariableType::ShortPtr => 2,
+                                    };
+                                    gstate.write(&format!("{:23}\tds {}\n", vx, s))?; 
+                                    bsize += s;
+                                }
+                            }
                         }
+                    }
+                    if bsize > maxbsize {
+                        maxbsize = bsize;
                     }
                 }
             }
         }
+        if maxbsize != bsize {
+            gstate.write(&format!("\tORG LOCAL_VARIABLES_{} + {}\n", level, maxbsize))?;
+        }
+        level += 1;
     }
 
     gstate.write("\n\tSEG.U RAM1\n\tORG $1800\n\tRORG $1800\n")?;
@@ -1134,3 +1168,30 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     }
     Ok(())
 }
+
+fn compute_function_level(function_name: &String, node: &str, current_level: usize, tree: &HashMap<String, Vec<String>>, i: u32) -> Option<usize> 
+{
+    let mut ret = None;
+    if i == 1000 { return None; } // In order to avoid recursive tree
+    if let Some(calls) = tree.get(node) {
+        // Is the function name in current_level tree ?
+        if calls.contains(function_name) {
+            ret = Some(current_level);
+        }
+        // Look at the lower levels if it is possible to find it also
+        for nodex in calls {
+            if let Some(lx) = compute_function_level(function_name, nodex, current_level + 1, tree, i + 1) {
+                if let Some(lxx) = ret {
+                    if lx > lxx {
+                        ret = Some(lx);
+                    }
+                } else {
+                    ret = Some(lx)
+                }
+            }
+        }
+    } 
+    ret 
+}
+
+
