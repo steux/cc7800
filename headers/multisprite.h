@@ -359,7 +359,11 @@ char multisprite_pal_frame_skip()
     return 0;
 }
 
-void multisprite_init()
+#define MODE_160AB 0
+#define MODE_320BD 2
+#define MODE_320AC 3
+
+void multisprite_init(char mode)
 {
     *BACKGRND = 0x0;
     
@@ -442,7 +446,7 @@ void multisprite_init()
     _ms_dmaerror = 0;
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b1_dll;
-    *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
+    *CTRL = 0x50 | mode; // DMA on, 160A/B mode, Two (2) byte characters mode
 }
 
 void multisprite_clear()

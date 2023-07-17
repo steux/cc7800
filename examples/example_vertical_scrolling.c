@@ -26,7 +26,7 @@ void main()
 {
     counter = 0;
 
-    multisprite_init();
+    multisprite_init(MODE_160AB);
     multisprite_set_charbase(tiles);
    
     // Set up a full background 

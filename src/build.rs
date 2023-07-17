@@ -941,7 +941,9 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     write_a78_header(compiler_state, &mut gstate, bankswitching_scheme, &args.output, memoryonchip)?;
 
     gstate.write("\n\tSEG.U ZEROPAGE\n\tORG $40\n\n")?;
-    
+   
+    let mut zeropage_bytes = 1;
+
     // Generate variables code
     gstate.write("cctmp                  \tds 1\n")?; 
     for v in compiler_state.sorted_variables().iter() {
@@ -954,6 +956,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
                     _ => unreachable!()
                 };
                 gstate.write(&format!("{:23}\tds {}\n", v.0, v.1.size * s))?; 
+                zeropage_bytes += v.1.size * s;
             } else {
                 let s = match v.1.var_type {
                     VariableType::Char => 1,
@@ -963,6 +966,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
                     VariableType::ShortPtr => 2,
                 };
                 gstate.write(&format!("{:23}\tds {}\n", v.0, s))?; 
+                zeropage_bytes += s;
             }
         }
     }
@@ -1029,7 +1033,11 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         if maxbsize != bsize {
             gstate.write(&format!("\tORG LOCAL_VARIABLES_{} + {}\n", level, maxbsize))?;
         }
+        zeropage_bytes += maxbsize;
         level += 1;
+    }
+    if args.verbose {
+        println!("Atari 7800 zeropage RAM usage: {}/192", zeropage_bytes);
     }
 
     gstate.write("\n\tSEG.U RAM1\n\tORG $1800\n\tRORG $1800\n")?;
