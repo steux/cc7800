@@ -885,7 +885,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     }
 
     // Start generation
-    let mut gstate = GeneratorState::new(compiler_state, writer, args.insert_code, bankswitching_scheme);
+    let mut gstate = GeneratorState::new(compiler_state, writer, args.insert_code, args.warnings.clone(), bankswitching_scheme);
     gstate.write("\tPROCESSOR 6502\n\n")?;
     
     for v in compiler_state.sorted_variables().iter() {
