@@ -3,6 +3,8 @@
 #include "prosystem.h"
 #include "joystick.h"
 
+#define MODE_320AC
+
 // Generated from tiles7800 --sparse highres_tiles.yaml highres_sparse.tmx 
 const char tilemap_0_data[] = {96, 0xff};
 const char tilemap_1_data[] = {96, 0xff};
@@ -129,7 +131,7 @@ void main()
 {
     x = -1; y = 0;
 
-    multisprite_init(MODE_320AC);
+    multisprite_init();
     multisprite_set_charbase(blue_tubes);
     tiling_init(tilemap_data);
     joystick_init();

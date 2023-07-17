@@ -359,11 +359,7 @@ char multisprite_pal_frame_skip()
     return 0;
 }
 
-#define MODE_160AB 0
-#define MODE_320BD 2
-#define MODE_320AC 3
-
-void multisprite_init(char mode)
+void multisprite_init()
 {
     *BACKGRND = 0x0;
     
@@ -435,7 +431,15 @@ void multisprite_init(char mode)
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
+#ifdef MODE_320AC
+    *P7C2 = 0;
+#else
+#ifdef MODE_320BD
+    *P7C2 = 0;
+#else
     *P7C3 = 0; 
+#endif
+#endif
 #endif
     
 #ifdef HORIZONTAL_SCROLLING
@@ -446,7 +450,15 @@ void multisprite_init(char mode)
     _ms_dmaerror = 0;
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b1_dll;
-    *CTRL = 0x50 | mode; // DMA on, 160A/B mode, Two (2) byte characters mode
+#ifdef MODE_320AC
+    *CTRL = 0x53;
+#else
+#ifdef MODE_320BD
+    *CTRL = 0x52;
+#else
+    *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
+#endif
+#endif
 }
 
 void multisprite_clear()

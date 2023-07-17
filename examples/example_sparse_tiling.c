@@ -172,7 +172,7 @@ void main()
     score = 0;
     x = 0; y = 0;
 
-    multisprite_init(MODE_160AB);
+    multisprite_init();
     multisprite_set_charbase(tiles);
     tiling_init(tilemap_data);
     joystick_init();
