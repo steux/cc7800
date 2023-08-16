@@ -435,7 +435,7 @@ void multisprite_init()
     *P7C2 = 0;
 #else
 #ifdef MODE_320BD
-    *P7C2 = 0;
+    *P4C3 = 0;
 #else
     *P7C3 = 0; 
 #endif
@@ -735,8 +735,9 @@ void multisprite_flip()
         }
         Y = _ms_dlend[X]; 
         _ms_tmpptr[Y++] = _ms_hide_bottom; 
-        _ms_tmpptr[Y++] = -20 & 0x1f | (7 << 5);
+        _ms_tmpptr[Y++] = 0x40; // WM = 0, Direct mode
         _ms_tmpptr[Y++] = (_ms_hide_bottom >> 8) | _ms_vscroll_offset;
+        _ms_tmpptr[Y++] = -20 & 0x1f | (7 << 5);
         _ms_tmpptr[Y++] = 0; 
         _ms_tmpptr[Y++] = _ms_hide_bottom; 
         _ms_tmpptr[Y++] = -20 & 0x1f | (7 << 5);
@@ -788,7 +789,7 @@ void multisprite_flip()
         }
 #ifdef VERTICAL_SCROLLING
         // Consider the DMA penalty for the vertical scrolling shadowing lines
-        _ms_dldma[X = _MS_DLL_ARRAY_SIZE - 1] -= (8 + 20 * 3 + 1) / 2;
+        _ms_dldma[X = _MS_DLL_ARRAY_SIZE - 1] -= (10 + 20 * 3 + 8 + 20 * 3) / 2;
 #endif
     } else {
         // Add DL end entry on each DL
@@ -833,7 +834,7 @@ void multisprite_flip()
         }
 #ifdef VERTICAL_SCROLLING
         // Consider the DMA penalty for the vertical scrolling shadowing lines
-        _ms_dldma[X = _MS_DLL_ARRAY_SIZE * 2 - 1] -= (8 + 20 * 3 + 1) / 2;
+        _ms_dldma[X = _MS_DLL_ARRAY_SIZE * 2 - 1] -= (10 + 20 * 3 + 8 + 20 * 3) / 2;
 #endif
     }
 }

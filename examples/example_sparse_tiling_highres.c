@@ -129,7 +129,7 @@ ramchip int x, y;
 
 void main()
 {
-    x = -1; y = 0;
+    x = 0; y = 0;
 
     multisprite_init();
     multisprite_set_charbase(blue_tubes);
