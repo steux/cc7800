@@ -1,3 +1,7 @@
+v0.2.11 (08/28/2023) :
+    - Corrected some bugs in conio.h
+    - Added holeydmacost.c example
+
 v0.2.10 (07/17/2023) :
     - Added information on zeropage memory usage
     - Better local variables memory mapping in order to avoid copies and stacking (for cc6502 v0.9.1)

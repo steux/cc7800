@@ -92,7 +92,7 @@ ramchip char *_conio_ptr; // Pointer to the screen RAM
 #define wherey() _conio_y
 #define putch(c) _ms_tmp = (c); _conio_putch()
 #define cputs(s) _ms_tmpptr2 = (s); _conio_cputs()
-#define textcolor(c) _conio_palette = (c << 5)
+#define textcolor(c) _conio_palette = ((c) << 5)
 
 #define CONIO_HBAR 96
 #define CONIO_VBAR ('z' + 3)
@@ -146,51 +146,51 @@ void clrscr()
     // 19 blank lines for NTSC
     if (_ms_pal_detected) {
         // 16 blank lines
-        _ms_tmpptr[Y = 0] = 0x4f;  // 16 lines
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
+        _ms_tmpptr[Y = 0] = 0x0f;  // 16 lines
+        _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_set_wm_dl;
         // 16 blank lines
-        _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = 0x0f;  // 16 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
         // 14 blank lines
-        _ms_tmpptr[++Y] = 0x4d;  // 14 lines
+        _ms_tmpptr[++Y] = 0x0d;  // 14 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     } else {
-        _ms_tmpptr[Y = 0] = 0x4f; // 16 lines
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
+        _ms_tmpptr[Y = 0] = 0x0f; // 16 lines
+        _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_set_wm_dl;
         // 5 blank lines
-        _ms_tmpptr[++Y] = 0x44;  // 5 lines
+        _ms_tmpptr[++Y] = 0x04;  // 5 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     }
     // 8 pixel high regions
     for (X = 0; X != 25; X++) {
-        _ms_tmpptr[++Y] = 0x47; // 8 lines
+        _ms_tmpptr[++Y] = 0x27; // 8 lines, Holey DMA enabled
         _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
         _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
     }
     if (_ms_pal_detected) {
         // 16 blank lines
-        _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = 0x0f;  // 16 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
         // 16 blank lines
-        _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+        _ms_tmpptr[++Y] = 0x0f;  // 16 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
         // 15 blank lines
-        _ms_tmpptr[++Y] = 0x4e;  // 15 lines
+        _ms_tmpptr[++Y] = 0x0e;  // 15 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     } else {
-        _ms_tmpptr[++Y] = 0x4f; // 16 lines
+        _ms_tmpptr[++Y] = 0x0f; // 16 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
         // 6 blank lines
-        _ms_tmpptr[++Y] = 0x45;  // 6 lines
+        _ms_tmpptr[++Y] = 0x05;  // 6 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     }
