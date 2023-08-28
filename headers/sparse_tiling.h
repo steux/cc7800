@@ -68,7 +68,7 @@ void _tiling_goto()
             Y += _STS_SIZE;
         } while (1);
         Y++; // Next byte
-        y = 0;
+        y = _ms_dlend[X];
         data[4] = ptr[Y];
         while (data[4] < _tiling_right) { // 9 cycles
             data[0] = ptr[++Y]; // 10 cycles

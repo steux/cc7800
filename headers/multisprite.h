@@ -5,6 +5,7 @@
     This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
     
     v0.1: First working version
+    v0.2: Added DMA Masking vertical scrolling support
 */
 
 #ifndef __ATARI7800_MULTISPRITE__
@@ -58,28 +59,6 @@ ramchip char _ms_sbuffer_dma;
 #define _MS_TOP_SCROLLING_ZONE 0
 #endif
 
-holeydma scattered(16,20) char _ms_hide_bottom[320] = {
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff 
-};
 #ifdef BIDIR_VERTICAL_SCROLLING
 ramchip char _ms_top_sbuffer[_MS_DL_MALLOC(-1)];
 ramchip char _ms_bottom_sbuffer[_MS_DL_MALLOC(-2)];
@@ -431,17 +410,8 @@ void multisprite_init()
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
-#ifdef MODE_320AC
-    *P7C2 = 0;
-#else
-#ifdef MODE_320BD
-    *P4C3 = 0;
-#else
-    *P7C3 = 0; 
-#endif
-#endif
-#endif
-    
+#endif   
+ 
 #ifdef HORIZONTAL_SCROLLING
     _ms_delayed_hscroll = 0;
 #endif
@@ -724,26 +694,36 @@ void _ms_horizontal_scrolling_visible();
 void multisprite_flip()
 {
 #ifdef VERTICAL_SCROLLING
-    // Insert vertical scrolling shadowing lines
+    // Insert DMA masking objects 
     if (_ms_vscroll_offset) {
         if (_ms_buffer) {
-            X = _MS_DLL_ARRAY_SIZE - 1 + _MS_DLL_ARRAY_SIZE;
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
             _ms_tmpptr = _ms_b1_dl14;
         } else {
             X = _MS_DLL_ARRAY_SIZE - 1;
             _ms_tmpptr = _ms_b0_dl14;
         }
-        Y = _ms_dlend[X]; 
-        _ms_tmpptr[Y++] = _ms_hide_bottom; 
-        _ms_tmpptr[Y++] = 0x40; // WM = 0, Direct mode
-        _ms_tmpptr[Y++] = (_ms_hide_bottom >> 8) | _ms_vscroll_offset;
-        _ms_tmpptr[Y++] = -20 & 0x1f | (7 << 5);
-        _ms_tmpptr[Y++] = 0; 
-        _ms_tmpptr[Y++] = _ms_hide_bottom; 
-        _ms_tmpptr[Y++] = -20 & 0x1f | (7 << 5);
-        _ms_tmpptr[Y++] = (_ms_hide_bottom >> 8) | _ms_vscroll_offset;
-        _ms_tmpptr[Y++] = 80; 
-        _ms_dlend[X] = Y;
+        if (_ms_tmpptr[Y = 4] != 160) {
+            // Insert the object
+            Y = _ms_dlend[X];
+            // First, move all objects on this line 20 bytes on the right
+            _ms_tmpptr2 = _ms_tmpptr + 20;
+            for (Y--; Y >= 0; Y--) { 
+                _ms_tmpptr2[Y] = _ms_tmpptr[Y];
+            }
+            for (Y = 0, _ms_tmp = 0; _ms_tmp != 4; _ms_tmp++) {
+                _ms_tmpptr[Y++] = 0; 
+                _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0;
+                _ms_tmpptr[Y++] = 160; 
+            }
+            _ms_dlend[X] += 20;
+        } else {
+            for (Y = 2, _ms_tmp = 0; _ms_tmp != 4; Y +=5, _ms_tmp++) {
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+            }
+        }
     }
 #endif
     if (_ms_buffer) {
@@ -788,8 +768,8 @@ void multisprite_flip()
             _ms_dldma[X] = _ms_dldma_save[X];
         }
 #ifdef VERTICAL_SCROLLING
-        // Consider the DMA penalty for the vertical scrolling shadowing lines
-        _ms_dldma[X = _MS_DLL_ARRAY_SIZE - 1] -= (10 + 20 * 3 + 8 + 20 * 3) / 2;
+        X = _MS_DLL_ARRAY_SIZE - 1;
+        _ms_tmpptr = _ms_b0_dl14;
 #endif
     } else {
         // Add DL end entry on each DL
@@ -833,10 +813,37 @@ void multisprite_flip()
             _ms_dldma[Y] = _ms_dldma_save[X];
         }
 #ifdef VERTICAL_SCROLLING
-        // Consider the DMA penalty for the vertical scrolling shadowing lines
-        _ms_dldma[X = _MS_DLL_ARRAY_SIZE * 2 - 1] -= (10 + 20 * 3 + 8 + 20 * 3) / 2;
+        X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        _ms_tmpptr = _ms_b1_dl14;
 #endif
     }
+#ifdef VERTICAL_SCROLLING
+    // Insert DMA masking objects 
+    if (_ms_vscroll_offset) {
+        _ms_dldma[X] -= (13 * 4) / 2;
+        if (_ms_tmpptr[Y = 4] != 160) {
+            // Insert the object
+            Y = _ms_dlend[X];
+            // First, move all objects on this line 20 bytes on the right
+            _ms_tmpptr2 = _ms_tmpptr + 20;
+            for (Y--; Y >= 0; Y--) { 
+                _ms_tmpptr2[Y] = _ms_tmpptr[Y];
+            }
+            for (Y = 0, _ms_tmp = 0; _ms_tmp != 4; _ms_tmp++) {
+                _ms_tmpptr[Y++] = 0; 
+                _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0;
+                _ms_tmpptr[Y++] = 160; 
+            }
+        } else {
+            for (Y = 2, _ms_tmp = 0; _ms_tmp != 4; Y +=5, _ms_tmp++) {
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+            }
+        }
+        _ms_dlend[X] += 20;
+    }
+#endif
 }
 
 #ifdef VERTICAL_SCROLLING

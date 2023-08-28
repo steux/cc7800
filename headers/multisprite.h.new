@@ -693,6 +693,39 @@ void _ms_horizontal_scrolling_visible();
 // This one should obvisouly executed during VBLANK, since it modifies the DPPL/H pointers
 void multisprite_flip()
 {
+#ifdef VERTICAL_SCROLLING
+    // Insert DMA masking objects 
+    if (_ms_vscroll_offset) {
+        if (_ms_buffer) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            _ms_tmpptr = _ms_b1_dl14;
+        } else {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+            _ms_tmpptr = _ms_b0_dl14;
+        }
+        if (_ms_tmpptr[Y = 4] != 160) {
+            // Insert the object
+            Y = _ms_dlend[X];
+            // First, move all objects on this line 20 bytes on the right
+            _ms_tmpptr2 = _ms_tmpptr + 20;
+            for (Y--; Y >= 0; Y--) { 
+                _ms_tmpptr2[Y] = _ms_tmpptr[Y];
+            }
+            for (Y = 0, _ms_tmp = 0; _ms_tmp != 4; _ms_tmp++) {
+                _ms_tmpptr[Y++] = 0; 
+                _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0;
+                _ms_tmpptr[Y++] = 160; 
+            }
+            _ms_dlend[X] += 20;
+        } else {
+            for (Y = 2, _ms_tmp = 0; _ms_tmp != 4; Y +=5, _ms_tmp++) {
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+            }
+        }
+    }
+#endif
     if (_ms_buffer) {
         // Add DL end entry on each DL
         for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
