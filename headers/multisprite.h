@@ -706,7 +706,7 @@ void multisprite_flip()
         if (_ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
-            // First, move all objects on this line 20 bytes on the right
+            // First, move all objects on this line 17 bytes on the right
             _ms_tmpptr2 = _ms_tmpptr + 17;
             for (Y--; Y >= 0; Y--) { 
                 _ms_tmpptr2[Y] = _ms_tmpptr[Y];
@@ -830,7 +830,7 @@ void multisprite_flip()
         if (_ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
-            // First, move all objects on this line 20 bytes on the right
+            // First, move all objects on this line 17 bytes on the right
             _ms_tmpptr2 = _ms_tmpptr + 17;
             for (Y--; Y >= 0; Y--) { 
                 _ms_tmpptr2[Y] = _ms_tmpptr[Y];
