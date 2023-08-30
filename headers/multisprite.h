@@ -703,24 +703,30 @@ void multisprite_flip()
             X = _MS_DLL_ARRAY_SIZE - 1;
             _ms_tmpptr = _ms_b0_dl14;
         }
-        if (_ms_tmpptr[Y = 4] != 160) {
+        if (_ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
             // First, move all objects on this line 20 bytes on the right
-            _ms_tmpptr2 = _ms_tmpptr + 20;
+            _ms_tmpptr2 = _ms_tmpptr + 17;
             for (Y--; Y >= 0; Y--) { 
                 _ms_tmpptr2[Y] = _ms_tmpptr[Y];
             }
-            for (Y = 0, _ms_tmp = 0; _ms_tmp != 4; _ms_tmp++) {
+            Y = 0;
+            _ms_tmpptr[Y++] = 0; 
+            _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y++] = 0;
+            _ms_tmpptr[Y++] = 161; 
+            for (_ms_tmp = 0; _ms_tmp != 3; _ms_tmp++) {
                 _ms_tmpptr[Y++] = 0; 
-                _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+                _ms_tmpptr[Y++] = 0xe1;
                 _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
-                _ms_tmpptr[Y++] = 0;
-                _ms_tmpptr[Y++] = 160; 
+                _ms_tmpptr[Y++] = 161; 
             }
-            _ms_dlend[X] += 20;
+            _ms_dlend[X] += 17;
         } else {
-            for (Y = 2, _ms_tmp = 0; _ms_tmp != 4; Y +=5, _ms_tmp++) {
+            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_offset;
+            for (Y = 7, _ms_tmp = 0; _ms_tmp != 3; Y += 4, _ms_tmp++) {
                 _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
             }
         }
@@ -821,27 +827,33 @@ void multisprite_flip()
     // Insert DMA masking objects 
     if (_ms_vscroll_offset) {
         _ms_dldma[X] -= (13 * 4) / 2;
-        if (_ms_tmpptr[Y = 4] != 160) {
+        if (_ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
             // First, move all objects on this line 20 bytes on the right
-            _ms_tmpptr2 = _ms_tmpptr + 20;
+            _ms_tmpptr2 = _ms_tmpptr + 17;
             for (Y--; Y >= 0; Y--) { 
                 _ms_tmpptr2[Y] = _ms_tmpptr[Y];
             }
-            for (Y = 0, _ms_tmp = 0; _ms_tmp != 4; _ms_tmp++) {
+            Y = 0;
+            _ms_tmpptr[Y++] = 0; 
+            _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y++] = 0;
+            _ms_tmpptr[Y++] = 161; 
+            for (_ms_tmp = 0; _ms_tmp != 3; _ms_tmp++) {
                 _ms_tmpptr[Y++] = 0; 
-                _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
+                _ms_tmpptr[Y++] = 0xe1;
                 _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
-                _ms_tmpptr[Y++] = 0;
-                _ms_tmpptr[Y++] = 160; 
+                _ms_tmpptr[Y++] = 161; 
             }
         } else {
-            for (Y = 2, _ms_tmp = 0; _ms_tmp != 4; Y +=5, _ms_tmp++) {
+            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_offset;
+            for (Y = 7, _ms_tmp = 0; _ms_tmp != 3; Y += 4, _ms_tmp++) {
                 _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
             }
         }
-        _ms_dlend[X] += 20;
+        _ms_dlend[X] += 17;
     }
 #endif
 }
