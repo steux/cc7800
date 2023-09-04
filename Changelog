@@ -1,3 +1,8 @@
+v0.2.12 (09/04/2023) :
+    - Added small and big sprites in multisprite.h
+    - Added example_small_sprites and example_explosions
+    - Moved to cc6502 v1.0.3
+
 v0.2.11 (08/28/2023) :
     - Corrected some bugs in conio.h
     - Added holeydmacost.c example

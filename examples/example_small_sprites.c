@@ -3,7 +3,7 @@
 
 char i, xpos, ypos;
 
-#define NB_SMALL_SPRITES 64 
+#define NB_SMALL_SPRITES 128
 ramchip short sp_xpos[NB_SMALL_SPRITES], sp_ypos[NB_SMALL_SPRITES];
 ramchip char sp_direction[NB_SMALL_SPRITES];
 
@@ -15,9 +15,6 @@ const char vertical_pingpong[24] = { 0, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 
 // Generated with sprites7800 missile.yaml
 holeydma reversed scattered(16,1) char missile[16] = {
 	0x18, 0x96, 0x7a, 0x7e, 0x7e, 0x6e, 0x9a, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-holeydma reversed scattered(16,1) char missile_ex[16] = {
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x96, 0x7a, 0x7e, 0x7e, 0x6e, 0x9a, 0x28
 };
 
 void main()
