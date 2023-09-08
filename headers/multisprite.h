@@ -911,6 +911,35 @@ void multisprite_restore()
     _ms_sbuffer_size = Y;
 
 #define multisprite_vscroll_buffer_empty() (!_ms_sbuffer_size)
+
+char *_ms_vscroll_sparse_tiles_ptr_high, *_ms_vscroll_sparse_tiles_ptr_low;
+#define multisprite_vscroll_init_sparse_tiles(ptr) \
+    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0];\
+    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1];
+
+void multisprite_vscroll_buffer_sparse_tiles(char c)
+{
+    char *stiles, tmp;
+    Y = c;
+    tmp = _ms_vscroll_sparse_tiles_ptr_low[Y];
+    stiles = tmp | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    Y = 1;
+    tmp = stiles[Y];
+    X = _ms_sbuffer_size;
+    while (tmp != 0xff) {
+        _ms_sbuffer[X++] = stiles[++Y];
+        _ms_sbuffer[X++] = stiles[++Y];
+        _ms_sbuffer[X++] = stiles[++Y];
+        _ms_sbuffer[X++] = stiles[++Y];
+        _ms_sbuffer[X++] = tmp << 3;
+        _ms_sbuffer_dma -= stiles[++Y];
+        ++Y;
+        tmp = stiles[++Y];
+    }
+    if (!X) X = 128; // To mark sbuffer_size != 0
+    _ms_sbuffer_size = X;
+}
+
 #endif
 
 void _ms_move_dlls_down()
@@ -941,7 +970,7 @@ void _ms_move_dlls_down()
 #ifdef BIDIR_VERTICAL_SCROLLING
     Y = _ms_top_sbuffer_size;
 #else
-    Y = _ms_sbuffer_size;
+    Y = _ms_sbuffer_size & 0x7f;
 #endif
     _ms_dlend[X] = Y;
     for (Y--; Y >= 0; Y--) { 
@@ -970,7 +999,7 @@ void _ms_move_save_down()
     _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_scroll_buffers_refill = MS_SCROLL_UP;
 #else
-    _ms_dlend_save[X] = _ms_sbuffer_size;
+    _ms_dlend_save[X] = _ms_sbuffer_size & 0x7f;
     _ms_dldma_save[X] = _ms_sbuffer_dma;
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
@@ -1005,7 +1034,7 @@ void _ms_move_dlls_up()
 #ifdef BIDIR_VERTICAL_SCROLLING
     Y = _ms_bottom_sbuffer_size;
 #else
-    Y = _ms_sbuffer_size;
+    Y = _ms_sbuffer_size & 0x7f;
 #endif
     _ms_dlend[X] = Y;
     for (Y--; Y >= 0; Y--) { 
@@ -1034,7 +1063,7 @@ void _ms_move_save_up()
     _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_scroll_buffers_refill = MS_SCROLL_DOWN;
 #else
-    _ms_dlend_save[X] = _ms_sbuffer_size;
+    _ms_dlend_save[X] = _ms_sbuffer_size & 0x7f;
     _ms_dldma_save[X] = _ms_sbuffer_dma;
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;

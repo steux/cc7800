@@ -75,7 +75,7 @@ void _tiling_goto()
             data[1] = ptr[++Y];
             data[2] = ptr[++Y];
             data[3] = ptr[++Y];
-            _ms_dldma[X] += ptr[++Y]; // 18 cycles
+            _ms_dldma[X] -= ptr[++Y]; // 18 cycles
             _save_y = Y;
             Y = y; // 6 cycles
             _ms_tmpptr[Y++] = data[0]; // 11 cycles
