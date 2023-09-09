@@ -227,7 +227,11 @@ const char tilemap_31_1[4] = {76, 78, 80, 82};
 const char tilemap_31_2[1] = {44};
 const char tilemap_31_3[2] = {104, 106};
 const char tilemap_31_data[] = {0, 0, tilemap_31_0, 0xe0, tilemap_31_0 >> 8, (0 << 5) | ((-2) & 0x1f), 15, 6, 5, tilemap_31_1, 0xe0, tilemap_31_1 >> 8, (0 << 5) | ((-4) & 0x1f), 24, 7, 7, tilemap_31_2, 0x60, tilemap_31_2 >> 8, (5 << 5) | ((-1) & 0x1f), 11, 31, 31, tilemap_31_3, 0xe0, tilemap_31_3 >> 8, (0 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
-const char tilemap_data[64] = {tilemap_0_data & 0xff, tilemap_0_data >> 8, tilemap_1_data & 0xff, tilemap_1_data >> 8, tilemap_2_data & 0xff, tilemap_2_data >> 8, tilemap_3_data & 0xff, tilemap_3_data >> 8, tilemap_4_data & 0xff, tilemap_4_data >> 8, tilemap_5_data & 0xff, tilemap_5_data >> 8, tilemap_6_data & 0xff, tilemap_6_data >> 8, tilemap_7_data & 0xff, tilemap_7_data >> 8, tilemap_8_data & 0xff, tilemap_8_data >> 8, tilemap_9_data & 0xff, tilemap_9_data >> 8, tilemap_10_data & 0xff, tilemap_10_data >> 8, tilemap_11_data & 0xff, tilemap_11_data >> 8, tilemap_12_data & 0xff, tilemap_12_data >> 8, tilemap_13_data & 0xff, tilemap_13_data >> 8, tilemap_14_data & 0xff, tilemap_14_data >> 8, tilemap_15_data & 0xff, tilemap_15_data >> 8, tilemap_16_data & 0xff, tilemap_16_data >> 8, tilemap_17_data & 0xff, tilemap_17_data >> 8, tilemap_18_data & 0xff, tilemap_18_data >> 8, tilemap_19_data & 0xff, tilemap_19_data >> 8, tilemap_20_data & 0xff, tilemap_20_data >> 8, tilemap_21_data & 0xff, tilemap_21_data >> 8, tilemap_22_data & 0xff, tilemap_22_data >> 8, tilemap_23_data & 0xff, tilemap_23_data >> 8, tilemap_24_data & 0xff, tilemap_24_data >> 8, tilemap_25_data & 0xff, tilemap_25_data >> 8, tilemap_26_data & 0xff, tilemap_26_data >> 8, tilemap_27_data & 0xff, tilemap_27_data >> 8, tilemap_28_data & 0xff, tilemap_28_data >> 8, tilemap_29_data & 0xff, tilemap_29_data >> 8, tilemap_30_data & 0xff, tilemap_30_data >> 8, tilemap_31_data & 0xff, tilemap_31_data >> 8};
+const char tilemap_data_ptrs_high[32] = {tilemap_0_data >> 8, tilemap_1_data >> 8, tilemap_2_data >> 8, tilemap_3_data >> 8, tilemap_4_data >> 8, tilemap_5_data >> 8, tilemap_6_data >> 8, tilemap_7_data >> 8, tilemap_8_data >> 8, tilemap_9_data >> 8, tilemap_10_data >> 8, tilemap_11_data >> 8, tilemap_12_data >> 8, tilemap_13_data >> 8, tilemap_14_data >> 8, tilemap_15_data >> 8, tilemap_16_data >> 8, tilemap_17_data >> 8, tilemap_18_data >> 8, tilemap_19_data >> 8, tilemap_20_data >> 8, tilemap_21_data >> 8, tilemap_22_data >> 8, tilemap_23_data >> 8, tilemap_24_data >> 8, tilemap_25_data >> 8, tilemap_26_data >> 8, tilemap_27_data >> 8, tilemap_28_data >> 8, tilemap_29_data >> 8, tilemap_30_data >> 8, tilemap_31_data >> 8};
+
+const char tilemap_data_ptrs_low[32] = {tilemap_0_data & 0xff, tilemap_1_data & 0xff, tilemap_2_data & 0xff, tilemap_3_data & 0xff, tilemap_4_data & 0xff, tilemap_5_data & 0xff, tilemap_6_data & 0xff, tilemap_7_data & 0xff, tilemap_8_data & 0xff, tilemap_9_data & 0xff, tilemap_10_data & 0xff, tilemap_11_data & 0xff, tilemap_12_data & 0xff, tilemap_13_data & 0xff, tilemap_14_data & 0xff, tilemap_15_data & 0xff, tilemap_16_data & 0xff, tilemap_17_data & 0xff, tilemap_18_data & 0xff, tilemap_19_data & 0xff, tilemap_20_data & 0xff, tilemap_21_data & 0xff, tilemap_22_data & 0xff, tilemap_23_data & 0xff, tilemap_24_data & 0xff, tilemap_25_data & 0xff, tilemap_26_data & 0xff, tilemap_27_data & 0xff, tilemap_28_data & 0xff, tilemap_29_data & 0xff, tilemap_30_data & 0xff, tilemap_31_data & 0xff};
+
+const char *tilemap_data_ptrs[2] = {tilemap_data_ptrs_high, tilemap_data_ptrs_low};
 
 #define TILING_HEIGHT 32
 #define TILING_WIDTH 32
@@ -371,7 +375,7 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(white_tubes);
-    tiling_init(tilemap_data);
+    tiling_init(tilemap_data_ptrs);
     joystick_init();
     
     tiling_goto(x, y);

@@ -11,10 +11,11 @@
 #define VERTICAL_SCROLLING
 #include "multisprite.h"
 
-ramchip char *_tilemap_data_ptr;
 ramchip signed char _tiling_xpos, _tiling_ypos, _tiling_xoffset, _tiling_yoffset, _tiling_left, _tiling_right;
 
-#define tiling_init(ptr) _tilemap_data_ptr = (ptr)
+#define tiling_init(ptr) \
+    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0];\
+    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1];
 
 #define tiling_goto(x, y) \
     _ms_tmp = x; \
@@ -38,6 +39,7 @@ ramchip signed char _tiling_xpos, _tiling_ypos, _tiling_xoffset, _tiling_yoffset
 void _tiling_goto()
 {
     char *ptr, data[5], y, tmp, bottom;
+
     // Skip the lines on top
     _ms_tmp = _MS_TOP_SCROLLING_ZONE;
     _ms_tmp2 = _tiling_ypos;
@@ -56,9 +58,9 @@ void _tiling_goto()
     }
     _tiling_right = _tiling_xpos + TILING_WIDTH - 2;
     for (X = _ms_tmp; X < bottom; _ms_tmp2++) {
-        Y = _ms_tmp2 << 1;
-        tmp = tilemap_data[Y++];
-        ptr = tmp | (tilemap_data[Y] << 8);   
+        Y = _ms_tmp2;
+        tmp = _ms_vscroll_sparse_tiles_ptr_low[Y];
+        ptr = tmp | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
         _ms_tmpptr = _ms_dls[X];
         // Find the first visible tileset on this line, if any
         Y = 0;
