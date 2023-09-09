@@ -153,7 +153,7 @@ void main()
         for (i = 0; i != NB_EXPLOSIONS; i++) {
             x = xpos[i];
             y = ypos[i];
-            multisprite_display_big_sprite(x, y, gfx, 6, 0, 3);
+            multisprite_display_big_sprite(x, y, gfx, 6, 0, 3, 0);
             gfx += 18;
             k++;
             if (k == NB_EXPLOSIONS) {
