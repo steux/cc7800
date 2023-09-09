@@ -485,12 +485,17 @@ holeydma reversed scattered(16,12) char boss_2[192] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x63, 0x9c, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+#define MISSILES_SPEED 10
+#define MISSILES_NB_MAX 5
+ramchip char xmissile[MISSILES_NB_MAX], ymissile[MISSILES_NB_MAX], nbmissiles;
+ramchip char button_pressed;
+ramchip char exhaust_state;
+
 void main()
 {
     char counter = 255;
-    char i, x, y, xpos, ypos;
+    char i, j, x, y, xpos, ypos;
     char *gfxptr;
-    char exhaust_state = 0;
 
     multisprite_init();
     multisprite_set_charbase(blue_objects1);
@@ -516,8 +521,12 @@ void main()
     *P3C2 = multisprite_color(0x37); // Orange
     *P3C3 = multisprite_color(0x43); // Red
 
+    // Init game state variables
     xpos = 80 - 6;
     ypos = 180;
+    nbmissiles = 0;
+    button_pressed = 0;
+    exhaust_state = 0;
 
     // Main loop
     do {
@@ -541,6 +550,43 @@ void main()
             if (joystick[0] & JOYSTICK_DOWN) {
                 if (ypos < 224 - 25) ypos++;
             }
+        }
+        if (joystick[0] & JOYSTICK_BUTTON1) {
+            if (!button_pressed) {
+                button_pressed = 1;
+                if (nbmissiles != MISSILES_NB_MAX) {
+                    X = nbmissiles;
+                    xmissile[X] = xpos;
+                    ymissile[X] = ypos;
+                    nbmissiles = ++X;
+                }
+            }
+        } else button_pressed = 0;
+
+        // Draw missiles
+        j = -1;
+        for (i = 0; i != nbmissiles; i++) {
+            X = i;
+            x = xmissile[X];
+            y = ymissile[X] - MISSILES_SPEED;
+            if (y < 0) {
+                xmissile[X] = -1;
+                if (j == -1) j = X;
+            } else {
+                ymissile[X] = y;
+                multisprite_display_sprite_ex(x, y, missiles, 3, 3, 0);
+            }
+        }
+        if (j != -1) {
+            // Destroy dissapeared missiles
+            for (X = j, Y = j; X != nbmissiles; X++) {
+                if (xmissile[X] != -1) {
+                    xmissile[Y] = xmissile[X];
+                    ymissile[Y] = ymissile[X];
+                    Y++;
+                }
+            }
+            nbmissiles = Y;
         }
 
         // Draw exhaust
