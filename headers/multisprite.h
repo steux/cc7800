@@ -1342,7 +1342,7 @@ void multisprite_flip()
 #ifdef VERTICAL_SCROLLING
 
 // Vertical scrolling
-#define multisprite_vertical_scrolling(x) _ms_tmp = (x); _ms_vertical_scrolling() 
+#define multisprite_vertical_scrolling(x) { _ms_tmp = (x); _ms_vertical_scrolling(); }
 
 void _ms_vertical_scrolling_adjust_bottom_of_screen()
 {

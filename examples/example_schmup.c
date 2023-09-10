@@ -485,11 +485,14 @@ holeydma reversed scattered(16,12) char boss_2[192] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x63, 0x9c, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+#include "example_schmup_tiles.c"
+
 #define MISSILES_SPEED 10
 #define MISSILES_NB_MAX 5
 ramchip char xmissile[MISSILES_NB_MAX], ymissile[MISSILES_NB_MAX], nbmissiles;
 ramchip char button_pressed;
 ramchip char exhaust_state;
+ramchip char scrolling_counter, scrolling_done;
 
 void main()
 {
@@ -499,6 +502,7 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(blue_objects1);
+    multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
     joystick_init();
 
     // Grey palette
@@ -527,12 +531,20 @@ void main()
     nbmissiles = 0;
     button_pressed = 0;
     exhaust_state = 0;
+    scrolling_counter = 255;
+    scrolling_done = 0;
 
     // Main loop
     do {
         // Prepare scrolling data
         if (multisprite_vscroll_buffer_empty()) {
-            if (counter) counter--;
+            if (!scrolling_done) {
+                multisprite_vscroll_buffer_sparse_tiles(scrolling_counter);
+                if (scrolling_counter) scrolling_counter--; else scrolling_done = 1; 
+            } else if (scrolling_done == 1) {
+                multisprite_vscroll_buffer_sparse_tiles(255);
+                scrolling_done = 2;
+            } else scrolling_done = 3;
         }
 
         joystick_update();
@@ -548,7 +560,7 @@ void main()
         } else {
             exhaust_state = 0;
             if (joystick[0] & JOYSTICK_DOWN) {
-                if (ypos < 224 - 25) ypos++;
+                if (ypos < 224 - 33) ypos++;
             }
         }
         if (joystick[0] & JOYSTICK_BUTTON1) {
@@ -604,8 +616,9 @@ void main()
         }
         multisprite_display_big_sprite(xpos, ypos, spaceship, 6, 0, 2, 1);
         multisprite_display_big_sprite((80 - 12), 8, boss, 12, 0, 3, 1);
-        
+
+        while (*MSTAT & 0x80); 
         multisprite_flip();
-        multisprite_vertical_scrolling(1);
+        if (scrolling_done != 3) multisprite_vertical_scrolling(1);
     } while(1);
 }
