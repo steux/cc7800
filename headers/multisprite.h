@@ -1184,7 +1184,7 @@ void multisprite_flip()
             X = _MS_DLL_ARRAY_SIZE - 1;
             _ms_tmpptr = _ms_b0_dl14;
         }
-        if (_ms_tmpptr[Y = 4] != 161) {
+        if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
             // First, move all objects on this line 17 bytes on the right
@@ -1308,7 +1308,7 @@ void multisprite_flip()
     // Insert DMA masking objects 
     if (_ms_vscroll_offset) {
         _ms_dldma[X] -= (13 * 4) / 2;
-        if (_ms_tmpptr[Y = 4] != 161) {
+        if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
             // First, move all objects on this line 17 bytes on the right
