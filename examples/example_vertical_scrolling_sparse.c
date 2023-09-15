@@ -280,11 +280,11 @@ reversed scattered(16,16) char grey_objects2[256] = {
 	0x0e, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0e, 0x10, 0x09, 0x10, 0x09, 0x20
 };
 
-#include "example_schmup_tiles.c"
+#include "example_shmup_tiles.c"
 
 void main()
 {
-    char counter = 0;
+    char counter = 255;
     char done = 0;
 
     multisprite_init();

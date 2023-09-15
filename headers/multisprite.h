@@ -1018,8 +1018,7 @@ void multisprite_vscroll_buffer_sparse_tiles(char c)
 {
     char *stiles, tmp;
     Y = c;
-    tmp = _ms_vscroll_sparse_tiles_ptr_low[Y];
-    stiles = tmp | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    stiles = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
     Y = 1;
     tmp = stiles[Y];
     X = _ms_sbuffer_size;
@@ -1037,6 +1036,95 @@ void multisprite_vscroll_buffer_sparse_tiles(char c)
     _ms_sbuffer_size = X;
 }
 
+#ifdef MULTISPRITE_VIDEO_MEMORY
+ramchip char _ms_vscroll_sparse_step, _ms_vscroll_sparse_sbuffer_size;
+char _ms_vscroll_sparse_vmem_ptr_low, _ms_vscroll_sparse_vlem_ptr_high, *_ms_vscroll_sparse_tiles_ptr;
+
+#define multisprite_vscroll_sparse_tiles_vmem_init(ptr) \
+{ \
+    _ms_vscroll_sparse_tiles_ptr = (ptr); \
+    _ms_vscroll_sparse_vmem_ptr_low = 0x00; \
+    _ms_vscroll_sparse_vmem_ptr_high = 0x40; \
+} \
+
+void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
+{
+    char len, tmp, low, low2, high;
+    low = _ms_vscroll_sparse_tiles_ptr_low;
+    high = _ms_vscroll_sparse_tiles_ptr_high;
+    Y = c;
+    _ms_vssroll_sparse_tiles_ptr = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    Y = 0;
+    len = _ms_vscroll_sparse_tiles_ptr[Y++];
+    tmp = _ms_vscroll_sparse_tiles_ptr[Y];
+    len -= tmp;
+    len++;
+    X = _ms_sbuffer_size;
+    while (tmp != 0xff) {
+        low2 = low - len;
+        if (low && low2 < 0) {
+            low = 0;
+            high += 16;
+        } else low = len2;
+        _ms_sbuffer[X++] = low;
+        ++Y;
+        _ms_sbuffer[X++] = _ms_vscroll_sparse_tiles_ptr[++Y];
+        _ms_sbuffer[X++] = high;
+        ++Y;
+        _ms_sbuffer[X++] = _ms_vscroll_sparse_tiles_ptr[++Y];
+        _ms_sbuffer[X++] = tmp << 3;
+        _ms_sbuffer_dma -= _ms_vscroll_sparse_tiles_ptr[++Y];
+        len = _ms_vscroll_sparse_tiles_ptr[++Y];
+        tmp = _ms_vscroll_sparse_tiles_ptr[++Y];
+        len -= tmp;
+        len++;
+    }
+    if (!X) X = 128; // To mark sbuffer_size != 0
+    _ms_vscroll_sparse_sbuffer_size = X;
+}
+
+void mumtisprite_vscroll_buffer_sparse_tiles_vmem_step()
+{
+    char len, tmp, low, low2, high, charlow, charhigh, *charptr;
+    low = _ms_vscroll_sparse_tiles_ptr_low;
+    high = _ms_vscroll_sparse_tiles_ptr_high;
+    Y = 0;
+    len = _ms_vscroll_sparse_tiles_ptr[Y++];
+    tmp = _ms_vscroll_sparse_tiles_ptr[Y];
+    len -= tmp;
+    len++;
+    while (tmp != 0xff) {
+        low2 = low - len;
+        if (low && low2 < 0) {
+            low = 0;
+            high += 16;
+        } else low = len2;
+        charlow = _ms_vscroll_sparse_tiles_ptr[++Y];
+        ++Y;
+        charhigh = _ms_vscroll_sparse_tiles_ptr[++Y];
+        ++Y; ++Y;
+
+        _save_y = Y;
+        // Copy the row of chars for current step
+        charptr = charlow | (charhigh << 8);
+        
+        
+        Y = _save_y;
+        
+        len = _ms_vscroll_sparse_tiles_ptr[++Y];
+        tmp = _ms_vscroll_sparse_tiles_ptr[++Y];
+        len -= tmp;
+        len++;
+    }
+    _ms_vscroll_sparse_step++;
+    if (_ms_vscroll_sparse_step == 16) {
+        _ms_vscroll_sbuffer_size = _ms_vscroll_sparse_sbuffer_size;
+        _ms_vscroll_sparse_tiles_ptr_low = low;
+        _ms_vscroll_sparse_tiles_ptr_high = high;
+    }
+}
+
+#endif
 #endif
 
 void _ms_move_dlls_down()
@@ -1535,6 +1623,44 @@ void _multisprite_disable_dli()
     _ms_b0_dll[X = _ms_tmp] &= 0x7f;
     _ms_b1_dll[X] &= 0x7f;
 }
+
+char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
+
+// ~100 cycles pixel accurate collision detection (60us)
+#define multisprite_compute_collision(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\
+    _ms_tmp3 = 0; \
+    _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
+    if (_ms_tmp2 >= 0) { \
+        if ((x1) - (x2) < (w2)) { \
+            if ((y1) - (y2) < (h2)) { \
+                _ms_tmp = (x1) + ((w1) - 1) - (x2); \
+                if (_ms_tmp >= 0) { \
+                    Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
+                    while (_ms_tmp >= 8) { \
+                        Y++; \
+                        _ms_tmp -= 8; \
+                    } \
+                    _ms_tmp3 = collision_map[Y] & _ms_bit_extract[X = _ms_tmp]; \
+                } \
+            } \
+        } \
+    } \
+}
+
+#define multisprite_compute_box_collision(x1, y1, w1, h1, x2, y2, w2, h2) {\
+    _ms_tmp3 = 0; \
+    if ((y1) + ((h1) - 1) >= (y2)) { \
+        if ((x1) - (x2) < (w2)) { \
+            if ((y1) - (y2) < (h2)) { \
+                if ((x1) + ((w1) - 1) >= (x2)) { \
+                    _ms_tmp3 = 1; \
+                } \
+            } \
+        } \
+    } \
+}
+
+#define multisprite_collision_detected (_ms_tmp3)
 
 #endif // __ATARI7800_MULTISPRITE__
  
