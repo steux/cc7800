@@ -1036,92 +1036,116 @@ void multisprite_vscroll_buffer_sparse_tiles(char c)
     _ms_sbuffer_size = X;
 }
 
-#ifdef MULTISPRITE_VIDEO_MEMORY
-ramchip char _ms_vscroll_sparse_step, _ms_vscroll_sparse_sbuffer_size;
-char _ms_vscroll_sparse_vmem_ptr_low, _ms_vscroll_sparse_vlem_ptr_high, *_ms_vscroll_sparse_tiles_ptr;
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+ramchip char _ms_vscroll_sparse_step;
+char _ms_vscroll_sparse_vmem_ptr_low, _ms_vscroll_sparse_vmem_ptr_high, *_ms_vscroll_tiles_ptr;
 
-#define multisprite_vscroll_sparse_tiles_vmem_init(ptr) \
+#define multisprite_vscroll_init_sparse_tiles_vmem(ptr, tiles_ptr) \
 { \
-    _ms_vscroll_sparse_tiles_ptr = (ptr); \
+    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_vscroll_tiles_ptr = (tiles_ptr); \
     _ms_vscroll_sparse_vmem_ptr_low = 0x00; \
     _ms_vscroll_sparse_vmem_ptr_high = 0x40; \
+    _ms_vscroll_sparse_step = 255; \
 } \
 
 void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
 {
-    char len, tmp, low, low2, high;
-    low = _ms_vscroll_sparse_tiles_ptr_low;
-    high = _ms_vscroll_sparse_tiles_ptr_high;
+    char *stiles, len, tmp, low, tmp2, high, first = 1;
+    low = _ms_vscroll_sparse_vmem_ptr_low;
+    high = _ms_vscroll_sparse_vmem_ptr_high;
     Y = c;
-    _ms_vssroll_sparse_tiles_ptr = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    stiles = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
     Y = 0;
-    len = _ms_vscroll_sparse_tiles_ptr[Y++];
-    tmp = _ms_vscroll_sparse_tiles_ptr[Y];
-    len -= tmp;
-    len++;
+    len = stiles[Y++];
+    tmp = stiles[Y];
+    len = (len - tmp + 1) << 1;
     X = _ms_sbuffer_size;
     while (tmp != 0xff) {
-        low2 = low - len;
-        if (low && low2 < 0) {
-            low = 0;
-            high += 16;
-        } else low = len2;
-        _ms_sbuffer[X++] = low;
-        ++Y;
-        _ms_sbuffer[X++] = _ms_vscroll_sparse_tiles_ptr[++Y];
-        _ms_sbuffer[X++] = high;
-        ++Y;
-        _ms_sbuffer[X++] = _ms_vscroll_sparse_tiles_ptr[++Y];
+        tmp2 = low - len;
+        if (tmp2 < 0 && low) {
+            low = -len;
+            high ^= 16;
+        } else low = tmp2;
+        Y++; Y++; Y++; Y++;
+        tmp2 = ((-len) & 0x1f) | (stiles[Y] & 0xe0);
+        if (first) {
+            _ms_sbuffer[X++] = low;
+            _ms_sbuffer[X++] = 0x40;
+            _ms_sbuffer[X++] = high;
+            _ms_sbuffer[X++] = tmp2;
+            _ms_sbuffer_dma -= 5;
+            first = 0;
+        } else {
+            _ms_sbuffer[X++] = low;
+            _ms_sbuffer[X++] = tmp2;
+            _ms_sbuffer[X++] = high;
+            _ms_sbuffer_dma -= 4;
+        }
+        Y++;
         _ms_sbuffer[X++] = tmp << 3;
-        _ms_sbuffer_dma -= _ms_vscroll_sparse_tiles_ptr[++Y];
-        len = _ms_vscroll_sparse_tiles_ptr[++Y];
-        tmp = _ms_vscroll_sparse_tiles_ptr[++Y];
-        len -= tmp;
-        len++;
+        len = stiles[++Y];
+        tmp = stiles[++Y];
+        len = (len - tmp + 1) << 1;
     }
     if (!X) X = 128; // To mark sbuffer_size != 0
-    _ms_vscroll_sparse_sbuffer_size = X;
+    _ms_sbuffer_size = X;
+    _ms_vscroll_sparse_step = 15;
 }
 
-void mumtisprite_vscroll_buffer_sparse_tiles_vmem_step()
+char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
 {
-    char len, tmp, low, low2, high, charlow, charhigh, *charptr;
+    char *stiles, len, len2, tmp, low, tmp2, high, charlow, charhigh, *charptr, *tilesptr, *vmemptr, byte1, byte2;
+    if (_ms_vscroll_sparse_step == 255) return 0;
+    tmp = (_ms_vscroll_tiles_ptr >> 8) + _ms_vscroll_sparse_step;
+    tmp2 = _ms_vscroll_tiles_ptr;
+    tilesptr = tmp2 | (tmp << 8);
     low = _ms_vscroll_sparse_tiles_ptr_low;
-    high = _ms_vscroll_sparse_tiles_ptr_high;
+    high = _ms_vscroll_sparse_tiles_ptr_high + _ms_vscroll_sparse_step;
     Y = 0;
-    len = _ms_vscroll_sparse_tiles_ptr[Y++];
-    tmp = _ms_vscroll_sparse_tiles_ptr[Y];
-    len -= tmp;
-    len++;
+    len = stiles[Y++];
+    tmp = stiles[Y];
+    len2 = len - tmp + 1; // in chars
+    len = len2 << 1; // in bytes
     while (tmp != 0xff) {
-        low2 = low - len;
-        if (low && low2 < 0) {
-            low = 0;
-            high += 16;
-        } else low = len2;
-        charlow = _ms_vscroll_sparse_tiles_ptr[++Y];
+        tmp2 = low - len;
+        if (tmp2 < 0 && low) {
+            low = -len;
+            high ^= 16;
+        } else low = tmp2;
+        vmemptr = low | (high << 8);
+        charlow = stiles[++Y];
         ++Y;
-        charhigh = _ms_vscroll_sparse_tiles_ptr[++Y];
+        charhigh = stiles[++Y];
         ++Y; ++Y;
 
         _save_y = Y;
         // Copy the row of chars for current step
         charptr = charlow | (charhigh << 8);
-        
-        
+        for (Y = 0; Y != len2; Y++) {
+            tmp2 = Y;
+            Y = charptr[Y];
+            byte1 = tilesptr[Y++];
+            byte2 = tilesptr[Y];
+            Y = tmp2 << 1;
+            vmemptr[Y++] = byte1;
+            vmemptr[Y] = byte2;
+            Y = tmp2;
+        }
         Y = _save_y;
         
-        len = _ms_vscroll_sparse_tiles_ptr[++Y];
-        tmp = _ms_vscroll_sparse_tiles_ptr[++Y];
-        len -= tmp;
-        len++;
+        len = stiles[++Y];
+        tmp = stiles[++Y];
+        len2 = len - tmp + 1;
+        len = len2 << 1;
     }
-    _ms_vscroll_sparse_step++;
-    if (_ms_vscroll_sparse_step == 16) {
-        _ms_vscroll_sbuffer_size = _ms_vscroll_sparse_sbuffer_size;
-        _ms_vscroll_sparse_tiles_ptr_low = low;
-        _ms_vscroll_sparse_tiles_ptr_high = high;
+    _ms_vscroll_sparse_step--;
+    if (_ms_vscroll_sparse_step == 255) {
+        _ms_vscroll_sparse_vmem_ptr_low = low;
+        _ms_vscroll_sparse_vmem_ptr_high = high;
     }
+    return 1;
 }
 
 #endif
