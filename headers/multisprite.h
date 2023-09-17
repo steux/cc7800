@@ -1041,7 +1041,8 @@ ramchip char _ms_vscroll_sparse_step;
 ramchip char _ms_vscroll_sparse_vmem_ptr_low, _ms_vscroll_sparse_vmem_ptr_high, _ms_vscroll_charbase;
 char *_ms_sbuffer_sparse_tilemap_ptr;
 
-bank1 char vmem[8192];
+bank1 char multisprite_vmem[8192]; // Video memory in RAM
+bank1 const char multisprite_vscroll_init_sparse_tiles_vmem_use_rom[] = {1};
 
 #define multisprite_vscroll_init_sparse_tiles_vmem(ptr, tiles_ptr) \
 { \
@@ -1101,7 +1102,7 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
 
 char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
 {
-    char len, len2, tmp, low, tmp2, high, charlow, charhigh, *charptr, *tilesptr, *vmemptr, byte1, byte2;
+    char len, len2, tmp, low, tmp2, high, charlow, charhigh, *chptr, *tilesptr, *vmemptr, byte1, byte2;
     if (_ms_vscroll_sparse_step == 255) return 0;
     tmp = _ms_vscroll_charbase + _ms_vscroll_sparse_step;
     tilesptr = tmp << 8;
@@ -1126,10 +1127,10 @@ char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
 
         _save_y = Y;
         // Copy the row of chars for current step
-        charptr = charlow | (charhigh << 8);
+        chptr = charlow | (charhigh << 8);
         for (Y = 0; Y != len2; Y++) {
             tmp2 = Y;
-            Y = charptr[Y];
+            Y = chptr[Y];
             byte1 = tilesptr[Y++];
             byte2 = tilesptr[Y];
             Y = tmp2 << 1;

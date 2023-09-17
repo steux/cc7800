@@ -304,6 +304,7 @@ void main()
     // Main loop
     do {
         multisprite_vscroll_buffer_sparse_tiles_vmem_step();
+        multisprite_vscroll_buffer_sparse_tiles_vmem_step();
         // Prepare scrolling data
         if (multisprite_vscroll_buffer_empty()) {
             if (!done) {

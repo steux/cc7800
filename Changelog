@@ -1,3 +1,6 @@
+v0.2.13 (09/17/2023) :
+    - Better supergame detection (no need to have function code in banks)
+
 v0.2.12 (09/04/2023) :
     - Added small and big sprites in multisprite.h
     - Added example_small_sprites and example_explosions

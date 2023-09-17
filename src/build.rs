@@ -874,12 +874,18 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
 
     let mut maxbank = 0;
     for f in compiler_state.sorted_functions().iter() {
-         if f.1.bank > maxbank { maxbank = f.1.bank; }
+        if f.1.bank > maxbank { maxbank = f.1.bank; }
+    }
+    for v in compiler_state.sorted_variables().iter() {
+        if let VariableMemory::ROM(rombank) = v.1.memory {
+            if rombank > maxbank {maxbank = rombank;
+            }
+        }
     }
     if maxbank != 0 {
         bankswitching_scheme = "SuperGame";
         if maxbank > 7 {
-            return Err(Error::Configuration { error: "Atari 7800 Super Game bankswitching scheme is limited to 7 banks".to_string() });
+            return Err(Error::Configuration { error: "Atari 7800 Super Game bankswitching scheme is limited to 8 banks (0 to 7)".to_string() });
         }
         maxbank = 7;
     }
