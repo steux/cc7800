@@ -1052,11 +1052,12 @@ bank1 const char multisprite_vscroll_init_sparse_tiles_vmem_use_rom[] = {1};
     _ms_vscroll_sparse_vmem_ptr_low = 0x00; \
     _ms_vscroll_sparse_vmem_ptr_high = 0x40; \
     _ms_vscroll_sparse_step = 255; \
+    _ms_sbuffer_size = 128; \
 } \
 
 void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
 {
-    char len, len2, tmp, low, tmp2, high, first = 1;
+    char len, len2, tmp, low, tmp2, tmp3, high, first = 1;
     low = _ms_vscroll_sparse_vmem_ptr_low;
     high = _ms_vscroll_sparse_vmem_ptr_high;
     Y = c;
@@ -1064,17 +1065,20 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
     Y = 0;
     len = _ms_sbuffer_sparse_tilemap_ptr[Y++];
     tmp = _ms_sbuffer_sparse_tilemap_ptr[Y];
-    len2 = len - tmp + 1;
-    len = len2 << 1;
     X = _ms_sbuffer_size;
     while (tmp != 0xff) {
+        len2 = len - tmp + 1;
+        len = len2 << 1;
         tmp2 = low - len;
-        if (tmp2 < 0 && low) {
+        if (tmp2 < 0) {
             low = -len;
-            high ^= 16;
+            //high ^= 16;
+            high += 16;
+            if (high == 0x70) high = 0x40;
         } else low = tmp2;
         Y++; Y++; Y++; Y++;
-        tmp2 = ((-len) & 0x1f) | (_ms_sbuffer_sparse_tilemap_ptr[Y] & 0xe0);
+        tmp3 = _ms_sbuffer_sparse_tilemap_ptr[Y] & 0xe0;
+        tmp2 = ((-len) & 0x1f) | tmp3;
         if (first) {
             _ms_sbuffer[X++] = low;
             _ms_sbuffer[X++] = 0x40;
@@ -1092,8 +1096,6 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
         _ms_sbuffer[X++] = tmp << 3;
         len = _ms_sbuffer_sparse_tilemap_ptr[++Y];
         tmp = _ms_sbuffer_sparse_tilemap_ptr[++Y];
-        len2 = len - tmp + 1;
-        len = len2 << 1;
     }
     if (!X) X = 128; // To mark sbuffer_size != 0
     _ms_sbuffer_size = X;
@@ -1102,7 +1104,7 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
 
 char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
 {
-    char len, len2, tmp, low, tmp2, high, charlow, charhigh, *chptr, *tilesptr, *vmemptr, byte1, byte2;
+    char len, len2, tmp, low, tmp2, high, chlow, chhigh, *chptr, *tilesptr, *vmemptr, byte1;
     if (_ms_vscroll_sparse_step == 255) return 0;
     tmp = _ms_vscroll_charbase + _ms_vscroll_sparse_step;
     tilesptr = tmp << 8;
@@ -1111,39 +1113,39 @@ char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
     Y = 0;
     len = _ms_sbuffer_sparse_tilemap_ptr[Y++];
     tmp = _ms_sbuffer_sparse_tilemap_ptr[Y];
-    len2 = len - tmp + 1; // in chars
-    len = len2 << 1; // in bytes
     while (tmp != 0xff) {
+        len2 = len - tmp + 1; // in chars
+        len = len2 << 1; // in bytes
         tmp2 = low - len;
-        if (tmp2 < 0 && low) {
+        if (tmp2 < 0) {
             low = -len;
-            high ^= 16;
+            //high ^= 16;
+            high += 16;
+            if (high >= 0x70) high = 0x40 + _ms_vscroll_sparse_step;
         } else low = tmp2;
         vmemptr = low | (high << 8);
-        charlow = _ms_sbuffer_sparse_tilemap_ptr[++Y];
+        chlow = _ms_sbuffer_sparse_tilemap_ptr[++Y];
         ++Y;
-        charhigh = _ms_sbuffer_sparse_tilemap_ptr[++Y];
+        chhigh = _ms_sbuffer_sparse_tilemap_ptr[++Y];
         ++Y; ++Y;
 
         _save_y = Y;
         // Copy the row of chars for current step
-        chptr = charlow | (charhigh << 8);
+        chptr = chlow | (chhigh << 8);
         for (Y = 0; Y != len2; Y++) {
             tmp2 = Y;
             Y = chptr[Y];
             byte1 = tilesptr[Y++];
-            byte2 = tilesptr[Y];
+            X = tilesptr[Y];
             Y = tmp2 << 1;
             vmemptr[Y++] = byte1;
-            vmemptr[Y] = byte2;
+            vmemptr[Y] = X;
             Y = tmp2;
         }
         Y = _save_y;
         
         len = _ms_sbuffer_sparse_tilemap_ptr[++Y];
         tmp = _ms_sbuffer_sparse_tilemap_ptr[++Y];
-        len2 = len - tmp + 1;
-        len = len2 << 1;
     }
     _ms_vscroll_sparse_step--;
     if (_ms_vscroll_sparse_step == 255) {
