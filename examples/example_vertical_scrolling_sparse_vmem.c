@@ -318,7 +318,7 @@ void main()
 
         while (*MSTAT & 0x80); 
         multisprite_flip();
-        if (done != 3) multisprite_vertical_scrolling(1);
+        if (done != 3) multisprite_vertical_scrolling(2);
 
     } while(1);
 }

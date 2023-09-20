@@ -78,10 +78,10 @@ void main()
             counter++;
         }
 
+        while (*MSTAT & 0x80); 
         multisprite_flip();
-        multisprite_vertical_scrolling(1);
+        multisprite_vertical_scrolling(-1);
         multisprite_reserve_dma(104, sizeof(hello_world), 2);
-
         for (i = 0; i != NB_SPRITES; i++) {
             X = i;
             Y = sp_direction[X];

@@ -145,8 +145,8 @@ void main()
                 (xpos >= 150 && (dx[Y] >> 8) >= 0)) {
                 sp_direction[X] = horizontal_pingpong[Y];
             }
-            if ((ypos < 5 + 16 && (dy[Y] >> 8) < 0) || 
-                (ypos >= MS_YMAX - 20 && (dy[Y] >> 8) >= 0)) {
+            if ((ypos < 5 && (dy[Y] >> 8) < 0) || 
+                (ypos >= MS_YMAX - 16 - 20 && (dy[Y] >> 8) >= 0)) {
                 sp_direction[X] = vertical_pingpong[Y];
             }
             multisprite_display_sprite(xpos, ypos, bb_char1, 2, 0); 

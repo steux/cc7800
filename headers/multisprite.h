@@ -6,6 +6,7 @@
     
     v0.1: First working version
     v0.2: Added DMA Masking vertical scrolling support
+    v0.3: Refactored scrolling to avoid memory copy from region to region when coarse scrolling 
 */
 
 #ifndef __ATARI7800_MULTISPRITE__
@@ -32,6 +33,7 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 signed char _ms_tmp3;
+char _ms_tmp4;
 
 #ifdef BIDIR_VERTICAL_SCROLLING
 #ifndef VERTICAL_SCROLLING
@@ -40,8 +42,11 @@ signed char _ms_tmp3;
 #endif
 
 #ifdef VERTICAL_SCROLLING
-ramchip signed char _ms_vscroll_offset;
+signed char _ms_vscroll_fine_offset;
+ramchip char _ms_vscroll_coarse_offset;
+char _ms_vscroll_coarse_offset_shifted;
 ramchip char _ms_delayed_vscroll;
+ramchip char _ms_delayed_vscroll_remove;
 #ifdef BIDIR_VERTICAL_SCROLLING
 ramchip char _ms_top_sbuffer_size;
 ramchip char _ms_top_sbuffer_dma;
@@ -74,11 +79,110 @@ ramchip signed char _ms_delayed_hscroll;
 
 ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
 ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0)], _ms_b1_dl1[_MS_DL_MALLOC(1)], _ms_b1_dl2[_MS_DL_MALLOC(2)], _ms_b1_dl3[_MS_DL_MALLOC(3)], _ms_b1_dl4[_MS_DL_MALLOC(4)], _ms_b1_dl5[_MS_DL_MALLOC(5)], _ms_b1_dl6[_MS_DL_MALLOC(6)], _ms_b1_dl7[_MS_DL_MALLOC(7)], _ms_b1_dl8[_MS_DL_MALLOC(8)], _ms_b1_dl9[_MS_DL_MALLOC(9)], _ms_b1_dl10[_MS_DL_MALLOC(10)], _ms_b1_dl11[_MS_DL_MALLOC(11)], _ms_b1_dl12[_MS_DL_MALLOC(12)], _ms_b1_dl13[_MS_DL_MALLOC(13)], _ms_b1_dl14[_MS_DL_MALLOC(14)];
-const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
-};
 
+#ifdef VERTICAL_SCROLLING
+#if _MS_TOP_SCROLLING_ZONE == 0
+aligned(256) const char _ms_shift3[] = {
+    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0
+};
+#else
+#if _MS_TOP_SCROLLING_ZONE == 1
+aligned(256) const char _ms_shift3[] = {
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1
+};
+#else
+#if _MS_TOP_SCROLLING_ZONE == 2
+aligned(256) const char _ms_shift3[] = {
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2
+};
+#endif
+#endif
+#endif
+#else
 const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
     1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
@@ -96,6 +200,13 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
     14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
 };
+#endif
+const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
+};
+
+
 const char _ms_set_wm_dl[5] = {0, 0x40, 0x21, 0xff, 160}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
@@ -118,9 +229,10 @@ void multisprite_flip();
 
 #ifdef VERTICAL_SCROLLING
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \
@@ -137,7 +249,7 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp2 & 0x0f) { \
-                    X++; \
+	            X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
                     if (_ms_dldma[X] < 0) { \
                         _ms_dmaerror++; \
@@ -160,9 +272,10 @@ void multisprite_flip();
         }
 
 #define multisprite_display_small_sprite(x, y, gfx, width, palette) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \
@@ -179,7 +292,7 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp >= 8) { \
-                    X++; \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
                     if (_ms_dldma[X] < 0) { \
                         _ms_dmaerror++; \
@@ -202,9 +315,10 @@ void multisprite_flip();
         }
 
 #define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, mode) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \
@@ -222,7 +336,7 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp >= 8) { \
-                    X++; \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
                     if (_ms_dldma[X] < 0) { \
                         _ms_dmaerror++; \
@@ -246,9 +360,10 @@ void multisprite_flip();
         }
 
 #define multisprite_display_big_sprite(x, y, gfx, width, palette, height, mode) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \
@@ -268,8 +383,9 @@ void multisprite_flip();
                 if (_ms_tmp2 & 0x0f) { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x10) | _ms_tmp; \
-                    for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
-                        X++; \
+                    for (_ms_tmp4 = (height) - 1; _ms_tmp4 != 0; _ms_tmp4--) { \
+                        _ms_tmp3 += 8; \
+                        X = _ms_shift3[Y = _ms_tmp3]; \
                         _ms_dldma[X] -= (20 + 3 + width * 3 + 1) / 2; \
                         if (_ms_dldma[X] < 0) { \
                             _ms_dmaerror++; \
@@ -295,7 +411,7 @@ void multisprite_flip();
                             } \
                         } \
                     } \
-                    X++; \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
                     if (_ms_dldma[X] < 0) { \
                         _ms_dmaerror++; \
@@ -317,8 +433,9 @@ void multisprite_flip();
                 } else { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = (_ms_tmpptr2 >> 8) | _ms_tmp; \
-                    for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
-                        X++; \
+                    for (_ms_tmp4 = (height) - 1; _ms_tmp4 != 0; _ms_tmp4--) { \
+                        _ms_tmp3 += 8; \
+                        X = _ms_shift3[Y = _ms_tmp3]; \
                         _ms_tmpptr2 += width; \
                         _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
                         if (_ms_dldma[X] < 0) { \
@@ -344,9 +461,10 @@ void multisprite_flip();
         }
 
 #define multisprite_display_sprite_ex(x, y, gfx, width, palette, mode) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \
@@ -364,7 +482,7 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp2 & 0x0f) { \
-                    X++; \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
                     if (_ms_dldma[X] < 0) { \
                         _ms_dmaerror++; \
@@ -388,9 +506,10 @@ void multisprite_flip();
         }
 
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
         _ms_tmp = _ms_tmp2 & 0x0f; \
-        X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
@@ -400,7 +519,7 @@ void multisprite_flip();
         _ms_tmpptr[Y++] = (x); \
         _ms_dlend[X] = Y; \
         if (_ms_tmp2 & 0x0f) { \
-            X++; \
+	    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
             _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
             _ms_tmpptr = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
@@ -412,11 +531,12 @@ void multisprite_flip();
         }
 
 #define multisprite_reserve_dma(y, nb_sprites, width) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
-        X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
         _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
         if (_ms_tmp2 & 0x0f) { \
-            X++; \
+	    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
             _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
         }
 
@@ -850,7 +970,8 @@ void multisprite_init()
     }
 
 #ifdef VERTICAL_SCROLLING
-    _ms_vscroll_offset = 0;
+    _ms_vscroll_fine_offset = 0;
+    _ms_vscroll_coarse_offset = 0;
     _ms_delayed_vscroll = 0;
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_top_sbuffer_size = 0;
@@ -1161,28 +1282,38 @@ char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
 
 void _ms_move_dlls_down()
 {
-    if (_ms_buffer) {
-        for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE + 1 + _MS_TOP_SCROLLING_ZONE; X--) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[--X];
-            Y = _ms_dlend[X];
-            _ms_dlend[++X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
-        }
+    if (_ms_pal_detected) {
+        Y = 6 + (_MS_TOP_SCROLLING_ZONE * 3);
     } else {
-        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1 + _MS_TOP_SCROLLING_ZONE; X--) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[--X];
-            Y = _ms_dlend[X];
-            _ms_dlend[++X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
-        }
+        Y = 3 + (_MS_TOP_SCROLLING_ZONE * 3);
     }
-    // Copy the scroll buffer to the first zone 
+    if (_ms_buffer) {
+        _ms_tmpptr = _ms_b1_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == 2 *_MS_DLL_ARRAY_SIZE) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
+        }
+        // Copy the scroll buffer to the first zone 
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+    } else {
+        _ms_tmpptr = _ms_b0_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == _MS_DLL_ARRAY_SIZE) X = _MS_TOP_SCROLLING_ZONE;
+        }
+        // Copy the scroll buffer to the first zone 
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+    }
     _ms_tmpptr = _ms_dls[X];
 #ifdef BIDIR_VERTICAL_SCROLLING
     Y = _ms_top_sbuffer_size;
@@ -1201,12 +1332,8 @@ void _ms_move_dlls_down()
 
 void _ms_move_save_down()
 {
-    for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1 + _MS_TOP_SCROLLING_ZONE; X--) {
-        Y = _ms_dldma_save[--X];
-        _ms_dldma_save[++X] = Y;
-        Y = _ms_dlend_save[--X];
-        _ms_dlend_save[++X] = Y;
-    }
+    X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_top_sbuffer_size;
     _ms_dldma_save[X] = _ms_top_sbuffer_dma;
@@ -1225,28 +1352,47 @@ void _ms_move_save_down()
 
 void _ms_move_dlls_up()
 {
+    // Move the DLLs
+    if (_ms_pal_detected) {
+        Y = 6 + (_MS_TOP_SCROLLING_ZONE * 3);
+    } else {
+        Y = 3 + (_MS_TOP_SCROLLING_ZONE * 3);
+    }
     if (_ms_buffer) {
-        for (X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE; X < _MS_DLL_ARRAY_SIZE * 2 - 1; X++) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[++X];
-            Y = _ms_dlend[X];
-            _ms_dlend[--X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
+        _ms_tmpptr = _ms_b1_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == 2 *_MS_DLL_ARRAY_SIZE) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
+        }
+        // Copy the scroll buffer to the last zone 
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE - 1 + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
         }
     } else {
-        for (X = _MS_TOP_SCROLLING_ZONE; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[++X];
-            Y = _ms_dlend[X];
-            _ms_dlend[--X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
+        _ms_tmpptr = _ms_b0_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == _MS_DLL_ARRAY_SIZE) X = _MS_TOP_SCROLLING_ZONE;
+        }
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE - 1 + _ms_vscroll_coarse_offset;
         }
     }
-    // Copy the scroll buffer to the first zone 
+    // Copy the scroll buffer to the last zone 
     _ms_tmpptr = _ms_dls[X];
 #ifdef BIDIR_VERTICAL_SCROLLING
     Y = _ms_bottom_sbuffer_size;
@@ -1265,12 +1411,12 @@ void _ms_move_dlls_up()
 
 void _ms_move_save_up()
 {
-    for (X = _MS_TOP_SCROLLING_ZONE ; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
-        Y = _ms_dldma_save[++X];
-        _ms_dldma_save[--X] = Y;
-        Y = _ms_dlend_save[++X];
-        _ms_dlend_save[--X] = Y;
+    if (_ms_vscroll_coarse_offset == 0) {
+        X = _MS_DLL_ARRAY_SIZE - 1;
+    } else {
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
     }
+
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_bottom_sbuffer_size;
     _ms_dldma_save[X] = _ms_bottom_sbuffer_dma;
@@ -1296,14 +1442,21 @@ void multisprite_flip()
 {
 #ifdef VERTICAL_SCROLLING
     // Insert DMA masking objects 
-    if (_ms_vscroll_offset) {
+    if (_ms_vscroll_fine_offset) {
         if (_ms_buffer) {
-            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
-            _ms_tmpptr = _ms_b1_dl14;
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+            }
         } else {
-            X = _MS_DLL_ARRAY_SIZE - 1;
-            _ms_tmpptr = _ms_b0_dl14;
-        }
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+            }
+        } 
+        _ms_tmpptr = _ms_dls[X];
         if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
@@ -1315,20 +1468,20 @@ void multisprite_flip()
             Y = 0;
             _ms_tmpptr[Y++] = 0; 
             _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
-            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
             _ms_tmpptr[Y++] = 0;
             _ms_tmpptr[Y++] = 161; 
             for (_ms_tmp = 0; _ms_tmp != 3; _ms_tmp++) {
                 _ms_tmpptr[Y++] = 0; 
                 _ms_tmpptr[Y++] = 0xe1;
-                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
                 _ms_tmpptr[Y++] = 161; 
             }
             _ms_dlend[X] += 17;
         } else {
-            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_fine_offset;
             for (Y = 7, _ms_tmp = 0; _ms_tmp != 3; Y += 4, _ms_tmp++) {
-                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_fine_offset;
             }
         }
     }
@@ -1362,6 +1515,16 @@ void multisprite_flip()
                 _ms_move_dlls_down();
                 _ms_move_save_down();
             } else if (_ms_delayed_vscroll == 2) {
+                _ms_tmpptr = _ms_dls[X = _ms_delayed_vscroll_remove];
+                if (_ms_dlend[X] >= 17 && _ms_tmpptr[Y = 4] == 161) {
+                    // Remove the DMA masking objects 
+                    // First, move all objects on this line 17 bytes to the left 
+                    _ms_tmpptr2 = _ms_tmpptr + 17;
+                    for (Y = 0; Y != _ms_dlend[X]; Y++) { 
+                        _ms_tmpptr[Y] = _ms_tmpptr2[Y];
+                    }
+                    _ms_dlend[X] -= 17;
+                }
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
@@ -1375,8 +1538,11 @@ void multisprite_flip()
             _ms_dldma[X] = _ms_dldma_save[X];
         }
 #ifdef VERTICAL_SCROLLING
-        X = _MS_DLL_ARRAY_SIZE - 1;
-        _ms_tmpptr = _ms_b0_dl14;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+        }
 #endif
     } else {
         // Add DL end entry on each DL
@@ -1407,6 +1573,16 @@ void multisprite_flip()
                 _ms_move_dlls_down();
                 _ms_move_save_down();
             } else if (_ms_delayed_vscroll == 2) {
+                _ms_tmpptr = _ms_dls[X = _ms_delayed_vscroll_remove];
+                if (_ms_dlend[X] >= 17 && _ms_tmpptr[Y = 4] == 161) {
+                    // Remove the DMA masking objects 
+                    // First, move all objects on this line 17 bytes to the left 
+                    _ms_tmpptr2 = _ms_tmpptr + 17;
+                    for (Y = 0; Y != _ms_dlend[X]; Y++) { 
+                        _ms_tmpptr[Y] = _ms_tmpptr2[Y];
+                    }
+                    _ms_dlend[X] -= 17;
+                }
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
@@ -1420,13 +1596,17 @@ void multisprite_flip()
             _ms_dldma[Y] = _ms_dldma_save[X];
         }
 #ifdef VERTICAL_SCROLLING
-        X = _MS_DLL_ARRAY_SIZE * 2 - 1;
-        _ms_tmpptr = _ms_b1_dl14;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+        }
 #endif
     }
 #ifdef VERTICAL_SCROLLING
     // Insert DMA masking objects 
-    if (_ms_vscroll_offset) {
+    if (_ms_vscroll_fine_offset) {
+        _ms_tmpptr = _ms_dls[X];
         _ms_dldma[X] -= (13 * 4) / 2;
         if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
@@ -1439,19 +1619,19 @@ void multisprite_flip()
             Y = 0;
             _ms_tmpptr[Y++] = 0; 
             _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
-            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
             _ms_tmpptr[Y++] = 0;
             _ms_tmpptr[Y++] = 161; 
             for (_ms_tmp = 0; _ms_tmp != 3; _ms_tmp++) {
                 _ms_tmpptr[Y++] = 0; 
                 _ms_tmpptr[Y++] = 0xe1;
-                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
                 _ms_tmpptr[Y++] = 161; 
             }
         } else {
-            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_fine_offset;
             for (Y = 7, _ms_tmp = 0; _ms_tmp != 3; Y += 4, _ms_tmp++) {
-                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_fine_offset;
             }
         }
         _ms_dlend[X] += 17;
@@ -1472,36 +1652,65 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
         _ms_tmpptr = _ms_b0_dll;
     }
     if (_ms_pal_detected) { Y = 6 + 3 * _MS_TOP_SCROLLING_ZONE; } else { Y = 3 + 3 * _MS_TOP_SCROLLING_ZONE; }
-    _ms_tmpptr[Y] = (15 - _ms_vscroll_offset) | 0x40;
+    _ms_tmpptr[Y] = (15 - _ms_vscroll_fine_offset) | 0x40; // 16 - _ms_vscroll_fine_offset lines
     Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1 - _MS_TOP_SCROLLING_ZONE);
-    if (_ms_vscroll_offset) {
-        _ms_tmpptr[Y] = 0x4f; // 16 lines
-        if (_ms_buffer) {
-            _ms_tmpptr[++Y] = _ms_b1_dl14 >> 8;
-            _ms_tmpptr[++Y] = _ms_b1_dl14;
-        } else {
-            _ms_tmpptr[++Y] = _ms_b0_dl14 >> 8;
-            _ms_tmpptr[++Y] = _ms_b0_dl14;
-        }
-        _ms_tmpptr[++Y] = (_ms_vscroll_offset - 1) | 0x40;  // _ms_vscroll_offset lines
+    if (_ms_vscroll_fine_offset) {
+        _ms_tmpptr[Y++] = 0x4f; // 16 lines
+        Y++;
+        _ms_tmpptr[++Y] = _ms_vscroll_fine_offset | 0x40;  // _ms_vscroll_fine_offset + 1 lines
     } else {
-        _ms_tmpptr[Y] = 0x40; // 1 line
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
+        _ms_tmpptr[Y++] = 0x40; // 1 line
+        Y++;
         _ms_tmpptr[++Y] = 0x4f;  // 16 lines
     }
 }
 
 void _ms_vertical_scrolling()
 {
-    _ms_vscroll_offset -= _ms_tmp;
-    if (_ms_vscroll_offset < 0) {
+    _ms_vscroll_fine_offset -= _ms_tmp;
+    if (_ms_vscroll_fine_offset < 0) {
+        _ms_vscroll_coarse_offset--; 
+        if (_ms_vscroll_coarse_offset == 255)
+            _ms_vscroll_coarse_offset = _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE - 1;
+        _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_down();
-        _ms_vscroll_offset += 16;
+        _ms_vscroll_fine_offset += 16;
         _ms_delayed_vscroll = 1;
-    } else if (_ms_vscroll_offset >= 16) {
+    } else if (_ms_vscroll_fine_offset >= 16) {
+        
+        // Check the current last zone and remove the DMA masking object
+        if (_ms_buffer) {
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+            }
+            _ms_delayed_vscroll_remove = X - _MS_DLL_ARRAY_SIZE;
+        } else {
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+            }
+            _ms_delayed_vscroll_remove = X + _MS_DLL_ARRAY_SIZE;
+        } 
+        _ms_tmpptr = _ms_dls[X];
+        if (_ms_dlend[X] >= 17 && _ms_tmpptr[Y = 4] == 161) {
+            // Remove the object
+            // First, move all objects on this line 17 bytes to the left 
+            _ms_tmpptr2 = _ms_tmpptr + 17;
+            for (Y = 0; Y != _ms_dlend[X]; Y++) { 
+                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
+            }
+            _ms_dlend[X] -= 17;
+        }
+
+        _ms_vscroll_coarse_offset++; 
+        if (_ms_vscroll_coarse_offset == _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE)
+            _ms_vscroll_coarse_offset = 0;
+        _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_up();
-        _ms_vscroll_offset -= 16;
+        _ms_vscroll_fine_offset -= 16;
         _ms_delayed_vscroll = 2;
     } else {
         _ms_delayed_vscroll = 3;
