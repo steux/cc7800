@@ -42,7 +42,7 @@ void _tiling_init()
         multisprite_display_tiles_fast(_tiling_tmp, _ms_tmp, _ms_tmpptr2, 21, _ms_tmp3);
         _ms_tmpptr2 += _tiling_width;
     }
-    _ms_vscroll_offset = _tiling_yoffset;
+    _ms_vscroll_fine_offset = _tiling_yoffset;
     _ms_vertical_scrolling_adjust_bottom_of_screen();
 }
 
@@ -112,7 +112,7 @@ void _tiling_goto()
         _ms_tmpptr[Y] = 160; // Out of screen 
     }
 
-    _ms_vscroll_offset = _tiling_yoffset;
+    _ms_vscroll_fine_offset = _tiling_yoffset;
     _ms_vertical_scrolling_adjust_bottom_of_screen();
 }
 #undef palette_and_width

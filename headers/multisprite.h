@@ -1648,19 +1648,31 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
 {
     if (_ms_buffer) {
         _ms_tmpptr = _ms_b1_dll;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+        }
     } else {
         _ms_tmpptr = _ms_b0_dll;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+        }
     }
     if (_ms_pal_detected) { Y = 6 + 3 * _MS_TOP_SCROLLING_ZONE; } else { Y = 3 + 3 * _MS_TOP_SCROLLING_ZONE; }
     _ms_tmpptr[Y] = (15 - _ms_vscroll_fine_offset) | 0x40; // 16 - _ms_vscroll_fine_offset lines
     Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1 - _MS_TOP_SCROLLING_ZONE);
     if (_ms_vscroll_fine_offset) {
-        _ms_tmpptr[Y++] = 0x4f; // 16 lines
-        Y++;
+        _ms_tmpptr[Y] = 0x4f; // 16 lines
+        _ms_tmpptr[++Y] = _ms_dls[X] >> 8;
+        _ms_tmpptr[++Y] = _ms_dls[X];
         _ms_tmpptr[++Y] = _ms_vscroll_fine_offset | 0x40;  // _ms_vscroll_fine_offset + 1 lines
     } else {
-        _ms_tmpptr[Y++] = 0x40; // 1 line
-        Y++;
+        _ms_tmpptr[Y] = 0x40; // 1 line
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
         _ms_tmpptr[++Y] = 0x4f;  // 16 lines
     }
 }

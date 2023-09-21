@@ -93,7 +93,7 @@ void _tiling_goto()
         _ms_dlend[X++] = y;
     }
 
-    _ms_vscroll_offset = _tiling_yoffset;
+    _ms_vscroll_fine_offset = _tiling_yoffset;
     _ms_vertical_scrolling_adjust_bottom_of_screen();
 }
 

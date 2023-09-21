@@ -1483,7 +1483,7 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
             _ms_tmpptr[++Y] = _ms_b0_dl14 >> 8;
             _ms_tmpptr[++Y] = _ms_b0_dl14;
         }
-        _ms_tmpptr[++Y] = (_ms_vscroll_offset - 1) | 0x40;  // _ms_vscroll_offset lines
+        _ms_tmpptr[++Y] = _ms_vscroll_offset | 0x40;  // _ms_vscroll_offset lines
     } else {
         _ms_tmpptr[Y] = 0x40; // 1 line
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
