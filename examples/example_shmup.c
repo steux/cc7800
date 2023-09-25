@@ -12,7 +12,11 @@ const signed short dx[24] = {300, 289, 259, 212, 149, 77, 0, -77, -150, -212, -2
 const signed short dy[24] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240, 124, 0, -124, -239, -339, -415, -463, -480, -463, -415, -339, -240, -124};
 
 #define ENEMY_NB_MAX 10
-ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
+#define ENEMY_BIG 128
+#define ENEMY_TOUCHED 128
+const char enemy_width[1] = { 24 };
+const char enemy_height[1] = { 48 };
+ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_state[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
 ramchip char enemy_first, enemy_last;
 
 #define BULLETS_NB_MAX 32 
@@ -20,7 +24,7 @@ ramchip short bullet_xpos[BULLETS_NB_MAX], bullet_ypos[BULLETS_NB_MAX];
 ramchip char bullet_direction[BULLETS_NB_MAX];
 ramchip char bullet_first, bullet_last;
 
-#define MISSILES_SPEED 10
+#define MISSILES_SPEED 16 
 #define MISSILES_NB_MAX 5
 ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX];
 ramchip char missile_first, missile_last;
@@ -96,6 +100,10 @@ void init()
     bullet_first = 0;
     bullet_last = 0;
 
+    // Initialize enemy 
+    enemy_first = 0;
+    enemy_last = 0;
+
     // Initialize spaceship state
     spaceship_x = 80 - 6;
     spaceship_y = 180;
@@ -120,7 +128,7 @@ void fire()
     if (missile_last == MISSILES_NB_MAX) missile_last = 0;
     if (missile_last != missile_first) {
         missile_xpos[X] = spaceship_x;
-        missile_ypos[X] = spaceship_y;
+        missile_ypos[X] = spaceship_y + 16;
     } else missile_last = X;
 }
 
@@ -152,14 +160,38 @@ void joystick_input()
     }
 }
 
+char missile_management(char x, char y) {
+    char i, exploded = 0;
+    multisprite_display_sprite_aligned(x, y, missiles, 3, 3, 0);
+    // Check collision with enemys
+    for (i = enemy_first; i != enemy_last; i++) {
+        if (i == ENEMY_NB_MAX) {
+            i = 0; if (enemy_last == 0) break;
+        }
+        X = i;
+        if (enemy_type[X] != -1) {
+            char xe, ye;
+            xe = enemy_xpos[X];
+            ye = enemy_ypos[X];
+            if (enemy_type[X] & ENEMY_BIG) {
+                Y = enemy_type[X] & 0x7f;
+                multisprite_compute_box_collision(x, y, 12, 16, xe, ye, enemy_width[Y], enemy_height[Y]);
+            } else {
+                multisprite_compute_box_collision(x, y, 12, 16, xe, ye, 8, 16);
+            }
+            if (multisprite_collision_detected) {
+                exploded = 1;
+                enemy_state[X] |= ENEMY_TOUCHED;
+            }
+        }
+    }
+    return exploded;
+}
+
 void step()
 {
-    // Draw missiles
     char x, y, i;
-    i = (missile_first << 3) + (missile_first << 1) + missile_last;
-    score = i;
-    display_score_update();
-    if (missile_last == 0) *BACKGRND = 0xcf;
+    // Draw missiles
     for (i = missile_first; i != missile_last; i++) {
         if (i == MISSILES_NB_MAX) {
             i = 0;
@@ -170,6 +202,7 @@ void step()
         if (x != -1) {
             y = missile_ypos[X] - MISSILES_SPEED;
             if (y < 0) {
+                // Out of screen
                 missile_xpos[X] = -1; // Removed
                 do {
                     X++;
@@ -178,11 +211,18 @@ void step()
                 missile_first = X;
             } else {
                 missile_ypos[X] = y;
-                multisprite_display_sprite_ex(x, y, missiles, 3, 3, 0);
+                if (missile_management(x, y)) {
+                    X = i;
+                    missile_xpos[X] = -1; // Removed
+                    do {
+                        X++;
+                        if (X == MISSILES_NB_MAX) X = 0;
+                    } while (X != missile_last && missile_xpos[X] == -1);
+                    missile_first = X;
+                }
             }
         }
     }
-    *BACKGRND = 0x00;
 
     char draw_spaceship;
     if (spaceship_state == 0) {
@@ -240,7 +280,7 @@ void step()
     // Draw evil guy
     draw_evil_guys();
     
-    // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be desplayed)
+    // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be displayed)
     for (i = bullet_first; i != bullet_last; i++) {
         char xbullet, ybullet;
         if (i == BULLETS_NB_MAX) {
