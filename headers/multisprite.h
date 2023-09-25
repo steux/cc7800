@@ -33,7 +33,7 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 signed char _ms_tmp3;
-char _ms_tmp4;
+char _ms_tmp4, _ms_tmp5;
 
 #ifdef BIDIR_VERTICAL_SCROLLING
 #ifndef VERTICAL_SCROLLING
@@ -382,10 +382,11 @@ void multisprite_flip();
             if (Y >= _MS_DL_SIZE - 7) { \
                 _ms_dmaerror++; \
             } else { \
+                _ms_tmp5 = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (gfx); \
                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
-                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = _ms_tmp5; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp2 & 0x0f) { \
@@ -407,13 +408,13 @@ void multisprite_flip();
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
-                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = _ms_tmp5; \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_tmpptr2 += width; \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = (_ms_tmpptr2 >> 8) | _ms_tmp; \
-                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = _ms_tmp5; \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_dlend[X] = Y; \
                             } \
@@ -433,7 +434,7 @@ void multisprite_flip();
                             _ms_tmpptr[Y++] = _ms_tmpptr2; \
                             _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                             _ms_tmpptr[Y++] = _ms_tmp2; \
-                            _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                            _ms_tmpptr[Y++] = _ms_tmp5; \
                             _ms_tmpptr[Y++] = (x); \
                             _ms_dlend[X] = Y; \
                         } \
@@ -458,7 +459,7 @@ void multisprite_flip();
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
-                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = _ms_tmp5; \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_dlend[X] = Y; \
                             } \

@@ -13,10 +13,10 @@ const signed short dy[24] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240
 
 #define ENEMY_NB_MAX 10
 #define ENEMY_BIG 128
-#define ENEMY_TOUCHED 128
+#define ENEMY_HIT 128
 const char enemy_width[1] = { 24 };
 const char enemy_height[1] = { 48 };
-ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_state[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
+ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_state[ENEMY_NB_MAX], enemy_lives[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
 ramchip char enemy_first, enemy_last;
 
 #define BULLETS_NB_MAX 32 
@@ -35,6 +35,7 @@ ramchip char spaceship_x, spaceship_y, spaceship_state, spaceship_state_counter;
 ramchip char scrolling_counter, scrolling_done;
 
 ramchip int score;
+ramchip char update_score;
 ramchip char display_score_str[5];
 
 void display_score_update()
@@ -60,6 +61,21 @@ void interrupt dli()
     load(save_acc);
 }
 
+void spawn_boss()
+{
+    X = enemy_last++;
+    if (enemy_last == ENEMY_NB_MAX) enemy_last = 0;
+    if (enemy_last != enemy_first) {
+        enemy_xpos[X] = -24;
+        enemy_ypos[X] = 10;
+        enemy_type[X] = ENEMY_BIG;
+        enemy_state[X] = 0;
+        enemy_lives[X] = 100;
+        enemy_counter1[X] = 0;
+        enemy_counter2[X] = 0;
+    } else enemy_last = X;
+}
+
 void init()
 {
     multisprite_init();
@@ -81,12 +97,32 @@ void init()
     // Green palette
     *P2C1 = multisprite_color(0xd4); // Dark green 
     *P2C2 = multisprite_color(0xd8); // Light green
-    *P2C3 = 0x0f; 
+    *P2C3 = 0x0e; 
     
     // Fire palette
-    *P3C1 = multisprite_color(0x1c); // Yellow 
+    *P3C1 = multisprite_color(0x43); // Red
     *P3C2 = multisprite_color(0x37); // Orange
-    *P3C3 = multisprite_color(0x43); // Red
+    *P3C3 = multisprite_color(0x1c); // Yellow 
+
+    // Yellow palette (bright)
+    *P4C1 = multisprite_color(0x19); // Yellow (dark)
+    *P4C2 = multisprite_color(0x1c); // Yellow
+    *P4C3 = multisprite_color(0x1f); // Yellow (bright) 
+
+    // Blue palette
+    *P5C1 = multisprite_color(0x54); // Dark purple 
+    *P5C2 = multisprite_color(0x57); // Light purple
+    *P5C3 = multisprite_color(0x5c); // Rose 
+
+    // Green palette
+    *P6C1 = multisprite_color(0xda); // Light green 
+    *P6C2 = multisprite_color(0xdd); // Very light green
+    *P6C3 = 0x0f; 
+    
+    // Fire palette
+    *P7C1 = multisprite_color(0x43); // Red
+    *P7C2 = multisprite_color(0x37); // Orange
+    *P7C3 = multisprite_color(0x1c); // Yellow 
 
     // Init game state variables
     missile_first = 0;
@@ -115,11 +151,92 @@ void init()
     display_score_update();
     multisprite_display_tiles(0, 0, display_score_str, 5, 3);
     multisprite_save();
+
+    spawn_boss();
 }
 
-void draw_evil_guys()
+void enemy_destroyed(char i)
 {
-    multisprite_display_big_sprite((80 - 12), 8, boss, 12, 0, 3, 1);
+    X = i;
+    enemy_state[X] = -1; // Removed
+    do {
+        X++;
+        if (X == ENEMY_NB_MAX) X = 0;
+    } while (X != enemy_last && enemy_state[X] == -1);
+    enemy_first = X;
+}
+
+void enemy_shoot(char x, char y, char direction)
+{
+    X = bullet_last++;
+    if (bullet_last == BULLETS_NB_MAX) bullet_last = 0;
+    if (bullet_last != bullet_first) {
+        bullet_xpos[X] = x << 8;
+        bullet_ypos[X] = y << 8;
+        bullet_direction[X] = direction;
+    } else bullet_last = X;
+}
+
+void draw_enemies()
+{
+    int i, x, y, palette;
+    for (i = enemy_first; i != enemy_last; i++) {
+        if (i == ENEMY_NB_MAX) {
+            i = 0; if (enemy_last == 0) break;
+        }
+        X = i;
+        if (enemy_type[X] != -1) {
+            if (enemy_type[X] & ENEMY_BIG) {
+                // This is our big ship
+                palette = 0;
+                if (enemy_state[X] & ENEMY_HIT) {
+                    // Hit
+                    palette = 4;
+                    enemy_state[X] &= ~ENEMY_HIT;
+                    enemy_lives[X]--;
+                    score += 10;
+                    update_score = 1;
+                    if (enemy_lives[X] == 0) {
+                        // Destruction
+                        score += 1000;
+                        enemy_destroyed(i);
+                        spawn_boss();
+                        continue;
+                    }
+                }
+                if (enemy_state[X] == 0) {
+                    enemy_xpos[X] += 2;
+                    if (enemy_xpos[X] >= 100 && enemy_xpos[X] < 160) {
+                        enemy_state[X] = 1;
+                    }
+                } else if (enemy_state[X] == 1) {
+                    enemy_xpos[X]--;
+                    if (enemy_xpos[X] < 160 - 124) {
+                        enemy_state[X] = 2;
+                    }
+                } else if (enemy_state[X] == 2) {
+                    enemy_xpos[X]++;
+                    if (enemy_xpos[X] > 100) {
+                        enemy_state[X] = 1;
+                    }
+                }
+                x = enemy_xpos[X];
+                y = enemy_ypos[X];
+                // Shoot
+                enemy_counter1[X]++;
+                if (enemy_counter1[X] == 5) { // Shoots 12 times par second
+                    enemy_counter1[X] = 0;
+                    enemy_counter2[X]++;
+                    if (enemy_counter2[X] == 8) enemy_counter2[X] = 0;
+                    char direction;
+                    if (enemy_counter2[X] < 5) direction = 4 + enemy_counter2[X];
+                    else direction = 12 - enemy_counter2[X];
+                    enemy_shoot(x + 10, y + 40, direction);
+                }
+                multisprite_display_big_sprite(x, y, boss, 12, palette, 3, 1);
+            }
+        }
+    }
 }
 
 void fire()
@@ -163,7 +280,7 @@ void joystick_input()
 char missile_management(char x, char y) {
     char i, exploded = 0;
     multisprite_display_sprite_aligned(x, y, missiles, 3, 3, 0);
-    // Check collision with enemys
+    // Check collision with enemies
     for (i = enemy_first; i != enemy_last; i++) {
         if (i == ENEMY_NB_MAX) {
             i = 0; if (enemy_last == 0) break;
@@ -175,13 +292,13 @@ char missile_management(char x, char y) {
             ye = enemy_ypos[X];
             if (enemy_type[X] & ENEMY_BIG) {
                 Y = enemy_type[X] & 0x7f;
-                multisprite_compute_box_collision(x, y, 12, 16, xe, ye, enemy_width[Y], enemy_height[Y]);
+                multisprite_compute_box_collision(xe, ye, enemy_width[Y], enemy_height[Y], x, y, 12, 16);
             } else {
-                multisprite_compute_box_collision(x, y, 12, 16, xe, ye, 8, 16);
+                multisprite_compute_box_collision(xe, ye, 8, 16, xe, ye, 12, 16);
             }
             if (multisprite_collision_detected) {
                 exploded = 1;
-                enemy_state[X] |= ENEMY_TOUCHED;
+                enemy_state[X] |= ENEMY_HIT;
             }
         }
     }
@@ -277,8 +394,8 @@ void step()
         }
     }
 
-    // Draw evil guy
-    draw_evil_guys();
+    // Draw evil guys
+    draw_enemies();
     
     // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be displayed)
     for (i = bullet_first; i != bullet_last; i++) {
@@ -335,7 +452,11 @@ void main()
 
         joystick_input();
         step();
-
+        if (update_score) {
+            display_score_update();
+            update_score = 0;
+        }
+        
         multisprite_flip();
         multisprite_set_charbase(digits); // To display the score
         if (scrolling_done != 3) multisprite_vertical_scrolling(4);
