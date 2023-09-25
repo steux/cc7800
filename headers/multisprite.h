@@ -1892,8 +1892,8 @@ char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
     _ms_tmp3 = 0; \
     _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
     if (_ms_tmp2 >= 0) { \
-        if ((x1) - (x2) < (w2)) { \
-            if ((y1) - (y2) < (h2)) { \
+        if ((x1) <= (x2) + ((w2) - 1)) { \
+            if ((y1) <= (y2) + ((h2) - 1)) { \
                 _ms_tmp = (x1) + ((w1) - 1) - (x2); \
                 if (_ms_tmp >= 0) { \
                     Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
@@ -1911,8 +1911,8 @@ char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 #define multisprite_compute_box_collision(x1, y1, w1, h1, x2, y2, w2, h2) {\
     _ms_tmp3 = 0; \
     if ((y1) + ((h1) - 1) >= (y2)) { \
-        if ((x1) - (x2) < (w2)) { \
-            if ((y1) - (y2) < (h2)) { \
+        if ((x1) <= (x2) + ((w2) - 1)) { \
+            if ((y1) <= (y2) + ((h2) - 1)) { \
                 if ((x1) + ((w1) - 1) >= (x2)) { \
                     _ms_tmp3 = 1; \
                 } \

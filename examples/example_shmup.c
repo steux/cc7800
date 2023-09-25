@@ -11,6 +11,10 @@
 const signed short dx[24] = {300, 289, 259, 212, 149, 77, 0, -77, -150, -212, -259, -289, -300, -289, -259, -212, -149, -77, 0, 77, 149, 212, 259, 289};
 const signed short dy[24] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240, 124, 0, -124, -239, -339, -415, -463, -480, -463, -415, -339, -240, -124};
 
+#define ENEMY_NB_MAX 10
+ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
+ramchip char enemy_first, enemy_last;
+
 #define BULLETS_NB_MAX 32 
 ramchip short bullet_xpos[BULLETS_NB_MAX], bullet_ypos[BULLETS_NB_MAX];
 ramchip char bullet_direction[BULLETS_NB_MAX];
@@ -18,7 +22,9 @@ ramchip char bullet_first, bullet_last;
 
 #define MISSILES_SPEED 10
 #define MISSILES_NB_MAX 5
-ramchip char xmissile[MISSILES_NB_MAX], ymissile[MISSILES_NB_MAX], nbmissiles;
+ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX];
+ramchip char missile_first, missile_last;
+
 ramchip char button_pressed;
 ramchip char exhaust_state;
 ramchip char spaceship_x, spaceship_y, spaceship_state, spaceship_state_counter; 
@@ -79,13 +85,16 @@ void init()
     *P3C3 = multisprite_color(0x43); // Red
 
     // Init game state variables
-    nbmissiles = 0;
+    missile_first = 0;
+    missile_last = 0;
     button_pressed = 0;
     exhaust_state = 0;
-    scrolling_counter = 255;
     scrolling_done = 0;
+    scrolling_counter = 255;
 
-    // Initialize
+    // Initialize bullets
+    bullet_first = 0;
+    bullet_last = 0;
 
     // Initialize spaceship state
     spaceship_x = 80 - 6;
@@ -105,7 +114,17 @@ void draw_evil_guys()
     multisprite_display_big_sprite((80 - 12), 8, boss, 12, 0, 3, 1);
 }
 
-void step()
+void fire()
+{
+    X = missile_last++;
+    if (missile_last == MISSILES_NB_MAX) missile_last = 0;
+    if (missile_last != missile_first) {
+        missile_xpos[X] = spaceship_x;
+        missile_ypos[X] = spaceship_y;
+    } else missile_last = X;
+}
+
+void joystick_input()
 {
     joystick_update();
     if (spaceship_state < 2) {
@@ -127,41 +146,43 @@ void step()
         if (joystick[0] & JOYSTICK_BUTTON1) {
             if (!button_pressed) {
                 button_pressed = 1;
-                if (nbmissiles != MISSILES_NB_MAX) {
-                    X = nbmissiles;
-                    xmissile[X] = spaceship_x;
-                    ymissile[X] = spaceship_y;
-                    nbmissiles = ++X;
-                }
+                fire();
             }
         } else button_pressed = 0;
     }
+}
 
+void step()
+{
     // Draw missiles
-    char x, y, i, j = -1;
-    for (i = 0; i != nbmissiles; i++) {
-        X = i;
-        x = xmissile[X];
-        y = ymissile[X] - MISSILES_SPEED;
-        if (y < 0) {
-            xmissile[X] = -1;
-            if (j == -1) j = X;
-        } else {
-            ymissile[X] = y;
-            multisprite_display_sprite_ex(x, y, missiles, 3, 3, 0);
+    char x, y, i;
+    i = (missile_first << 3) + (missile_first << 1) + missile_last;
+    score = i;
+    display_score_update();
+    if (missile_last == 0) *BACKGRND = 0xcf;
+    for (i = missile_first; i != missile_last; i++) {
+        if (i == MISSILES_NB_MAX) {
+            i = 0;
+            if (missile_last == 0) break;
         }
-    }
-    if (j != -1) {
-        // Destroy dissapeared missiles
-        for (X = j, Y = j; X != nbmissiles; X++) {
-            if (xmissile[X] != -1) {
-                xmissile[Y] = xmissile[X];
-                ymissile[Y] = ymissile[X];
-                Y++;
+        X = i;
+        x = missile_xpos[X];
+        if (x != -1) {
+            y = missile_ypos[X] - MISSILES_SPEED;
+            if (y < 0) {
+                missile_xpos[X] = -1; // Removed
+                do {
+                    X++;
+                    if (X == MISSILES_NB_MAX) X = 0;
+                } while (X != missile_last && missile_xpos[X] == -1);
+                missile_first = X;
+            } else {
+                missile_ypos[X] = y;
+                multisprite_display_sprite_ex(x, y, missiles, 3, 3, 0);
             }
         }
-        nbmissiles = Y;
     }
+    *BACKGRND = 0x00;
 
     char draw_spaceship;
     if (spaceship_state == 0) {
@@ -222,7 +243,10 @@ void step()
     // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be desplayed)
     for (i = bullet_first; i != bullet_last; i++) {
         char xbullet, ybullet;
-        if (i == BULLETS_NB_MAX) i = 0;
+        if (i == BULLETS_NB_MAX) {
+            i = 0;
+            if (bullet_last == 0) break;
+        }
         X = i;
         Y = bullet_direction[X];
         if (Y != 255) {
@@ -269,6 +293,7 @@ void main()
             } else scrolling_done = 3;
         }
 
+        joystick_input();
         step();
 
         multisprite_flip();
