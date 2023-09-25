@@ -64,10 +64,6 @@ ramchip char _ms_sbuffer_dma;
 #define _MS_TOP_SCROLLING_ZONE 0
 #endif
 
-#ifndef _MS_TOP_DISPLAY
-#define _MS_TOP_DISPLAY _MS_TOP_SCROLLING_ZONE
-#endif
-
 #ifdef BIDIR_VERTICAL_SCROLLING
 ramchip char _ms_top_sbuffer[_MS_DL_MALLOC(-1)];
 ramchip char _ms_bottom_sbuffer[_MS_DL_MALLOC(-2)];
@@ -79,6 +75,14 @@ ramchip char _ms_sbuffer[_MS_DL_MALLOC(-1)];
 #ifdef HORIZONTAL_SCROLLING
 ramchip signed char _ms_hscroll;
 ramchip signed char _ms_delayed_hscroll;
+#endif
+
+#ifndef _MS_TOP_DISPLAY
+#ifdef _MS_TOP_SCROLLING_ZONE
+#define _MS_TOP_DISPLAY _MS_TOP_SCROLLING_ZONE
+#else
+#define _MS_TOP_DISPLAY 0
+#endif
 #endif
 
 ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];

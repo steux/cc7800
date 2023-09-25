@@ -219,7 +219,7 @@ void step()
     // Draw evil guy
     draw_evil_guys();
     
-    // Draw bullets (last, so if there is a DMA issue, it doesn't present spaceships to be desplayed)
+    // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be desplayed)
     for (i = bullet_first; i != bullet_last; i++) {
         char xbullet, ybullet;
         if (i == BULLETS_NB_MAX) i = 0;
