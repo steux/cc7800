@@ -536,6 +536,27 @@ void multisprite_flip();
             }\
         }
 
+#define multisprite_display_sprite_top(x, y, gfx, width, palette, mode) \
+	X = y; \
+        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        if (_ms_dldma[X] < 0) { \
+            _ms_dmaerror++; \
+            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
+        } else { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_SIZE - 7) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+            }\
+        }
+
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
         _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
         _ms_tmp = _ms_tmp2 & 0x0f; \
@@ -1045,6 +1066,21 @@ void multisprite_clear()
     for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
         _ms_dlend_save[X] = 0;
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
+    }
+}
+
+void multisprite_top_display_clear()
+{
+    // Reset DL ends for both buffers
+    for (X = 0; X != _MS_TOP_DISPLAY; X++) {
+        _ms_dlend[X] = 0;
+        _ms_dldma[X] = _MS_DMA_START_VALUE;
+        _ms_dlend_save[X] = 0;
+        _ms_dldma_save[X] = _MS_DMA_START_VALUE;
+    }
+    for (X = _MS_DLL_ARRAY_SIZE; X != _MS_TOP_DISPLAY + _MS_DLL_ARRAY_SIZE; X++) {
+        _ms_dlend[X] = 0;
+        _ms_dldma[X] = _MS_DMA_START_VALUE;
     }
 }
 
