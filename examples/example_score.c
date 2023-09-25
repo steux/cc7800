@@ -132,7 +132,7 @@ void main()
         }
         
         multisprite_flip();
-        multisprite_vertical_scrolling(1);
+        multisprite_vertical_scrolling(-1);
 
         for (i = 0; i != NB_SPRITES; i++) {
             X = i;

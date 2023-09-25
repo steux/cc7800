@@ -64,6 +64,10 @@ ramchip char _ms_sbuffer_dma;
 #define _MS_TOP_SCROLLING_ZONE 0
 #endif
 
+#ifndef _MS_TOP_DISPLAY
+#define _MS_TOP_DISPLAY _MS_TOP_SCROLLING_ZONE
+#endif
+
 #ifdef BIDIR_VERTICAL_SCROLLING
 ramchip char _ms_top_sbuffer[_MS_DL_MALLOC(-1)];
 ramchip char _ms_bottom_sbuffer[_MS_DL_MALLOC(-2)];
@@ -939,7 +943,7 @@ void multisprite_init()
         }
         // 16 pixel high regions
         for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 1; X++, _ms_tmp2++) {
-            _ms_tmpptr[++Y] = 0x4f; // 16 lines
+            _ms_tmpptr[++Y] = (_ms_tmp2 < _MS_TOP_DISPLAY)?0x0f:0x4f; // 16 lines
             _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
         }
@@ -1662,7 +1666,7 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
         }
     }
     if (_ms_pal_detected) { Y = 6 + 3 * _MS_TOP_SCROLLING_ZONE; } else { Y = 3 + 3 * _MS_TOP_SCROLLING_ZONE; }
-    _ms_tmpptr[Y] = (15 - _ms_vscroll_fine_offset) | 0x40; // 16 - _ms_vscroll_fine_offset lines
+    _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | (15 - _ms_vscroll_fine_offset); // 16 - _ms_vscroll_fine_offset lines
     Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1 - _MS_TOP_SCROLLING_ZONE);
     if (_ms_vscroll_fine_offset) {
         _ms_tmpptr[Y] = 0x4f; // 16 lines
@@ -1879,7 +1883,7 @@ void _multisprite_disable_dli()
 
 char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
-// ~100 cycles pixel accurate collision detection (60us)
+// ~100 cycles max pixel accurate collision detection (60us)
 #define multisprite_compute_collision(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\
     _ms_tmp3 = 0; \
     _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
