@@ -221,9 +221,7 @@ const char _ms_blank_dl[2] = {0, 0};
 ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
-ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
-ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
 
 ramchip char _ms_buffer; // Double buffer state
 ramchip char _ms_pal_detected;
@@ -235,17 +233,28 @@ void multisprite_save();
 void multisprite_restore();
 void multisprite_flip();
 
+#ifdef DMA_CHECK
+ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
+ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
+#define _MS_DMA_CHECK(x) \
+        _ms_dldma[X] -= (x); \
+        if (_ms_dldma[X] < 0) { \
+            _ms_dmaerror++; \
+            _ms_dldma[X] += (x); \
+        } else  
+#define _MS_DMA_SUB(x) _ms_dldma[X] -= (x)
+#else
+#define _MS_DMA_SUB(x)
+#define _MS_DMA_CHECK(x) 
+#endif 
+
 #ifdef VERTICAL_SCROLLING
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
         _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -258,11 +267,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp2 & 0x0f) { \
 	            X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -284,11 +289,7 @@ void multisprite_flip();
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -301,11 +302,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp >= 8) { \
                     X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -327,11 +324,7 @@ void multisprite_flip();
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -345,11 +338,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp >= 8) { \
                     X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -372,11 +361,7 @@ void multisprite_flip();
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -395,11 +380,7 @@ void multisprite_flip();
                     for (_ms_tmp4 = (height) - 1; _ms_tmp4 != 0; _ms_tmp4--) { \
                         _ms_tmp3 += 8; \
                         X = _ms_shift3[Y = _ms_tmp3]; \
-                        _ms_dldma[X] -= (20 + 3 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (20 + 3 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 12) { \
@@ -421,11 +402,7 @@ void multisprite_flip();
                         } \
                     } \
                     X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -446,11 +423,7 @@ void multisprite_flip();
                         _ms_tmp3 += 8; \
                         X = _ms_shift3[Y = _ms_tmp3]; \
                         _ms_tmpptr2 += width; \
-                        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 7) { \
@@ -474,11 +447,7 @@ void multisprite_flip();
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -492,11 +461,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp2 & 0x0f) { \
                     X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -517,11 +482,7 @@ void multisprite_flip();
 #define multisprite_display_sprite_aligned(x, y, gfx, width, palette, mode) \
         Y = ((((y) >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -538,11 +499,7 @@ void multisprite_flip();
 
 #define multisprite_display_sprite_top(x, y, gfx, width, palette, mode) \
 	X = y; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -562,7 +519,7 @@ void multisprite_flip();
         _ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        _MS_DMA_SUB((8 + width * 3 + 1) / 2); \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
         _ms_tmpptr[Y++] = (gfx); \
@@ -572,7 +529,7 @@ void multisprite_flip();
         _ms_dlend[X] = Y; \
         if (_ms_tmp2 & 0x0f) { \
 	    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-            _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+            _MS_DMA_SUB((8 + width * 3 + 1) / 2); \
             _ms_tmpptr = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
             _ms_tmpptr[Y++] = (gfx); \
@@ -586,21 +543,17 @@ void multisprite_flip();
         _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
 	X = _ms_shift3[Y = _ms_tmp3]; \
-        _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         if (_ms_tmp2 & 0x0f) { \
 	    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
-            _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+            _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         }
 
 #else
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -613,11 +566,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if ((y) & 0x0f) { \
                     X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -637,11 +586,7 @@ void multisprite_flip();
 #define multisprite_display_small_sprite(x, y, gfx, width, palette) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -654,11 +599,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp >= 8) { \
                     X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -678,11 +619,7 @@ void multisprite_flip();
 #define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -696,11 +633,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if (_ms_tmp >= 8) { \
                     X++; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -721,11 +654,7 @@ void multisprite_flip();
 #define multisprite_display_big_sprite(x, y, gfx, width, palette, height, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -742,11 +671,7 @@ void multisprite_flip();
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x10) | _ms_tmp; \
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
                         X++; \
-                        _ms_dldma[X] -= (20 + 3 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (20 + 3 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 12) { \
@@ -768,11 +693,7 @@ void multisprite_flip();
                         } \
                     } \
                     X++; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -792,11 +713,7 @@ void multisprite_flip();
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
                         X++; \
                         _ms_tmpptr2 += width; \
-                        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 7) { \
@@ -818,11 +735,7 @@ void multisprite_flip();
 #define multisprite_display_sprite_ex(x, y, gfx, width, palette, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -836,11 +749,7 @@ void multisprite_flip();
                 _ms_dlend[X] = Y; \
                 if ((y) & 0x0f) { \
                     X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -861,7 +770,7 @@ void multisprite_flip();
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
         _ms_tmp = (y) & 0x0f; \
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
         _ms_tmpptr[Y++] = (gfx); \
@@ -871,7 +780,7 @@ void multisprite_flip();
         _ms_dlend[X] = Y; \
         if ((y) & 0x0f) { \
             X++; \
-            _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+            _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
             _ms_tmpptr = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
             _ms_tmpptr[Y++] = (gfx); \
@@ -884,10 +793,10 @@ void multisprite_flip();
 #define multisprite_reserve_dma(y, nb_sprites, width) \
         _ms_tmp = (y) & 0x0f; \
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         if ((y) & 0x0f) { \
             X++; \
-            _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+            _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         }
 
 #endif
@@ -895,11 +804,7 @@ void multisprite_flip();
 #define multisprite_display_tiles(x, y, tiles, size, palette) \
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
-    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
-    if (_ms_dldma[X] < 0) { \
-        _ms_dmaerror++; \
-        _ms_dldma[X] += (10 + 3 + size * 9 + 1) / 2; \
-    } else { \
+    _MS_DMA_CHECK((10 + 3 + size * 9 + 1) / 2) { \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
         if (Y >= _MS_DL_SIZE - 7) { \
@@ -917,7 +822,7 @@ void multisprite_flip();
 #define multisprite_display_tiles_fast(x, y, tiles, size, palette) \
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
-    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
+    _MS_DMA_SUB((10 + 3 + size * 9 + 1) / 2); \
     _ms_tmpptr = _ms_dls[X]; \
     Y = _ms_dlend[X]; \
     _ms_tmpptr[Y++] = (tiles); \
@@ -1061,11 +966,15 @@ void multisprite_clear()
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
+#ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
+#endif
     }
     for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
         _ms_dlend_save[X] = 0;
+#ifdef DMA_CHECK
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
+#endif
     }
 }
 
@@ -1074,13 +983,17 @@ void multisprite_top_display_clear()
     // Reset DL ends for both buffers
     for (X = 0; X != _MS_TOP_DISPLAY; X++) {
         _ms_dlend[X] = 0;
-        _ms_dldma[X] = _MS_DMA_START_VALUE;
         _ms_dlend_save[X] = 0;
+#ifdef DMA_CHECK
+        _ms_dldma[X] = _MS_DMA_START_VALUE;
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
+#endif
     }
     for (X = _MS_DLL_ARRAY_SIZE; X != _MS_TOP_DISPLAY + _MS_DLL_ARRAY_SIZE; X++) {
         _ms_dlend[X] = 0;
+#ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
+#endif
     }
 }
 
@@ -1091,7 +1004,9 @@ void multisprite_save()
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend_save[X] = _ms_dlend[Y];
+#ifdef DMA_CHECK
             _ms_dldma_save[X] = _ms_dldma[Y];
+#endif
         }
         // Copy the DLs from current write buffer to all buffers
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
@@ -1104,7 +1019,9 @@ void multisprite_save()
     } else {
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlend_save[X] = _ms_dlend[X];
+#ifdef DMA_CHECK
             _ms_dldma_save[X] = _ms_dldma[X];
+#endif
         }
         // Copy the DLs from current write buffer to all buffers
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
@@ -1122,12 +1039,16 @@ void multisprite_restore()
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend[Y] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
             _ms_dldma[Y] = _ms_dldma_save[X];
+#endif
         }
     } else {
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlend[X] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
             _ms_dldma[X] = _ms_dldma_save[X];
+#endif
         }
     }
 }
@@ -1403,7 +1324,9 @@ void _ms_move_save_down()
 
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_top_sbuffer_size;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_top_sbuffer_dma;
+#endif
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_top_sbuffer_size = 0;
@@ -1411,7 +1334,9 @@ void _ms_move_save_down()
     _ms_scroll_buffers_refill = MS_SCROLL_UP;
 #else
     _ms_dlend_save[X] = _ms_sbuffer_size & 0x7f;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_sbuffer_dma;
+#endif
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
@@ -1486,7 +1411,9 @@ void _ms_move_save_up()
 
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_bottom_sbuffer_size;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_bottom_sbuffer_dma;
+#endif
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_top_sbuffer_size = 0;
@@ -1494,7 +1421,9 @@ void _ms_move_save_up()
     _ms_scroll_buffers_refill = MS_SCROLL_DOWN;
 #else
     _ms_dlend_save[X] = _ms_sbuffer_size & 0x7f;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_sbuffer_dma;
+#endif
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
@@ -1602,7 +1531,9 @@ void multisprite_flip()
         // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlend[X] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
             _ms_dldma[X] = _ms_dldma_save[X];
+#endif
         }
 #ifdef VERTICAL_SCROLLING
         if (_ms_vscroll_coarse_offset == 0) {
@@ -1660,7 +1591,9 @@ void multisprite_flip()
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend[Y] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
             _ms_dldma[Y] = _ms_dldma_save[X];
+#endif
         }
 #ifdef VERTICAL_SCROLLING
         if (_ms_vscroll_coarse_offset == 0) {
@@ -1674,7 +1607,9 @@ void multisprite_flip()
     // Insert DMA masking objects 
     if (_ms_vscroll_fine_offset) {
         _ms_tmpptr = _ms_dls[X];
+#ifdef DMA_CHECK
         _ms_dldma[X] -= (13 * 4) / 2;
+#endif
         if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
