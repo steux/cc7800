@@ -498,8 +498,8 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         }
 
 #define multisprite_display_sprite_top(x, y, gfx, width, palette, mode) \
-	X = y; \
-        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
+	if (_ms_buffer) X = y + _MS_DLL_ARRAY_SIZE; else X = y; \
+        _MS_DMA_CHECK((8 + (width << 1) + width + 1) >> 1) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
