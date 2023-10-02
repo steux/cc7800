@@ -1199,11 +1199,18 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
 
         let mut map = MemoryMap::new(compiler_state, bank);
         map.fill_memory(0x8000 + b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true, true)?;
+        /*
         assert!(map.remaining_scattered == 0);
         assert!(map.remaining_functions == 0);
         assert!(map.remaining_assembler == 0);
         assert!(map.remaining_variables == 0);
-
+        */
+        if map.remaining_scattered != 0 {
+            return Err(Error::Configuration { error: "Memory full. Not enough scattered ROM memory".to_string() });
+        }
+        if map.remaining_functions != 0 || map.remaining_assembler != 0 || map.remaining_variables != 0 {
+            return Err(Error::Configuration { error: format!("Memory full. Not enough ROM memory in bank #{}", bank) });
+        }
         if b == maxbank {
             // Epilogue code
             gstate.write(&format!("

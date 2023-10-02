@@ -1,6 +1,7 @@
 v0.2.14 (10/02/2023) :
     - Added generation of asm in banked rom
     - Added interrupt tree call local variables declaration 
+    - Added memory full message
 
 v0.2.13 (09/17/2023) :
     - Better supergame detection (no need to have function code in banks)
