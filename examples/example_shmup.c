@@ -11,8 +11,8 @@
 #endif
 #include "sfx.h"
 
-// TODO: Add sound and music
-// TODO: Add gameover
+// DONE: Add sound and music
+// DONE: Add gameover
 // TODO: Add explosions list
 // DONE: Put enemies in bank1
 
@@ -132,7 +132,7 @@ void spawn_boss()
         enemy_ypos[X] = 10;
         enemy_type[X] = ENEMY_BIG;
         enemy_state[X] = 0;
-        enemy_lives[X] = 100;
+        enemy_lives[X] = 10;
         enemy_counter1[X] = 0;
         enemy_counter2[X] = 0;
     } else enemy_last = X;
@@ -191,10 +191,10 @@ void init()
     *P6C2 = multisprite_color(0xdd); // Very light green
     *P6C3 = 0x0f; 
     
-    // Fire palette
-    *P7C1 = multisprite_color(0x43); // Red
-    *P7C2 = multisprite_color(0x37); // Orange
-    *P7C3 = multisprite_color(0x1c); // Yellow 
+    // Fire palette (with white)
+    *P7C1 = multisprite_color(0x44); // Red
+    *P7C2 = multisprite_color(0x38); // Orange
+    *P7C3 = 0x0f; // White 
 
     // Init game state variables
     missile_first = 0;
@@ -249,6 +249,11 @@ void enemy_shoot(char x, char y, char direction)
         bullet_ypos[X] = y << 8;
         bullet_direction[X] = direction;
     } else bullet_last = X;
+}
+
+bank1 void display_boss(char x, char y, char palette)
+{
+    multisprite_display_big_sprite(x, y, boss, 12, palette, 3, 1);
 }
 
 void draw_enemies()
@@ -308,7 +313,7 @@ void draw_enemies()
                     //sfx_schedule(sfx_plainlaser);
                     enemy_shoot(x + 10, y + 40, direction);
                 }
-                multisprite_display_big_sprite(x, y, boss, 12, palette, 3, 1);
+                display_boss(x, y, palette);
             }
         }
     }
@@ -335,13 +340,13 @@ void joystick_input()
             if (spaceship_x < 160 - 13) spaceship_x++;
         }
         if (joystick[0] & JOYSTICK_UP) {
-            if (spaceship_y) spaceship_y--;
+            if (spaceship_y > 2) spaceship_y -= 2;
             exhaust_state++;
             if (exhaust_state == 13) exhaust_state = 10; 
         } else {
             exhaust_state = 0;
             if (joystick[0] & JOYSTICK_DOWN) {
-                if (spaceship_y < 224 - 33 - 16) spaceship_y++;
+                if (spaceship_y < 224 - 33 - 16) spaceship_y += 2;
             }
         }
         if (joystick[0] & JOYSTICK_BUTTON1) {
@@ -392,6 +397,22 @@ void lose_one_life()
     X = 8; // 9th byte is the width of the lives sprite
     _ms_b0_dl0[X] = w;
     _ms_b1_dl0[X] = w;
+}
+
+void draw_gameover()
+{
+    char i, x, xx = (spaceship_state_counter << 1), *ptr;
+    // Draw the skull in the middle of the screen
+    multisprite_display_big_sprite((80 - 16), ((224 - 16 - 48 - 48) / 2), skull, 8, 0, 3, 0);
+    x = xx - 36;
+    ptr = game;
+    for (i = 0; i != 2; i++) {
+        multisprite_display_sprite_ex(x, ((224 - 16 - 16) / 2), ptr, 9, 7, 0);
+        ptr = over;
+        x = 160 - xx;
+    }
+    spaceship_state_counter++;
+    if (spaceship_state_counter == 41) spaceship_state_counter = 40;
 }
 
 void step()
@@ -462,9 +483,12 @@ void step()
                 spaceship_state = 1;
                 spaceship_state_counter = 100;
             } else {
-                spaceship_state_counter = 20;
+                spaceship_state = 3;
+                spaceship_state_counter = 0;
             }
         }
+        draw_spaceship = 0;
+    } else if (spaceship_state == 3) {
         draw_spaceship = 0;
     }
 
@@ -489,43 +513,45 @@ void step()
 
     // Draw evil guys
     draw_enemies();
-    
-    // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be displayed)
-    for (i = bullet_first; i != bullet_last; i++) {
-        char xbullet, ybullet;
-        if (i == BULLETS_NB_MAX) {
-            i = 0;
-            if (bullet_last == 0) break;
-        }
-        X = i;
-        Y = bullet_direction[X];
-        if (Y != 255) {
-            bullet_xpos[X] += dx[Y];
-            bullet_ypos[X] += dy[Y];
-            xbullet = bullet_xpos[X] >> 8;
-            ybullet = bullet_ypos[X] >> 8;
-            if (xbullet < 5 || xbullet >= 156 || ybullet < 5 || ybullet >= MS_YMAX - 20 - 16) {
-                bullet_direction[X] = 255; // Removed
-                do {
-                    X++;
-                    if (X == BULLETS_NB_MAX) X = 0;
-                } while (X != bullet_last && bullet_direction[X] == 255);
-                bullet_first = X;
-            } else {
-                multisprite_display_small_sprite_ex(xbullet, ybullet, bullet, 1, 3, 0); 
-                if (spaceship_state == 0) {
-                    multisprite_compute_collision(xbullet, ybullet, 4, 8, spaceship_x, spaceship_y, 12, 24, collision_bullet_spaceship);
-                    if (multisprite_collision_detected) {
-                        // Explosion
-                        lose_one_life();
-                        sfx_schedule(sfx_bigboom);
-                        spaceship_state = 2;
-                        spaceship_state_counter = 20;
-                    }
-                } 
+   
+    if (spaceship_state != 3) {
+        // Draw bullets (last, so if there is a DMA issue, it doesn't prevent spaceships to be displayed)
+        for (i = bullet_first; i != bullet_last; i++) {
+            char xbullet, ybullet;
+            if (i == BULLETS_NB_MAX) {
+                i = 0;
+                if (bullet_last == 0) break;
+            }
+            X = i;
+            Y = bullet_direction[X];
+            if (Y != 255) {
+                bullet_xpos[X] += dx[Y];
+                bullet_ypos[X] += dy[Y];
+                xbullet = bullet_xpos[X] >> 8;
+                ybullet = bullet_ypos[X] >> 8;
+                if (xbullet < 5 || xbullet >= 156 || ybullet < 5 || ybullet >= MS_YMAX - 20 - 16) {
+                    bullet_direction[X] = 255; // Removed
+                    do {
+                        X++;
+                        if (X == BULLETS_NB_MAX) X = 0;
+                    } while (X != bullet_last && bullet_direction[X] == 255);
+                    bullet_first = X;
+                } else {
+                    multisprite_display_small_sprite_ex(xbullet, ybullet, bullet, 1, 3, 0); 
+                    if (spaceship_state == 0) {
+                        multisprite_compute_collision(xbullet, ybullet, 4, 8, spaceship_x, spaceship_y, 12, 24, collision_bullet_spaceship);
+                        if (multisprite_collision_detected) {
+                            // Explosion
+                            lose_one_life();
+                            sfx_schedule(sfx_bigboom);
+                            spaceship_state = 2;
+                            spaceship_state_counter = 20;
+                        }
+                    } 
+                }
             }
         }
-    }
+    } else draw_gameover();
 }
 
 void main()
