@@ -7,8 +7,8 @@ void main()
     int dx[24], dy[24];
     for (d = 0; d != 24; d++) {
         float angle = d * (M_PI / 12);
-        dx[d] = cosf(angle) * 127;
-        dy[d] = sinf(angle) * 256;
+        dx[d] = cosf(angle) * 450;
+        dy[d] = sinf(angle) * 450 * 1.6;
     }
     printf("const signed char dx[24] = {");
     for (d = 0; d != 23; d++) {

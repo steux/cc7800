@@ -1162,6 +1162,7 @@ void main()
     prevjoy = 0;
 
     joystick_init();
+    sfx_init();
     display_page();
 
     do {

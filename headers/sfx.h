@@ -64,17 +64,18 @@ void sfx_mute()
 // Must be called every frame, regularly (for instance in NMI or at VBLANK)
 void sfx_play()
 {
+    char *tmpptr, tmp, tmp2;
     for (X = 0; X != 2; X++) {
         if (_sfx_ptr[X] >> 8) {
             if (!_sfx_tick[X]) {
                 // This chunk is over. Load the next one
                 _sfx_tick[X] = _sfx_frames[X];
                 // Play the sound
-                _libc_tmpptr = _sfx_ptr[X];
-                AUDF0[X] = _libc_tmp = _libc_tmpptr[Y = 0];
-                AUDC0[X] = _libc_tmp2 = _libc_tmpptr[++Y];
-                AUDV0[X] = _libc_tmpptr[++Y];
-                if (!_libc_tmp && !_libc_tmp2 && !_libc_tmpptr[Y]) {
+                tmpptr = _sfx_ptr[X];
+                AUDF0[X] = tmp = tmpptr[Y = 0];
+                AUDC0[X] = tmp2 = tmpptr[++Y];
+                AUDV0[X] = tmpptr[++Y];
+                if (!tmp && !tmp2 && !tmpptr[Y]) {
                     _sfx_ptr[X] = 0;
                 } else {
                     _sfx_ptr[X] += 3;

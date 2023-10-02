@@ -31,7 +31,9 @@ use cc6502::Args;
 struct MemoryMap<'a> {
     bank: u32,
     set: HashSet<&'a String>,
+    set_asm: HashSet<usize>,
     remaining_functions: u32,
+    remaining_assembler: u32,
     remaining_scattered: u32,
     remaining_variables: u32,
     startup_code: bool,
@@ -43,6 +45,13 @@ impl<'a> MemoryMap<'a> {
         for f in compiler_state.sorted_functions().iter() {
             if f.1.bank == bank && f.1.code.is_some() && !f.1.inline {
                 remaining_functions += 1;
+            }
+        }
+        let mut remaining_assembler = 0;
+        for asm in &compiler_state.included_assembler {
+            let basm = if let Some(b) = asm.3 { b as u32 } else { 0 };
+            if basm == bank {
+                remaining_assembler += 1;
             }
         }
         let mut remaining_scattered = 0;
@@ -64,7 +73,9 @@ impl<'a> MemoryMap<'a> {
         MemoryMap {
             bank,
             set: HashSet::new(),
+            set_asm: HashSet::new(),
             remaining_functions,
+            remaining_assembler,
             remaining_scattered,
             remaining_variables,
             startup_code: false,
@@ -394,7 +405,7 @@ impl<'a> MemoryMap<'a> {
        
         let mut filled = 0;
         
-        if self.remaining_functions > 0 {
+        if self.remaining_functions > 0 || self.remaining_assembler > 0 {
 
             // Generate functions code
             gstate.write("\n\n; Functions definitions\n\tSEG CODE\n")?;
@@ -406,29 +417,42 @@ impl<'a> MemoryMap<'a> {
             gstate.current_bank = self.bank;
             gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
 
-            if self.bank == 0 && !self.startup_code {
-                // Generate included assembler
-                for asm in &compiler_state.included_assembler {
-                    gstate.write(&asm.0)?;
-                    let name;
-                    if let Some(n) = &asm.1 {
-                        name = n.as_str();
-                    } else {
-                        name = "Unknown";
-                    }
-                    if let Some(size) = asm.2 {
-                        filled += size as u32;
-                        if args.verbose {
-                            println!(" - Assembler {} code (filled {}/{})", name, filled, size);
+            // Generate included assembler
+            for (i, asm) in (&compiler_state.included_assembler).iter().enumerate() {
+                let basm = if let Some(b) = asm.3 {
+                    b as u32
+                } else { 0 };
+                debug!("assembler: {} {} {}", i, self.bank, basm);
+                let s = if let Some(sx) = asm.2 { sx as u32 } else { (asm.0.lines().count() * 3) as u32 };
+                if self.bank == basm && filled + s <= size {
+                    if !self.set_asm.contains(&i) {
+                        // Check if this one needs to be generated
+                        self.set_asm.insert(i);
+                        gstate.write(&asm.0)?;
+                        let name;
+                        if let Some(n) = &asm.1 {
+                            name = n.as_str();
+                        } else {
+                            name = "Unknown";
                         }
-                    } else {
-                        let nl = asm.0.lines().count() as u32; 
-                        filled += nl * 3; // 3 bytes default per line estimate.
-                        if args.verbose {
-                            println!(" - Assembler {} code (filled {}/{} - estimated)", name, filled, size);
+                        if let Some(s) = asm.2 {
+                            filled += s as u32;
+                            if args.verbose {
+                                println!(" - Assembler {} code (filled {}/{})", name, filled, size);
+                            }
+                        } else {
+                            let nl = asm.0.lines().count() as u32; 
+                            filled += nl * 3; // 3 bytes default per line estimate.
+                            if args.verbose {
+                                println!(" - Assembler {} code (filled {}/{} - estimated)", name, filled, size);
+                            }
                         }
+                        self.remaining_assembler -= 1;
                     }
                 }
+            }
+
+            if self.bank == 0 && !self.startup_code {
 
                 self.startup_code = true;
                 filled += 0x62; // Size of startup code
@@ -993,6 +1017,24 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             }
         }
     }
+   
+    // Look at the interrupt call tree
+    let base_level = function_levels.len();
+    for f in compiler_state.sorted_functions().iter() {
+        let lev = if f.1.interrupt { Some(0) } else {
+            compute_function_level(f.0, nmi_interrupt, 1, &gstate.functions_call_tree, 0)
+        };
+        if let Some(level) = lev {
+            let level = level + base_level;
+            let l = function_levels.get_mut(level);
+            if let Some(a) = l {
+                a.push(f.0.clone())
+            } else {
+                function_levels.resize(level + 1, Vec::new());
+                function_levels[level].push(f.0.clone());
+            }
+        }
+    }
     
     let mut level = 0;
     for l in function_levels {
@@ -1159,6 +1201,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         map.fill_memory(0x8000 + b * banksize, rorg, banksize, compiler_state, &mut gstate, args, true, true)?;
         assert!(map.remaining_scattered == 0);
         assert!(map.remaining_functions == 0);
+        assert!(map.remaining_assembler == 0);
         assert!(map.remaining_variables == 0);
 
         if b == maxbank {
