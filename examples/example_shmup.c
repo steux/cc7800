@@ -1,6 +1,7 @@
 #include "prosystem.h"
 #define _MS_TOP_SCROLLING_ZONE 1
 #define VERTICAL_SCROLLING
+#define INIT_BANK bank7
 #include "multisprite.h"
 #include "joystick.h"
 #include "string.h"
@@ -125,20 +126,7 @@ void interrupt dli()
     load(save_acc);
 }
 
-bank1 void spawn_boss()
-{
-    X = enemy_last++;
-    if (enemy_last == ENEMY_NB_MAX) enemy_last = 0;
-    if (enemy_last != enemy_first) {
-        enemy_xpos[X] = -24;
-        enemy_ypos[X] = 10;
-        enemy_type[X] = ENEMY_BIG;
-        enemy_state[X] = 0;
-        enemy_lives[X] = 10;
-        enemy_counter1[X] = 0;
-        enemy_counter2[X] = 0;
-    } else enemy_last = X;
-}
+bank1 void start_level1();
 
 void new_game()
 {
@@ -173,15 +161,11 @@ void new_game()
     score = 0;
     update_score = 1;
 
-    spawn_boss();
-
     game_state = STATE_RUNNING;
 }
 
-void init()
+INIT_BANK void init()
 {
-    *ROM_SELECT = 0;
-
     sfx_init();
 
 #ifdef POKEY_MUSIC
@@ -193,9 +177,7 @@ void init()
 #endif
 
     multisprite_init();
-    multisprite_enable_dli(1);
     multisprite_set_charbase(blue_objects1);
-    multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
     joystick_init();
     button_pressed = 0;
 
@@ -300,12 +282,33 @@ void big_explosion(char x, char y)
     } else big_explosion_last = X;
 }
 
-bank1 void display_boss(char x, char y, char palette)
+bank1 void spawn_boss()
+{
+    X = enemy_last++;
+    if (enemy_last == ENEMY_NB_MAX) enemy_last = 0;
+    if (enemy_last != enemy_first) {
+        enemy_xpos[X] = -24;
+        enemy_ypos[X] = 10;
+        enemy_type[X] = ENEMY_BIG;
+        enemy_state[X] = 0;
+        enemy_lives[X] = 10;
+        enemy_counter1[X] = 0;
+        enemy_counter2[X] = 0;
+    } else enemy_last = X;
+}
+
+bank1 void start_level1()
+{
+    multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
+    spawn_boss();
+}
+
+void display_boss(char x, char y, char palette)
 {
     multisprite_display_big_sprite(x, y, boss, 12, palette, 3, 1);
 }
 
-void draw_enemies()
+bank1 void draw_enemies()
 {
     int i, x, y, palette;
     for (i = enemy_first; i != enemy_last; i++) {
@@ -403,6 +406,7 @@ void joystick_input()
             button_pressed = 1;
             if (game_state == STATE_GAMEOVER) {
                 new_game();
+                start_level1();
             } else fire();
         }
     } else button_pressed = 0;
@@ -659,6 +663,9 @@ void step()
 void main()
 {
     init();
+    
+    start_level1();
+    multisprite_enable_dli(1);
 
     // Main loop
     do {

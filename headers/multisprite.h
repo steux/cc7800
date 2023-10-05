@@ -15,6 +15,10 @@
 #include "prosystem.h"
 #include "stdlib.h"
 
+#ifndef INIT_BANK
+#define INIT_BANK
+#endif
+
 #ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64
 #endif
@@ -227,9 +231,9 @@ ramchip char _ms_buffer; // Double buffer state
 ramchip char _ms_pal_detected;
 ramchip char _ms_pal_frame_skip_counter;
 
-void multisprite_init();
-void multisprite_clear();
-void multisprite_save();
+INIT_BANK void multisprite_init();
+INIT_BANK void multisprite_clear();
+INIT_BANK void multisprite_save();
 void multisprite_restore();
 void multisprite_flip();
 
@@ -840,7 +844,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
 #define multisprite_enable_dli(line) _ms_tmp = line; _multisprite_enable_dli()
 #define multisprite_disable_dli(line) _ms_tmp = line; _multisprite_disable_dli()
 
-void multisprite_get_tv()
+INIT_BANK void multisprite_get_tv()
 {
     while (!(*MSTAT & 0x80)); // Wait for VBLANK
     while (*MSTAT & 0x80); // Wait for end of VBLANK
@@ -867,7 +871,7 @@ char multisprite_pal_frame_skip()
     return 0;
 }
 
-void multisprite_init()
+INIT_BANK void multisprite_init()
 {
     *BACKGRND = 0x0;
     
@@ -961,7 +965,7 @@ void multisprite_init()
 #endif
 }
 
-void multisprite_clear()
+INIT_BANK void multisprite_clear()
 {
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
@@ -998,7 +1002,7 @@ void multisprite_top_display_clear()
 }
 
 // This one should be done during VBLANK, since we are copying from write buffer to currently displayed buffer
-void multisprite_save()
+INIT_BANK void multisprite_save()
 {
     while (!(*MSTAT & 0x80)); // Wait for VBLANK
     if (_ms_buffer) {

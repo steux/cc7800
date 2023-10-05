@@ -57,7 +57,6 @@ impl<'a> MemoryMap<'a> {
         let mut remaining_scattered = 0;
         let mut remaining_variables = 0;
         for v in compiler_state.sorted_variables().iter() {
-            debug!("Variable: {}, {:?}", v.0, v.1.memory);
             if let VariableMemory::ROM(b) = v.1.memory {
                 if b == bank {
                     if let Some(_) = v.1.scattered {
@@ -69,7 +68,6 @@ impl<'a> MemoryMap<'a> {
             }
         }
 
-        debug!("Remaining: {}, {}, {}", remaining_variables, remaining_functions, remaining_scattered);
         MemoryMap {
             bank,
             set: HashSet::new(),
@@ -953,6 +951,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
 
             gstate.functions_code.insert(f.0.clone(), AssemblyCode::new());
             gstate.current_function = Some(f.0.clone());
+            gstate.current_bank = f.1.bank;
             gstate.generate_statement(f.1.code.as_ref().unwrap())?;
             gstate.current_function = None;
 
