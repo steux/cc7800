@@ -24,7 +24,7 @@ const signed short dx[48] = {300, 289, 259, 212, 149, 77, 0, -77, -150, -212, -2
 const signed short dy[48] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240, 124, 0, -124, -239, -339, -415, -463, -480, -463, -415, -339, -240, -124, 0, 186, 360, 509, 623, 695, 720, 695, 623, 509, 360, 186, 0, -186, -359, -509, -623, -695, -720, -695, -623, -509, -360, -186};
 
 const char sfx_pewpew[66] = {
-	0x10, 2, 0x00, 0x1c, 0x04, 0x0f, 0x1c, 0x04, 0x0f, 0x09, 0x04, 0x0b, 0x03, 0x0c, 0x0a, 0x04,
+	0x10, 0, 0x00, 0x1c, 0x04, 0x0f, 0x1c, 0x04, 0x0f, 0x09, 0x04, 0x0b, 0x03, 0x0c, 0x0a, 0x04,
 	0x0c, 0x0e, 0x12, 0x04, 0x0c, 0x19, 0x04, 0x0f, 0x1c, 0x04, 0x0f, 0x07, 0x04, 0x05, 0x09, 0x04,
 	0x05, 0x0d, 0x04, 0x06, 0x0c, 0x04, 0x05, 0x18, 0x04, 0x06, 0x1c, 0x04, 0x05, 0x1e, 0x04, 0x03,
 	0x07, 0x04, 0x03, 0x09, 0x04, 0x03, 0x0c, 0x04, 0x02, 0x04, 0x0c, 0x02, 0x06, 0x0c, 0x01, 0x00,
@@ -32,7 +32,7 @@ const char sfx_pewpew[66] = {
 };
 
 const char sfx_bigboom[261] = {
-	0x10, 3, 0x00, 0x1d, 0x07, 0x0f, 0x1e, 0x06, 0x0f, 0x00, 0x06, 0x0f, 0x14, 0x07, 0x0f, 0x13,
+	0x10, 1, 0x00, 0x1d, 0x07, 0x0f, 0x1e, 0x06, 0x0f, 0x00, 0x06, 0x0f, 0x14, 0x07, 0x0f, 0x13,
 	0x0f, 0x0f, 0x1b, 0x07, 0x0f, 0x0e, 0x07, 0x0f, 0x1b, 0x07, 0x0f, 0x0f, 0x07, 0x0f, 0x10, 0x07,
 	0x0f, 0x10, 0x06, 0x0f, 0x16, 0x07, 0x0f, 0x0d, 0x0f, 0x0f, 0x1e, 0x0c, 0x0f, 0x16, 0x01, 0x0f,
 	0x17, 0x01, 0x0f, 0x10, 0x07, 0x0f, 0x10, 0x0f, 0x0f, 0x15, 0x07, 0x0d, 0x1a, 0x07, 0x0f, 0x1a,
@@ -114,7 +114,11 @@ void interrupt dli()
     store(save_acc);
     save_x = X;
     save_y = Y;
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+    multisprite_set_charbase(digits);
+#else
     multisprite_set_charbase(blue_objects1);
+#endif
 #ifdef POKEY_MUSIC 
     asm("JSR rmt_play", 3);
 #endif
@@ -168,16 +172,10 @@ INIT_BANK void init()
 {
     sfx_init();
 
-#ifdef POKEY_MUSIC
-    // Init RMT music
-    asm("LDX #<RMTSTART", 2); // Give pointer to RMT music
-    asm("LDY #>RMTSTART", 2);
-    load(0); // Song line in A register 
-    asm("JSR rmt_init", 3);
-#endif
-
     multisprite_init();
+#ifndef MULTISPRITE_USE_VIDEO_MEMORY
     multisprite_set_charbase(blue_objects1);
+#endif
     joystick_init();
     button_pressed = 0;
 
@@ -299,7 +297,19 @@ bank1 void spawn_boss()
 
 bank1 void start_level1()
 {
+    // Init level 1 music (in bank1)
+#ifdef POKEY_MUSIC
+    // Init RMT music
+    asm("LDX #<RMTSTART", 2); // Give pointer to RMT music
+    asm("LDY #>RMTSTART", 2);
+    load(0); // Song line in A register 
+    asm("JSR rmt_init", 3);
+#endif
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+    multisprite_vscroll_init_sparse_tiles_vmem(tilemap_data_ptrs, blue_objects1);
+#else
     multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
+#endif
     spawn_boss();
 }
 
@@ -665,17 +675,30 @@ void main()
     init();
     
     start_level1();
+
     multisprite_enable_dli(1);
 
     // Main loop
     do {
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+        multisprite_vscroll_buffer_sparse_tiles_vmem_step();
+        multisprite_vscroll_buffer_sparse_tiles_vmem_step();
+#endif
         // Prepare scrolling data
         if (multisprite_vscroll_buffer_empty()) {
             if (!scrolling_done) {
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+                multisprite_vscroll_buffer_sparse_tiles_vmem(scrolling_counter);
+#else
                 multisprite_vscroll_buffer_sparse_tiles(scrolling_counter);
+#endif
                 if (scrolling_counter) scrolling_counter--; else scrolling_done = 1; 
             } else if (scrolling_done == 1) {
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+                multisprite_vscroll_buffer_sparse_tiles_vmem(255);
+#else
                 multisprite_vscroll_buffer_sparse_tiles(255);
+#endif
                 scrolling_done = 2;
             } else scrolling_done = 3;
         }
@@ -693,7 +716,9 @@ void main()
         }
         
         multisprite_flip();
+#ifndef MULTISPRITE_USE_VIDEO_MEMORY
         multisprite_set_charbase(digits); // To display the score
-        if (scrolling_done != 3) multisprite_vertical_scrolling(4);
+#endif
+        if (scrolling_done != 3) multisprite_vertical_scrolling(2);
     } while(1);
 }
