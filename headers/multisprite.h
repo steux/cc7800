@@ -38,6 +38,7 @@ char _ms_dmaerror;
 #define _ms_tmp2 _libc_tmp2
 signed char _ms_tmp3;
 char _ms_tmp4, _ms_tmp5;
+char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 
 #ifdef BIDIR_VERTICAL_SCROLLING
 #ifndef VERTICAL_SCROLLING
@@ -894,7 +895,7 @@ INIT_BANK void multisprite_init()
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[Y = 0] = 0x41; // 2 lines
+            _ms_tmpptr[Y = 0] = 0x48; // 9 lines
             _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
             _ms_tmpptr[++Y] = _ms_set_wm_dl;
         }
@@ -923,7 +924,7 @@ INIT_BANK void multisprite_init()
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[++Y] = 0x4f; // 16 lines
+            _ms_tmpptr[++Y] = 0x48; // 9 lines
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         }
@@ -1122,16 +1123,15 @@ void multisprite_restore()
 
 #define multisprite_vscroll_buffer_empty() (!_ms_sbuffer_size)
 
-char *_ms_vscroll_sparse_tiles_ptr_high, *_ms_vscroll_sparse_tiles_ptr_low;
 #define multisprite_vscroll_init_sparse_tiles(ptr) \
-    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0];\
-    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1];
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0];\
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1];
 
 void multisprite_vscroll_buffer_sparse_tiles(char c)
 {
     char *stiles, tmp;
     Y = c;
-    stiles = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    stiles = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
     Y = 1;
     tmp = stiles[Y];
     X = _ms_sbuffer_size;
@@ -1159,8 +1159,8 @@ bank1 const char multisprite_vscroll_init_sparse_tiles_vmem_use_rom[] = {1};
 
 #define multisprite_vscroll_init_sparse_tiles_vmem(ptr, tiles_ptr) \
 { \
-    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0]; \
-    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
     _ms_vscroll_charbase = (tiles_ptr) >> 8; \
     _ms_vscroll_sparse_vmem_ptr_low = 0x00; \
     _ms_vscroll_sparse_vmem_ptr_high = 0x40; \
@@ -1174,7 +1174,7 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
     low = _ms_vscroll_sparse_vmem_ptr_low;
     high = _ms_vscroll_sparse_vmem_ptr_high;
     Y = c;
-    _ms_sbuffer_sparse_tilemap_ptr = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    _ms_sbuffer_sparse_tilemap_ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
     Y = 0;
     len = _ms_sbuffer_sparse_tilemap_ptr[Y++];
     tmp = _ms_sbuffer_sparse_tilemap_ptr[Y];
@@ -1920,6 +1920,56 @@ char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 }
 
 #define multisprite_collision_detected (_ms_tmp3)
+
+#define multisprite_sparse_tiling(ptr, top, left, height) \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_sparse_tiling(top, left, height);
+
+// Sparse tiling simple display
+void _ms_sparse_tiling(char top, char left, char height)
+{
+    char *ptr, data[5], y, bottom;
+    _ms_tmp2 = 0;
+
+    bottom = top + height;
+    if (_ms_buffer) {
+        top += _MS_DLL_ARRAY_SIZE; 
+        bottom += _MS_DLL_ARRAY_SIZE;
+    }
+
+    for (X = top; X < bottom; _ms_tmp2++) {
+        Y = _ms_tmp2;
+        ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
+        _ms_tmpptr = _ms_dls[X];
+        Y = 1;
+        y = _ms_dlend[X];
+        data[4] = ptr[Y];
+        while (data[4] != 0xff) {
+            data[0] = ptr[++Y];
+            data[1] = ptr[++Y];
+            data[2] = ptr[++Y];
+            data[3] = ptr[++Y];
+#ifdef DMA_CHECK 
+            _ms_dldma[X] -= ptr[++Y]; // 18 cycles
+#else
+            ++Y;
+#endif
+            _save_y = Y;
+            Y = y; // 6 cycles
+            _ms_tmpptr[Y++] = data[0]; // 11 cycles
+            _ms_tmpptr[Y++] = data[1];
+            _ms_tmpptr[Y++] = data[2];
+            _ms_tmpptr[Y++] = data[3];
+            _ms_tmpptr[Y++] = (data[4] << 3) + left;
+            y = Y; // 21 cycles
+            Y = _save_y;
+            Y++;
+            data[4] = ptr[++Y];
+        } 
+        _ms_dlend[X++] = y;
+    }
+}
 
 #endif // __ATARI7800_MULTISPRITE__
  
