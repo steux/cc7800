@@ -88,6 +88,7 @@ ramchip char scrolling_counter, scrolling_done;
 ramchip char game_state;
 #define STATE_RUNNING  0
 #define STATE_GAMEOVER 1
+ramchip char music_on;
 ramchip char nb_lives;
 ramchip int score;
 ramchip char update_score;
@@ -120,7 +121,7 @@ void interrupt dli()
     multisprite_set_charbase(blue_objects1);
 #endif
 #ifdef POKEY_MUSIC 
-    asm("JSR rmt_play", 3);
+    if (music_on) asm("JSR rmt_play", 3);
 #endif
     sfx_play();
     if (multisprite_pal_frame_skip())
@@ -130,9 +131,7 @@ void interrupt dli()
     load(save_acc);
 }
 
-bank1 void start_level1();
-
-void new_game()
+INIT_BANK new_game()
 {
     // Init game state variables
     missile_first = 0;
@@ -166,6 +165,13 @@ void new_game()
     update_score = 1;
 
     game_state = STATE_RUNNING;
+    
+    // Screen clear
+    multisprite_clear();
+    // Score display
+    display_score_update();
+    multisprite_display_tiles(0, 0, display_score_str, 5, 2);
+    multisprite_save();
 }
 
 INIT_BANK void init()
@@ -220,11 +226,6 @@ INIT_BANK void init()
     *P7C3 = 0x0f; // White 
 
     new_game();
-    
-    // Score display
-    display_score_update();
-    multisprite_display_tiles(0, 0, display_score_str, 5, 2);
-    multisprite_save();
 }
 
 void enemy_destroyed(char i)
@@ -311,6 +312,7 @@ bank1 void start_level1()
     multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
 #endif
     spawn_boss();
+    music_on = 1;
 }
 
 void display_boss(char x, char y, char palette)
@@ -415,9 +417,10 @@ void joystick_input()
         if (!button_pressed) {
             button_pressed = 1;
             if (game_state == STATE_GAMEOVER) {
+                music_on = 0; // Shut down pokey before going to bank7
                 new_game();
                 start_level1();
-            } else fire();
+            } else if (spaceship_state != 2) fire();
         }
     } else button_pressed = 0;
 }
@@ -448,19 +451,6 @@ char missile_management(char x, char y) {
         }
     }
     return exploded;
-}
-
-void lose_one_life()
-{
-    nb_lives--;
-    char w = -12 & 0x1f; // only 5 bits for sprites width
-    switch (nb_lives) {
-        case 1: w = -4 & 0x1f; break;
-        case 2: w = -8 & 0x1f; break;
-    }
-    X = 8; // 9th byte is the width of the lives sprite
-    _ms_b0_dl0[X] = w;
-    _ms_b1_dl0[X] = w;
 }
 
 void draw_gameover()
@@ -654,7 +644,7 @@ void step()
                         multisprite_compute_collision(xbullet, ybullet, 4, 8, spaceship_xpos, spaceship_ypos, 12, 24, collision_bullet_spaceship);
                         if (multisprite_collision_detected) {
                             // Explosion
-                            lose_one_life();
+                            nb_lives--;
                             big_explosion(spaceship_xpos + 6, spaceship_ypos + 12);
                             if (nb_lives) {
                                 spaceship_state = 1;

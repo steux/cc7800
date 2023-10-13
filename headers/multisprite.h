@@ -981,6 +981,10 @@ INIT_BANK void multisprite_clear()
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
 #endif
     }
+#ifdef VERTICAL_SCROLLING
+    _ms_sbuffer_size = 0;
+    _ms_delayed_vscroll = 0;
+#endif
 }
 
 void multisprite_top_display_clear()
