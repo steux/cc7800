@@ -52,6 +52,39 @@ void display_arrangement(char a)
     }
 }
 
+#define BOMBJACK_FALLING 0
+#define BOMBJACK_STILL   1
+#define BOMBJACK_JUMPING 2
+ramchip char bombjack_xpos, bombjack_state;
+ramchip short bombjack_yspeed, bombjack_ypos;
+
+void bombjack()
+{
+    char *gfx, y;
+    if (bombjack_state == BOMBJACK_FALLING) {
+        gfx = bombjack_falling;
+        bombjack_yspeed += 20;
+        bombjack_ypos += bombjack_yspeed;
+        if (bombjack_ypos >> 8 >= 224 - 15) {
+            bombjack_ypos = (224 - 16) << 8;
+            bombjack_state = BOMBJACK_STILL;
+        }
+    }
+    if (bombjack_state == BOMBJACK_STILL) {
+        gfx = bombjack_still;
+    }
+    y = bombjack_ypos >> 8;
+    multisprite_display_sprite_ex(bombjack_xpos, y, gfx, 6, 0, 1);
+}
+
+void game_init()
+{
+    bombjack_xpos = (112 - 12) / 2 + 4;
+    bombjack_ypos = (112 - 8) << 8;
+    bombjack_yspeed = 0;
+    bombjack_state = BOMBJACK_FALLING;
+}
+
 void main()
 {
     char y;
@@ -84,23 +117,31 @@ void main()
         _ms_b0_dll[X] = 0x00; // 1 line  
         _ms_b1_dll[X] = 0x00; // 1 line  
     }
+    // Display the sphinx and platforms
+    multisprite_sparse_tiling(tilemap_sphinx_data_ptrs, 0, 4, 14);
+    multisprite_sparse_tiling(tilemap_arrangement_A_data_ptrs, 0, 4, 14);
     // Left and right borders
     for (y = 0; y < 224; y += 16) {
         multisprite_display_sprite_fast(0, y, border, 1, 3);
         multisprite_display_sprite_fast(116, y, border, 1, 3);
     }
-    // Display the sphinx and platforms
-    multisprite_sparse_tiling(tilemap_sphinx_data_ptrs, 0, 4, 14);
-    multisprite_sparse_tiling(tilemap_arrangement_A_data_ptrs, 0, 4, 14);
 
     multisprite_save();
     
+    // Enemies palette 
+    *P0C1 = 0x04;
+    *P0C2 = 0x08;
+    *P0C3 = 0x34;
+
+    // Bombjack palette
+    *P1C1 = multisprite_color(0x87); // Light blue
     *P1C2 = multisprite_color(0x3c); // Rose 
+    *P1C3 = 0x00; // Black 
 
     // Bomb palette
     *P2C1 = multisprite_color(0x34); // Red
     *P2C2 = multisprite_color(0x1c); // Yellow 
-    *P2C3 = 0x0f; 
+    *P2C3 = 0x0f; // White 
 
     // Fire palette
     *P3C1 = multisprite_color(0x24); // Red
@@ -109,18 +150,19 @@ void main()
 
     // Blue palette
     *P4C1 = multisprite_color(0x84); // Dark blue 
-    *P4C2 = multisprite_color(0x87); // Light blue
-    *P4C3 = multisprite_color(0xac); // Turquoise 
     
     // Sphinx palette
     *P5C1 = multisprite_color(0x12); // Red
     *P5C2 = multisprite_color(0x15); // Orange
     *P5C3 = multisprite_color(0x18); // Yellow 
 
+    game_init();
+    
     // Main loop
     do {
         // Display the first arrangement
         display_arrangement(0);
+        bombjack();
 
         multisprite_flip();
     } while(1);
