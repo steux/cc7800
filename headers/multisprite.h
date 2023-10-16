@@ -221,7 +221,7 @@ const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
 };
 
 
-const char _ms_set_wm_dl[5] = {0, 0x40, 0x21, 0xff, 160}; // Write mode 0
+const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
 ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
