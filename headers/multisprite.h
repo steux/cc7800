@@ -14,6 +14,7 @@
 
 #include "prosystem.h"
 #include "stdlib.h"
+#include "assert.h"
 
 #ifndef INIT_BANK
 #define INIT_BANK
@@ -1973,6 +1974,38 @@ void _ms_sparse_tiling(char top, char left, char height)
         } 
         _ms_dlend[X++] = y;
     }
+}
+
+char multisprite_sparse_tiling_collision(char top, char left, char right)
+{
+    char *ptr, start, end, intersect = -1;
+    Y = top;
+    ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);
+    // Find the first possibly intersecting tileset on this line
+    Y = 0;
+    while (ptr[Y] < left) Y += 7;
+    // This one possibly intersects
+    end = ptr[Y++];
+    start = ptr[Y++];
+    while (right >= start) {
+        char l = (left < start)?start:left;
+        char r = (end < right)?end:right;
+        char n = r - l;
+        assert(n >= 0);
+        char tmp = ptr[Y++];
+        Y++;
+        char *ptr_tiles = tmp | (ptr[Y] << 8);
+        _save_y = Y;
+        Y = l - start;
+        for (X = n; X >= 0; Y++, X--) {
+            if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
+        }
+        Y = _save_y;
+        Y += 3;
+        end = ptr[Y++];
+        start = ptr[Y++];
+    }
+    return intersect;
 }
 
 #endif // __ATARI7800_MULTISPRITE__

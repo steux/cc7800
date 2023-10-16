@@ -56,7 +56,7 @@ void display_arrangement(char a)
 #define BOMBJACK_STILL   1
 #define BOMBJACK_JUMPING 2
 ramchip char bombjack_xpos, bombjack_state;
-ramchip short bombjack_yspeed, bombjack_ypos;
+ramchip unsigned short bombjack_yspeed, bombjack_ypos;
 
 void bombjack()
 {
@@ -65,7 +65,15 @@ void bombjack()
         gfx = bombjack_falling;
         bombjack_yspeed += 20;
         bombjack_ypos += bombjack_yspeed;
-        if (bombjack_ypos >> 8 >= 224 - 15) {
+        char left = (bombjack_xpos + (2 - 4)) >> 3;
+        char right = (bombjack_xpos + (9 - 4)) >> 3;
+        char top = ((bombjack_ypos >> 8) + 17) >> 4;
+        char collision = multisprite_sparse_tiling_collision(top, left, right);
+        if (collision != -1) {
+            y = (top - 1) << 4;
+            bombjack_ypos = y << 8;
+            bombjack_state = BOMBJACK_STILL;
+        } else if (bombjack_ypos >> 8 >= 224 - 15) {
             bombjack_ypos = (224 - 16) << 8;
             bombjack_state = BOMBJACK_STILL;
         }
@@ -81,11 +89,12 @@ void game_init()
 {
     bombjack_xpos = (112 - 12) / 2 + 4;
     bombjack_ypos = (112 - 8) << 8;
+    //bombjack_ypos = (128) << 8;
     bombjack_yspeed = 0;
     bombjack_state = BOMBJACK_FALLING;
 }
 
-void main()
+void init()
 {
     char y;
     multisprite_init();
@@ -129,9 +138,9 @@ void main()
     multisprite_save();
     
     // Enemies palette 
-    *P0C1 = 0x04;
-    *P0C2 = 0x08;
-    *P0C3 = 0x34;
+    *P0C1 = 0x04; // Dark gray
+    *P0C2 = 0x08; // Medium gray
+    *P0C3 = 0x34; // Red
 
     // Bombjack palette
     *P1C1 = multisprite_color(0x87); // Light blue
@@ -155,7 +164,11 @@ void main()
     *P5C1 = multisprite_color(0x12); // Red
     *P5C2 = multisprite_color(0x15); // Orange
     *P5C3 = multisprite_color(0x18); // Yellow 
+}
 
+void main()
+{
+    init();
     game_init();
     
     // Main loop
