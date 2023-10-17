@@ -111,7 +111,7 @@ void bombjack()
         } else {
             left = (bombjack_xpos + (4 - 4)) >> 3;
             right = (bombjack_xpos + (7 - 4)) >> 3;
-            top = (((bombjack_ypos >> 8) + 16) >> 4);
+            top = ((bombjack_ypos >> 8) >> 4) + 1;
             collision = multisprite_sparse_tiling_collision(top, left, right);
             if (collision != -1) {
                 y = (top - 1) << 4;
