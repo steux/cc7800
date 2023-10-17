@@ -72,6 +72,18 @@ ramchip char bombjack_xpos, bombjack_state, bombjack_counter;
 ramchip char button_pressed;
 ramchip unsigned short bombjack_yspeed, bombjack_ypos;
 
+void bombjack_move_left()
+{
+    bombjack_xpos--;
+    if (bombjack_xpos < 3) bombjack_xpos = 3;
+}
+
+void bombjack_move_right()
+{
+    bombjack_xpos++;
+    if (bombjack_xpos >= 112 - 12 + 6) bombjack_xpos = 112 - 12 + 5;
+}
+
 void bombjack()
 {
     char *gfx, y;
@@ -79,10 +91,10 @@ void bombjack()
     if (bombjack_state & BOMBJACK_FALLING) {
         if (bombjack_state & BOMBJACK_LEFT) {
             gfx = bombjack_falling_left;
-            bombjack_xpos--;
+            bombjack_move_left();
         } else if (bombjack_state & BOMBJACK_RIGHT) {
             gfx = bombjack_falling_right;
-            bombjack_xpos++;
+            bombjack_move_right();
         } else {
             if (bombjack_yspeed == 0) {
                 gfx = bombjack_jumping;
@@ -93,13 +105,13 @@ void bombjack()
 
         bombjack_yspeed += 20;
         bombjack_ypos += bombjack_yspeed;
-        if (bombjack_ypos >> 8 >= 224 - 15) {
+        if (bombjack_ypos >> 8 >= 224 - 16) {
             bombjack_ypos = (224 - 16) << 8;
             bombjack_state = BOMBJACK_STILL;
         } else {
             left = (bombjack_xpos + (4 - 4)) >> 3;
             right = (bombjack_xpos + (7 - 4)) >> 3;
-            top = ((bombjack_ypos >> 8) + 17) >> 4;
+            top = (((bombjack_ypos >> 8) + 16) >> 4);
             collision = multisprite_sparse_tiling_collision(top, left, right);
             if (collision != -1) {
                 y = (top - 1) << 4;
@@ -110,10 +122,10 @@ void bombjack()
     } else if (bombjack_state & BOMBJACK_JUMPING) {
         if (bombjack_state & BOMBJACK_LEFT) {
             gfx = bombjack_jumping_left;
-            bombjack_xpos--;
+            bombjack_move_left();
         } else if (bombjack_state & BOMBJACK_RIGHT) {
             gfx = bombjack_jumping_right;
-            bombjack_xpos++;
+            bombjack_move_right();
         } else gfx = bombjack_jumping;
 
         if (bombjack_yspeed < 20) {
@@ -153,8 +165,7 @@ void bombjack()
             } else {
                 gfx = bombjack_walking_left3;
             }
-            bombjack_xpos--;
-            if (bombjack_xpos < 3) bombjack_xpos = 3;
+            bombjack_move_left();
         } else {
             if (y == 0 || y == 2) {
                 gfx = bombjack_walking_right1;
@@ -163,8 +174,7 @@ void bombjack()
             } else {
                 gfx = bombjack_walking_right3;
             }
-            bombjack_xpos++;
-            if (bombjack_xpos >= 112 - 12 + 6) bombjack_xpos = 112 - 12 + 5;
+            bombjack_move_right();
         }
         if (bombjack_ypos >> 8 != 224 - 16) {
             left = (bombjack_xpos + (4 - 4)) >> 3;
@@ -220,17 +230,23 @@ void joystick_input()
             bombjack_counter = 0;
         } else if (bombjack_state & BOMBJACK_FALLING) {
             bombjack_state = BOMBJACK_FALLING_LEFT;
+        } else if (bombjack_state & BOMBJACK_JUMPING) {
+            bombjack_state = BOMBJACK_JUMPING_LEFT;
         } else if (bombjack_state != BOMBJACK_WALKING_LEFT) bombjack_state = BOMBJACK_STILL;
     } else if (joystick[0] & JOYSTICK_RIGHT) {
         if (bombjack_state & BOMBJACK_STILL) {
             bombjack_state = BOMBJACK_WALKING_RIGHT;
             bombjack_counter = 0;
         } else if (bombjack_state & BOMBJACK_FALLING) {
-            bombjack_state = BOMBJACK_WALKING_RIGHT;
+            bombjack_state = BOMBJACK_FALLING_RIGHT;
+        } else if (bombjack_state & BOMBJACK_JUMPING) {
+            bombjack_state = BOMBJACK_JUMPING_RIGHT;
         } else if (bombjack_state != BOMBJACK_WALKING_RIGHT) bombjack_state = BOMBJACK_STILL;
     } else {
         if (bombjack_state & BOMBJACK_WALKING) {
             bombjack_state = BOMBJACK_STILL | (bombjack_state & 0xc0);
+        } else {
+            bombjack_state &= ~(BOMBJACK_LEFT | BOMBJACK_RIGHT);
         }
     }
 }
