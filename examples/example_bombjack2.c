@@ -20,36 +20,51 @@ const char topborder_dl[] = { topborder, 0x60, topborder >> 8, (3 << 5) | (-15 &
 const char bottomborder[15] = {10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 12};
 const char bottomborder_dl[] = { bottomborder, 0x60, bottomborder >> 8, (3 << 5) | (-15 & 0x1f), 0, 0, 0};
 
+#define BOMBS_RIGHT 0
+#define BOMBS_UP    1
+#define BOMBS_LEFT  2
+#define BOMBS_DOWN  3
+
 // Arrangements - x, y of first bomb, nb bombs, direction (0 to 3).
 const char arrangement_A[] = { 
-    6 + 6 * 8, 3 * 16 - 8, 4, 0, 
-    4 + 13 * 8, 8 + 4 * 16, 4, 3, 4, 
-    5 * 16, 4, 3, 
-    4 + 2 * 8, 0, 3, 0,
-    4 + 11 * 8, 11 * 16, 3, 2, 
-    5 * 8, 13 * 16, 3, 2, 
-    4 + 13 * 8, 0, 3, 2}; 
+    6 + 6 * 8, 3 * 16 - 8, 4, BOMBS_RIGHT, 
+    4 + 13 * 8, 8 + 4 * 16, 4, BOMBS_DOWN, 
+    4, 5 * 16, 4, BOMBS_DOWN, 
+    4 + 2 * 8, 0, 3, BOMBS_RIGHT,
+    4 + 11 * 8, 11 * 16, 3, BOMBS_LEFT, 
+    5 * 8, 13 * 16, 3, BOMBS_LEFT, 
+    4 + 13 * 8, 0, 3, BOMBS_LEFT}; 
 const char arrangements_nb_series[] = { 7 };
 const char *arrangements[] = { arrangement_A }; 
 const signed char arrangement_dx[4] = { 12, 0, -12, 0 };
 const signed char arrangement_dy[4] = { 0, -24, 0, 24 };
 
+ramchip char bomb_disposed[24];
+char lighted_bomb;
+
 void display_arrangement(char a)
 {
     char *arrangement = arrangements[X = a];
-    char i, j, nb_series = arrangements_nb_series[X];
-    for (Y = 0, i = 0; i != nb_series; i++) {
+    char i, j, k, nb_series = arrangements_nb_series[X];
+    for (Y = 0, k = 0, i = 0; i != nb_series; i++) {
         char x = arrangement[Y++];
         char y = arrangement[Y++];
         char nb_bombs = arrangement[Y++];
         char direction = arrangement[Y++];
         _save_y = Y;
-        for (j = 0; j != nb_bombs; j++) {
-            multisprite_display_sprite_fast(x, y, bomb, 2, 2);
+        for (j = 0; j != nb_bombs; k++, j++) {
+            if (!bomb_disposed[X = k]) {
+                lighted_bomb = X;
+                multisprite_display_sprite_fast(x, y, bomb, 2, 2);
+            }
             x += arrangement_dx[X = direction]; 
             y += arrangement_dy[X]; 
         }
         Y = _save_y;
+    }
+    if (lighted_bomb != 0) {
+        // Display lighted bomb
+    
     }
 }
 
@@ -78,7 +93,7 @@ void display_arrangement(char a)
 #define GRAVITY 20 
 
 ramchip char bombjack_xpos, bombjack_state, bombjack_counter;
-ramchip char button_pressed;
+ramchip char button_pressed, current_arrangement;
 // ypos and yspeed are 16-bits to allow for fine vertical movement
 ramchip unsigned short bombjack_yspeed, bombjack_ypos;
 
@@ -124,6 +139,30 @@ void bombjack_move_right()
         collision = multisprite_sparse_tiling_collision(top, x, x);
         if (collision != -1) {
             bombjack_xpos--;
+        }
+    }
+}
+
+void bombjack_dispose_bombs(char a)
+{
+    char *arrangement = arrangements[X = a];
+    char x2 = bombjack_xpos + 2;
+    char y2 = (bombjack_ypos >> 8) + 1;
+    char i, j, k, nb_series = arrangements_nb_series[X];
+    for (Y = 0, k = 0, i = 0; i != nb_series; i++) {
+        char x = arrangement[Y++] + 1;
+        char y = arrangement[Y++] + 6;
+        char nb_bombs = arrangement[Y++];
+        char direction = arrangement[Y++];
+        for (j = 0; j != nb_bombs; k++, j++) {
+            if (!bomb_disposed[X = k]) {
+                multisprite_compute_box_collision(x, y, 5, 9, x2, y2, 7, 14);
+                if (multisprite_collision_detected) {
+                    bomb_disposed[X] = 1;
+                }
+            }
+            x += arrangement_dx[X = direction]; 
+            y += arrangement_dy[X]; 
         }
     }
 }
@@ -249,15 +288,18 @@ void bombjack()
 
     y = bombjack_ypos >> 8;
     multisprite_display_sprite_ex(bombjack_xpos, y, gfx, 6, 0, 1);
+    
+    bombjack_dispose_bombs(current_arrangement);
 }
 
 void game_init()
 {
+    for (X = 23; X >= 0; X--) bomb_disposed[X] = 0; 
     bombjack_xpos = (PLAYFIELD_WIDTH - SPRITE_WIDTH) / 2 + BORDER_WIDTH;
     bombjack_ypos = (PLAYFIELD_WIDTH - 8) << 8;
-    //bombjack_ypos = (128) << 8;
     bombjack_yspeed = 0;
     bombjack_state = BOMBJACK_FALLING;
+    current_arrangement = 0;
 }
 
 void joystick_input()
@@ -396,7 +438,7 @@ void main()
     // Main loop
     do {
         // Display the first arrangement
-        display_arrangement(0);
+        display_arrangement(current_arrangement);
         joystick_input();
         bombjack();
 
