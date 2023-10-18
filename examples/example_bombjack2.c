@@ -53,6 +53,7 @@ void display_arrangement(char a)
     }
 }
 
+// All the bombjack states
 #define BOMBJACK_LEFT           64
 #define BOMBJACK_RIGHT          128
 #define BOMBJACK_STILL          1
@@ -70,6 +71,7 @@ void display_arrangement(char a)
 
 ramchip char bombjack_xpos, bombjack_state, bombjack_counter;
 ramchip char button_pressed;
+// ypos and yspeed are 16-bits to allow for fine vertical movement
 ramchip unsigned short bombjack_yspeed, bombjack_ypos;
 
 void bombjack_move_left()
@@ -105,10 +107,12 @@ void bombjack()
 
         bombjack_yspeed += 20;
         bombjack_ypos += bombjack_yspeed;
+        // Does it land on bottom of the screen ?
         if (bombjack_ypos >> 8 >= 224 - 16) {
             bombjack_ypos = (224 - 16) << 8;
             bombjack_state = BOMBJACK_STILL;
         } else {
+            // Does it land on a platform ?
             left = (bombjack_xpos + (4 - 4)) >> 3;
             right = (bombjack_xpos + (7 - 4)) >> 3;
             top = ((bombjack_ypos >> 8) >> 4) + 1;
@@ -133,12 +137,24 @@ void bombjack()
             bombjack_state = BOMBJACK_FALLING;
         } else {
             bombjack_yspeed -= 20;
+            // Does it bump into the ceiling ?
             if (bombjack_ypos < bombjack_yspeed) {
                 bombjack_ypos = 0;
                 bombjack_yspeed = 0;
                 bombjack_state = BOMBJACK_FALLING;
             } else {
                 bombjack_ypos -= bombjack_yspeed;
+                // Does it bump into a platform ?
+                left = (bombjack_xpos + (4 - 4)) >> 3;
+                right = (bombjack_xpos + (7 - 4)) >> 3;
+                top = (((bombjack_ypos >> 8) + 7 ) >> 4);
+                collision = multisprite_sparse_tiling_collision(top, left, right);
+                if (collision != -1) {
+                    y = (top << 4) + 8; // Head below the platform
+                    bombjack_ypos = y << 8; // Turn to 16 bits
+                    bombjack_state = BOMBJACK_FALLING;
+                    bombjack_yspeed = 0;
+                }
             }
         }
     } else {
@@ -157,6 +173,7 @@ void bombjack()
         bombjack_counter++;
         if (bombjack_counter == 8) bombjack_counter = 0;
         y = bombjack_counter >> 1;
+        // Walking animatoin
         if (bombjack_state & BOMBJACK_LEFT) {
             if (y == 0 || y == 2) {
                 gfx = bombjack_walking_left1;
@@ -177,6 +194,7 @@ void bombjack()
             bombjack_move_right();
         }
         if (bombjack_ypos >> 8 != 224 - 16) {
+            // Does it fall from a platform ?
             left = (bombjack_xpos + (4 - 4)) >> 3;
             right = (bombjack_xpos + (7 - 4)) >> 3;
             top = ((bombjack_ypos >> 8) + 17) >> 4;
