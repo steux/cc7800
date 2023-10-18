@@ -69,6 +69,14 @@ void display_arrangement(char a)
 #define BOMBJACK_FALLING_LEFT   (BOMBJACK_FALLING | BOMBJACK_LEFT) 
 #define BOMBJACK_FALLING_RIGHT  (BOMBJACK_FALLING | BOMBJACK_RIGHT) 
 
+#define BORDER_WIDTH 4
+#define PLAYFIELD_HEIGHT 224
+#define PLAYFIELD_WIDTH 112 
+#define SPRITE_HEIGHT 16
+#define SPRITE_WIDTH 12
+#define PLATFORM_HEIGHT 8
+#define GRAVITY 20 
+
 ramchip char bombjack_xpos, bombjack_state, bombjack_counter;
 ramchip char button_pressed;
 // ypos and yspeed are 16-bits to allow for fine vertical movement
@@ -76,14 +84,48 @@ ramchip unsigned short bombjack_yspeed, bombjack_ypos;
 
 void bombjack_move_left()
 {
+    char x, top, collision;
     bombjack_xpos--;
     if (bombjack_xpos < 3) bombjack_xpos = 3;
+    else {
+        // Test if we bump into a platform with the head
+        x = (bombjack_xpos - BORDER_WIDTH + 1) >> 3;
+        top = (bombjack_ypos >> 8) >> 4;
+        collision = multisprite_sparse_tiling_collision(top, x, x);
+        if (collision != -1 && ((bombjack_ypos >> 8) & 0x0f) < PLATFORM_HEIGHT - 1) {
+            bombjack_xpos++;
+            return;
+        }
+        // Test if we bump into a platform with the foot 
+        top = ((bombjack_ypos >> 8) + SPRITE_HEIGHT - 1) >> 4;
+        collision = multisprite_sparse_tiling_collision(top, x, x);
+        if (collision != -1) {
+            bombjack_xpos++;
+        }
+    }
 }
 
 void bombjack_move_right()
 {
+    char x, top, collision;
     bombjack_xpos++;
-    if (bombjack_xpos >= 112 - 12 + 6) bombjack_xpos = 112 - 12 + 5;
+    if (bombjack_xpos >= PLAYFIELD_WIDTH - SPRITE_WIDTH + 6) bombjack_xpos = PLAYFIELD_WIDTH - SPRITE_WIDTH + 5;
+    else {
+        // Test if we bump into a platform with the head
+        x = (bombjack_xpos - BORDER_WIDTH + SPRITE_WIDTH - 3) >> 3;
+        top = (bombjack_ypos >> 8) >> 4;
+        collision = multisprite_sparse_tiling_collision(top, x, x);
+        if (collision != -1 && ((bombjack_ypos >> 8) & 0x0f) < PLATFORM_HEIGHT - 1) {
+            bombjack_xpos--;
+            return;
+        }
+        // Test if we bump into a platform with the foot 
+        top = ((bombjack_ypos >> 8) + SPRITE_HEIGHT - 1) >> 4;
+        collision = multisprite_sparse_tiling_collision(top, x, x);
+        if (collision != -1) {
+            bombjack_xpos--;
+        }
+    }
 }
 
 void bombjack()
@@ -105,16 +147,16 @@ void bombjack()
             }
         }
 
-        bombjack_yspeed += 20;
+        bombjack_yspeed += GRAVITY;
         bombjack_ypos += bombjack_yspeed;
         // Does it land on bottom of the screen ?
-        if (bombjack_ypos >> 8 >= 224 - 16) {
-            bombjack_ypos = (224 - 16) << 8;
+        if (bombjack_ypos >> 8 >= PLAYFIELD_HEIGHT - 16) {
+            bombjack_ypos = (PLAYFIELD_HEIGHT - 16) << 8;
             bombjack_state = BOMBJACK_STILL;
         } else {
             // Does it land on a platform ?
-            left = (bombjack_xpos + (4 - 4)) >> 3;
-            right = (bombjack_xpos + (7 - 4)) >> 3;
+            left = (bombjack_xpos + (4 - BORDER_WIDTH)) >> 3;
+            right = (bombjack_xpos + (7 - BORDER_WIDTH)) >> 3;
             top = ((bombjack_ypos >> 8) >> 4) + 1;
             collision = multisprite_sparse_tiling_collision(top, left, right);
             if (collision != -1) {
@@ -132,11 +174,11 @@ void bombjack()
             bombjack_move_right();
         } else gfx = bombjack_jumping;
 
-        if (bombjack_yspeed < 20) {
+        if (bombjack_yspeed < GRAVITY) {
             bombjack_yspeed = 0;
             bombjack_state = BOMBJACK_FALLING;
         } else {
-            bombjack_yspeed -= 20;
+            bombjack_yspeed -= GRAVITY;
             // Does it bump into the ceiling ?
             if (bombjack_ypos < bombjack_yspeed) {
                 bombjack_ypos = 0;
@@ -145,12 +187,12 @@ void bombjack()
             } else {
                 bombjack_ypos -= bombjack_yspeed;
                 // Does it bump into a platform ?
-                left = (bombjack_xpos + (4 - 4)) >> 3;
-                right = (bombjack_xpos + (7 - 4)) >> 3;
+                left = (bombjack_xpos + (4 - BORDER_WIDTH)) >> 3;
+                right = (bombjack_xpos + (7 - BORDER_WIDTH)) >> 3;
                 top = (((bombjack_ypos >> 8) + 7 ) >> 4);
                 collision = multisprite_sparse_tiling_collision(top, left, right);
                 if (collision != -1) {
-                    y = (top << 4) + 8; // Head below the platform
+                    y = (top << 4) + PLATFORM_HEIGHT; // Head below the platform
                     bombjack_ypos = y << 8; // Turn to 16 bits
                     bombjack_state = BOMBJACK_FALLING;
                     bombjack_yspeed = 0;
@@ -173,7 +215,7 @@ void bombjack()
         bombjack_counter++;
         if (bombjack_counter == 8) bombjack_counter = 0;
         y = bombjack_counter >> 1;
-        // Walking animatoin
+        // Walking animation
         if (bombjack_state & BOMBJACK_LEFT) {
             if (y == 0 || y == 2) {
                 gfx = bombjack_walking_left1;
@@ -193,7 +235,7 @@ void bombjack()
             }
             bombjack_move_right();
         }
-        if (bombjack_ypos >> 8 != 224 - 16) {
+        if (bombjack_ypos >> 8 != PLAYFIELD_HEIGHT - 16) {
             // Does it fall from a platform ?
             left = (bombjack_xpos + (4 - 4)) >> 3;
             right = (bombjack_xpos + (7 - 4)) >> 3;
@@ -211,8 +253,8 @@ void bombjack()
 
 void game_init()
 {
-    bombjack_xpos = (112 - 12) / 2 + 4;
-    bombjack_ypos = (112 - 8) << 8;
+    bombjack_xpos = (PLAYFIELD_WIDTH - SPRITE_WIDTH) / 2 + BORDER_WIDTH;
+    bombjack_ypos = (PLAYFIELD_WIDTH - 8) << 8;
     //bombjack_ypos = (128) << 8;
     bombjack_yspeed = 0;
     bombjack_state = BOMBJACK_FALLING;
@@ -308,7 +350,7 @@ void init()
     multisprite_sparse_tiling(tilemap_sphinx_data_ptrs, 0, 4, 14);
     multisprite_sparse_tiling(tilemap_arrangement_A_data_ptrs, 0, 4, 14);
     // Left and right borders
-    for (y = 0; y < 224; y += 16) {
+    for (y = 0; y < PLAYFIELD_HEIGHT; y += 16) {
         multisprite_display_sprite_fast(0, y, border, 1, 3);
         multisprite_display_sprite_fast(116, y, border, 1, 3);
     }
