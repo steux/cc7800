@@ -44,7 +44,8 @@ const signed char arrangement_dx[4] = { 12, 0, -12, 0 };
 const signed char arrangement_dy[4] = { 0, -24, 0, 24 };
 
 ramchip char bomb_disposed[24];
-char lighted_bomb;
+ramchip char lighted_bomb;
+ramchip char explosion_color1, explosion_color2, explosion_color3;
 
 void display_arrangement(char a)
 {
@@ -61,9 +62,9 @@ void display_arrangement(char a)
             if (!bomb_disposed[X = k]) {
                 multisprite_display_sprite_fast(x, y, bomb, 2, 2);
                 if (lighted_bomb == -1) {
-                    lighted_bomb = X;
+                    lighted_bomb = X = k;
                     if (X) {
-                        multisprite_display_sprite_fast(x, y, explosion, 2, 3);
+                        multisprite_display_sprite_fast(x, y, explosion, 2, 7);
                     }
                 }
             }
@@ -433,7 +434,23 @@ void init()
     *P5C2 = multisprite_color(0x15); // Orange
     *P5C3 = multisprite_color(0x18); // Yellow 
 
+    // Explosion palette
+    explosion_color1 = multisprite_color(0x24); // Red
+    explosion_color2 = multisprite_color(0x28); // Orange
+    explosion_color3 = multisprite_color(0x1c); // Yellow 
+
     button_pressed = 0;
+}
+
+void explosion_palette_roll()
+{
+    char roll = explosion_color3;
+    explosion_color3 = explosion_color2;
+    explosion_color2 = explosion_color1;
+    explosion_color1 = roll;
+    *P7C1 = explosion_color1;
+    *P7C2 = explosion_color2;
+    *P7C3 = explosion_color3;
 }
 
 void main()
@@ -447,6 +464,7 @@ void main()
         display_arrangement(current_arrangement);
         joystick_input();
         bombjack();
+        explosion_palette_roll();
 
         multisprite_flip();
     } while(1);
