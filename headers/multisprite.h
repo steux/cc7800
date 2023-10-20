@@ -228,6 +228,9 @@ ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
 ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
+#ifdef MULTISPRITE_OVERLAY
+ramchip char _ms_dlend_save_overlay[_MS_DLL_ARRAY_SIZE * 2];
+#endif
 
 ramchip char _ms_buffer; // Double buffer state
 ramchip char _ms_pal_detected;
@@ -972,6 +975,9 @@ INIT_BANK void multisprite_clear()
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
+#ifdef MULTISPRITE_CLEAR
+        _ms_dlend_save_overlay[X] = 0;
+#endif
 #ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
 #endif
@@ -1014,6 +1020,10 @@ INIT_BANK void multisprite_save()
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend_save[X] = _ms_dlend[Y];
+#ifdef MULTISPRITE_OVERLAY
+            _ms_dlend_save_overlay[Y] = _ms_dlend[Y];
+            _ms_dlend_save_overlay[X] = _ms_dlend[Y];
+#endif
 #ifdef DMA_CHECK
             _ms_dldma_save[X] = _ms_dldma[Y];
 #endif
@@ -1033,6 +1043,12 @@ INIT_BANK void multisprite_save()
             _ms_dldma_save[X] = _ms_dldma[X];
 #endif
         }
+#ifdef MULTISPRITE_OVERLAY
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend_save_overlay[Y] = _ms_dlend[X];
+            _ms_dlend_save_overlay[X] = _ms_dlend[X];
+        }
+#endif
         // Copy the DLs from current write buffer to all buffers
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
@@ -1043,6 +1059,36 @@ INIT_BANK void multisprite_save()
         }
     }
 }
+
+#ifdef MULTISPRITE_OVERLAY
+void multisprite_save_overlay()
+{
+    if (_ms_buffer) {
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend_save_overlay[Y] = _ms_dlend[Y];
+        }
+    } else {
+        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+            _ms_dlend_save_overlay[X] = _ms_dlend[X];
+        }
+    }
+}
+
+void multisprite_clear_overlay()
+{
+    if (_ms_buffer) {
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
+            _ms_dlend[Y] = _ms_dlend_save[X];
+        }
+    } else {
+        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+            _ms_dlend_save_overlay[X] = _ms_dlend_save[X];
+            _ms_dlend[X] = _ms_dlend_save[X];
+        }
+    }
+}
+#endif
 
 void multisprite_restore()
 {
@@ -1539,7 +1585,11 @@ void multisprite_flip()
 #endif
         // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+#ifdef MULTISPRITE_OVERLAY
+            _ms_dlend[X] = _ms_dlend_save_overlay[X];
+#else
             _ms_dlend[X] = _ms_dlend_save[X];
+#endif
 #ifdef DMA_CHECK
             _ms_dldma[X] = _ms_dldma_save[X];
 #endif
@@ -1599,7 +1649,11 @@ void multisprite_flip()
 #endif
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+#ifdef MULTISPRITE_OVERLAY
+            _ms_dlend[Y] = _ms_dlend_save_overlay[Y];
+#else
             _ms_dlend[Y] = _ms_dlend_save[X];
+#endif
 #ifdef DMA_CHECK
             _ms_dldma[Y] = _ms_dldma_save[X];
 #endif
