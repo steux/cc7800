@@ -573,7 +573,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if ((y) & 0x0f) { \
+                if (_ms_tmp) { \
                     X++; \
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
@@ -675,7 +675,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if ((y) & 0x0f) { \
+                if (_ms_tmp) { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x10) | _ms_tmp; \
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
@@ -756,7 +756,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if ((y) & 0x0f) { \
+                if (_ms_tmp) { \
                     X++; \
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
@@ -787,7 +787,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
         _ms_tmpptr[Y++] = (x); \
         _ms_dlend[X] = Y; \
-        if ((y) & 0x0f) { \
+        if (_ms_tmp) { \
             X++; \
             _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
             _ms_tmpptr = _ms_dls[X];  \
