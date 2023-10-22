@@ -31,6 +31,10 @@
 #define _MS_DLL_ARRAY_SIZE 15
 #define _MS_DMA_START_VALUE (402 / 2)
 
+#ifndef _MS_TOP_SCROLLING_ZONE
+#define _MS_TOP_SCROLLING_ZONE 0
+#endif
+
 // Zeropage variables
 char _ms_dmaerror;
 #define _ms_tmpptr _libc_tmpptr
@@ -64,10 +68,6 @@ ramchip char _ms_scroll_buffers_refill;
 #else
 ramchip char _ms_sbuffer_size;
 ramchip char _ms_sbuffer_dma;
-#endif
-
-#ifndef _MS_TOP_SCROLLING_ZONE
-#define _MS_TOP_SCROLLING_ZONE 0
 #endif
 
 #ifdef BIDIR_VERTICAL_SCROLLING
