@@ -54,19 +54,27 @@ void multisprite_display_tiles()
 
     right = _tiling_xpos + 22;
     for (y = _MS_DLL_ARRAY_SIZE - 1 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
-        char r;
+        signed char r, d;
+        char skip = 0;
         ptr = _ms_st_ptr[Y = y];
         linedb = (_ms_buffer)?(y + _MS_DLL_ARRAY_SIZE):y;
         _ms_tmpptr = _ms_dls[X = linedb];
         // Find the first visible tileset on this line, if any
         Y = 0;
         do {
-            // TODO: Check wrapping cases
+            // Check if it's the last tileset
+            if (ptr[Y] == 96) {
+                if (ptr[++Y] == 0xff) {
+                    skip = 1;
+                    break;
+                } else Y--;
+            }
             r = ptr[Y] - _tiling_xpos;
             if (r >= 0) break;
             Y += _STS_SIZE;
         } while (1);
-        if (y) { // Update the pointer
+        if (skip) continue;
+        if (Y) { // Update the pointer
             x = Y;
             _ms_st_ptr[X = y] += x;
         }
@@ -74,7 +82,9 @@ void multisprite_display_tiles()
         x = _ms_dlend[X = linedb];
         data[4] = ptr[Y];
         // First one: maybe is this too much on the left ?
-        if (data[4] < right) {
+        d = right - data[4];
+        
+        if (d >= 0) {
             char off;
             data[0] = ptr[++Y]; // 10 cycles
             data[1] = ptr[++Y];
@@ -102,34 +112,42 @@ void multisprite_display_tiles()
             _ms_tmpptr[Y++] = xpos << 3;
             x = Y; // 21 cycles
             Y = _save_y;
-            r = ptr[++Y] - _tiling_xpos;
+            
+            r = ptr[++Y];
             data[4] = ptr[++Y];
-        } 
-        // TODO: Check termination case
-        while (data[4] < right) { // 9 cycles
-            data[0] = ptr[++Y]; // 10 cycles
-            data[1] = ptr[++Y];
-            data[2] = ptr[++Y];
-            data[3] = ptr[++Y];
-            if (r >= 22) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
-                data[3] = (((data[3] | 0xe0) + (r - 21)) & 0x1f) | (data[3] & 0xe0); 
-            } 
+            d = right - data[4];
+            
+            while (d >= 0) {
+                // Check termination
+                if (r == 96 && data[4] == 0xff) break;
+                r -= _tiling_xpos;
+
+                data[0] = ptr[++Y]; // 10 cycles
+                data[1] = ptr[++Y];
+                data[2] = ptr[++Y];
+                data[3] = ptr[++Y];
+                if (r >= 22) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
+                    data[3] = (((data[3] | 0xe0) + (r - 21)) & 0x1f) | (data[3] & 0xe0); 
+                } 
 #ifdef DMA_CHECK 
-            _ms_dldma[X] -= ptr[++Y]; // 18 cycles
+                _ms_dldma[X] -= ptr[++Y]; // 18 cycles
 #else
-            ++Y;
+                ++Y;
 #endif
-            _save_y = Y;
-            Y = x; // 6 cycles
-            _ms_tmpptr[Y++] = data[0]; // 11 cycles
-            _ms_tmpptr[Y++] = data[1];
-            _ms_tmpptr[Y++] = data[2];
-            _ms_tmpptr[Y++] = data[3];
-            _ms_tmpptr[Y++] = ((data[4] - _tiling_xpos) << 3);
-            x = Y; // 21 cycles
-            Y = _save_y;
-            r = ptr[++Y] - _tiling_xpos;
-            data[4] = ptr[++Y];
+                _save_y = Y;
+                Y = x; // 6 cycles
+                _ms_tmpptr[Y++] = data[0]; // 11 cycles
+                _ms_tmpptr[Y++] = data[1];
+                _ms_tmpptr[Y++] = data[2];
+                _ms_tmpptr[Y++] = data[3];
+                _ms_tmpptr[Y++] = ((data[4] - _tiling_xpos) << 3);
+                x = Y; // 21 cycles
+                Y = _save_y;
+            
+                r = ptr[++Y];
+                data[4] = ptr[++Y];
+                d = right - data[4];
+            } 
         } 
         _ms_dlend[X = linedb] = x;
     }
