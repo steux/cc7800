@@ -26,8 +26,8 @@
 #define _MS_BOTTOM_SCROLLING_ZONE 0
 #endif
 
-ramchip char *_ms_st_ptr[_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE];
-ramchip signed char _tiling_xpos, _tiling_xoffset[2];
+ramchip char *_tiling_ptr[_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1];
+ramchip signed char _tiling_xpos[2], _tiling_xoffset[2];
 
 #define tiling_init(ptr) \
     _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
@@ -37,26 +37,27 @@ ramchip signed char _tiling_xpos, _tiling_xoffset[2];
 void _ms_tiling_init()
 {
     char *ptr;
-    for (Y = _MS_DLL_ARRAY_SIZE - 1 - _MS_BOTTOM_SCROLLING_ZONE; Y >= 0; Y--) {
+    for (Y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; Y >= 0; Y--) {
         ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
-        _ms_st_ptr[Y] = ptr;
+        _tiling_ptr[Y] = ptr;
     }
-    _tiling_xpos = 0;
-    _tiling_xoffset[X = 0] = 0;
+    _tiling_xpos[X = 0] = 0;
+    _tiling_xoffset[X] = 0;
     _tiling_xoffset[++X] = 0;
+    _tiling_xpos[X] = 0;
 }
 
-void multisprite_display_tiles()
+void tiling_display()
 {
     char *ptr, data[5];
     signed char y, right;
-    char x, linedb;
+    char x, linedb, txpos = _tiling_xpos[X = _ms_buffer];
 
-    right = _tiling_xpos + 22;
-    for (y = _MS_DLL_ARRAY_SIZE - 1 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
+    right = txpos + 22;
+    for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
         signed char r, d;
         char skip = 0;
-        ptr = _ms_st_ptr[Y = y];
+        ptr = _tiling_ptr[Y = y];
         linedb = (_ms_buffer)?(y + _MS_DLL_ARRAY_SIZE):y;
         _ms_tmpptr = _ms_dls[X = linedb];
         // Find the first visible tileset on this line, if any
@@ -69,14 +70,14 @@ void multisprite_display_tiles()
                     break;
                 } else Y--;
             }
-            r = ptr[Y] - _tiling_xpos;
+            r = ptr[Y] - txpos;
             if (r >= 0) break;
             Y += _STS_SIZE;
         } while (1);
         if (skip) continue;
         if (Y) { // Update the pointer
             x = Y;
-            _ms_st_ptr[X = y] += x;
+            _tiling_ptr[X = y] += x;
         }
         Y++; // Next byte
         x = _ms_dlend[X = linedb];
@@ -93,9 +94,12 @@ void multisprite_display_tiles()
             if (r >= 22) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
                 data[3] = (((data[3] | 0xe0) + (r - 21)) & 0x1f) | (data[3] & 0xe0); 
             } 
-            char xpos = data[4] - _tiling_xpos;
+            char xpos = data[4] - txpos;
             if (xpos < 0) { // Reduce the length of this tileset so that is doesn't get out of screen on the left
                 data[3] = (((data[3] | 0xe0) - xpos) & 0x1f) | (data[3] & 0xe0); 
+                // Advance pointer
+                if (data[0] >= xpos) data[2]++;
+                data[0] -= xpos;
                 xpos = 0;
             }
 #ifdef DMA_CHECK 
@@ -120,7 +124,7 @@ void multisprite_display_tiles()
             while (d >= 0) {
                 // Check termination
                 if (r == 96 && data[4] == 0xff) break;
-                r -= _tiling_xpos;
+                r -= txpos;
 
                 data[0] = ptr[++Y]; // 10 cycles
                 data[1] = ptr[++Y];
@@ -140,7 +144,7 @@ void multisprite_display_tiles()
                 _ms_tmpptr[Y++] = data[1];
                 _ms_tmpptr[Y++] = data[2];
                 _ms_tmpptr[Y++] = data[3];
-                _ms_tmpptr[Y++] = ((data[4] - _tiling_xpos) << 3);
+                _ms_tmpptr[Y++] = ((data[4] - txpos) << 3);
                 x = Y; // 21 cycles
                 Y = _save_y;
             
@@ -153,21 +157,21 @@ void multisprite_display_tiles()
     }
 }
 
-void multisprite_tiling_scroll(char offset)
+void tiling_scroll(char offset)
 {
     signed char y;
     _tiling_xoffset[X = _ms_buffer] += offset;
     if (_tiling_xoffset[X] >= 8) {
         _tiling_xoffset[X] -= 8;
-        _tiling_xpos++;
+        _tiling_xpos[X]++;
         multisprite_clear_overlay();
-        multisprite_display_tiles();
+        tiling_display();
         multisprite_save_overlay();
     }
     if (_tiling_xoffset[X]) {
         char xoffset = _tiling_xoffset[X];
         // Apply this offset to all the tilesets in overlay
-        for (y = _MS_DLL_ARRAY_SIZE - 1 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
+        for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
             if (_ms_buffer) {
                 _ms_tmpptr = _ms_dls[X = y + _MS_DLL_ARRAY_SIZE];
             } else {
@@ -175,12 +179,12 @@ void multisprite_tiling_scroll(char offset)
             }
             Y = _ms_dlend_save[X = y]; 
             while (Y < _ms_dlend[X]) {
-                if (_ms_tmpptr[++Y] & 0x1f == 0) {
+                if ((_ms_tmpptr[++Y] & 0x1f) == 0) {
                     // This is an extended header
                     Y++;
                 }
                 Y++; Y++;
-                _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf8) - xoffset; 
+                _ms_tmpptr[Y] = ((_ms_tmpptr[Y] + 7) & 0xf8) - xoffset; 
                 Y++;
             }
         }
