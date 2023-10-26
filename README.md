@@ -30,11 +30,8 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
 
 
 - The only data types supported are char (8-bit), short (16-bit) and char pointers (16-bits), and one dimensional arrays of these types.
-- Only global variables are supported, not local variables (no use of stack. It's so slow on 6502 and so dangerous due
-    to the lack of RAM that it'd be a bad idea anyway)
-- Functions can't have arguments and return values (no use of stack). Everything must go through global variables.
-- Array subscripts are limited to constants, X and Y variables / registers.
-- 16-bits arithmetics is severly constrained. Generated code may not work if too complex (carry propagation is not ensured).
+- Array subscripts are preferably constants, X and Y variables / registers (performance penalty or error in case of too complex subscript)
+- 16-bits arithmetics is severly constrained. Generated code may generate an error if too complex (carry propagation check).
 - No 32-bits operations, no floating point.
 - Works with one C file. No linking provided. Use `#include "other_file.c"` to cope with this.
 
@@ -61,6 +58,12 @@ The `a.out` file can be executed with the `a7800` emulator by typing `a7800 a780
 Concerto cart.
 
 ## Technical details
+
+### Atari 7800 specific keywords
+
+In order to deal with the very special Atari 7800 memory mapping, some specific keywords have been added to
+the standard C language. These keywords are `scattered`, `holeydma`, `reversed`, `ramchip` and `bankX`.
+Please look at the examples to understand how/wherer to use these keywords.
 
 ### Intrinsics
 
