@@ -63,7 +63,7 @@ Concerto cart.
 
 In order to deal with the very special Atari 7800 memory mapping, some specific keywords have been added to
 the standard C language. These keywords are `scattered`, `holeydma`, `reversed`, `ramchip` and `bankX`.
-Please look at the examples to understand how/wherer to use these keywords.
+Please look at the examples to understand how/where to use these keywords.
 
 ### Intrinsics
 
