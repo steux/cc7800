@@ -1,5 +1,8 @@
-v0.2.15 (10/09/2023) :
+v0.2.16 (10/26/2023) :
     - Moved to cc6502 v1.0.10
+
+v0.2.15 (10/09/2023) :
+    - Moved to cc6502 v1.0.9
 
 v0.2.14 (10/02/2023) :
     - Bug corrected: current_bank is set correctly (bankswitching)
