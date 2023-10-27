@@ -91,9 +91,6 @@ void tiling_display()
             data[1] = ptr[++Y];
             data[2] = ptr[++Y];
             data[3] = ptr[++Y];
-            if (r >= 22) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
-                data[3] = (((data[3] | 0xe0) + (r - 21)) & 0x1f) | (data[3] & 0xe0); 
-            } 
             char xpos = data[4] - txpos;
             if (xpos < 0) { // Reduce the length of this tileset so that is doesn't get out of screen on the left
                 data[3] = (((data[3] | 0xe0) - xpos) & 0x1f) | (data[3] & 0xe0); 
@@ -102,6 +99,9 @@ void tiling_display()
                 data[0] -= xpos;
                 xpos = 0;
             }
+            if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
+                data[3] = ((xpos - 23) & 0x1f) | (data[3] & 0xe0); 
+            } 
 #ifdef DMA_CHECK 
             _ms_dldma[X] -= ptr[++Y]; // 18 cycles
 #else
@@ -130,8 +130,9 @@ void tiling_display()
                 data[1] = ptr[++Y];
                 data[2] = ptr[++Y];
                 data[3] = ptr[++Y];
-                if (r >= 22) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
-                    data[3] = (((data[3] | 0xe0) + (r - 21)) & 0x1f) | (data[3] & 0xe0); 
+                if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
+                    data[3] = ((data[4] - txpos - 23) & 0x1f) | (data[3] & 0xe0); 
+                    //data[3] = (((data[3] | 0xe0) + (21 - r)) & 0x1f) | (data[3] & 0xe0); 
                 } 
 #ifdef DMA_CHECK 
                 _ms_dldma[X] -= ptr[++Y]; // 18 cycles
