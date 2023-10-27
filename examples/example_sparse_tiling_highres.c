@@ -137,10 +137,10 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(blue_tubes);
-    tiling_init(tilemap_data_ptrs);
+    sparse_tiling_init(tilemap_data_ptrs);
     joystick_init();
     
-    tiling_goto(x, y);
+    sparse_tiling_goto(x, y);
     *P0C2 = 0x0f; // White
     *P1C2 = multisprite_color(0x9a); // Blue
     *P2C2 = multisprite_color(0x3a); // Orange
@@ -154,6 +154,6 @@ void main()
         else if (joystick[0] & JOYSTICK_RIGHT) x++;
         if (joystick[0] & JOYSTICK_UP) y--; 
         else if (joystick[0] & JOYSTICK_DOWN) y++;
-        tiling_goto(x, y);
+        sparse_tiling_goto(x, y);
     } while(1);
 }

@@ -29,12 +29,12 @@
 ramchip char *_tiling_ptr[_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1];
 ramchip signed char _tiling_xpos[2], _tiling_xoffset[2];
 
-#define tiling_init(ptr) \
+#define sparse_tiling_init(ptr) \
     _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
     _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
-    _ms_tiling_init()
+    _sparse_tiling_init()
 
-void _ms_tiling_init()
+void _sparse_tiling_init()
 {
     char *ptr;
     for (Y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; Y >= 0; Y--) {
@@ -47,7 +47,7 @@ void _ms_tiling_init()
     _tiling_xpos[X] = 0;
 }
 
-void tiling_display()
+void sparse_tiling_display()
 {
     char *ptr, data[5];
     signed char y, right;
@@ -158,7 +158,7 @@ void tiling_display()
     }
 }
 
-void tiling_scroll(char offset)
+void sparse_tiling_scroll(char offset)
 {
     signed char y;
     _tiling_xoffset[X = _ms_buffer] += offset;
@@ -166,7 +166,7 @@ void tiling_scroll(char offset)
         _tiling_xoffset[X] -= 8;
         _tiling_xpos[X]++;
         multisprite_clear_overlay();
-        tiling_display();
+        sparse_tiling_display();
         multisprite_save_overlay();
     }
     if (_tiling_xoffset[X]) {
@@ -196,22 +196,22 @@ void tiling_scroll(char offset)
 #define VERTICAL_SCROLLING
 #include "multisprite.h"
 
-#define tiling_init(ptr) \
+#define sparse_tiling_init(ptr) \
     _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
     _ms_sparse_tiles_ptr_low = ptr[Y = 1];
 
 ramchip signed char _tiling_xpos, _tiling_ypos, _tiling_xoffset, _tiling_yoffset, _tiling_left, _tiling_right;
 
-#define tiling_goto(x, y) \
+#define sparse_tiling_goto(x, y) \
     _ms_tmp = x; \
     _tiling_xpos = (((x) >> 8) << 5) | (_ms_tmp >> 3); \
     _tiling_xoffset = (x) & 7; \
     _ms_tmp = y; \
     _tiling_ypos = ((((y) >> 8)) << 4) | (_ms_tmp >> 4); \
     _tiling_yoffset = (y) & 0xf; \
-    _tiling_goto()
+    _sparse_tiling_goto()
 
-void _tiling_goto()
+void _sparse_tiling_goto()
 {
     char *ptr, data[5], y, tmp, bottom;
 

@@ -18,7 +18,7 @@ void main()
     multisprite_set_charbase(brown_tiles1);
     //multisprite_sparse_tiling(tilemap_level1_data_ptrs, 0, 0, 13);
     //multisprite_save();
-    tiling_init(tilemap_level1_data_ptrs);
+    sparse_tiling_init(tilemap_level1_data_ptrs);
     
     // Beige palette
     *P4C1 = multisprite_color(0x12); 
@@ -43,20 +43,20 @@ void main()
     _tiling_xpos[X = 0] = 13;
     _tiling_xpos[++X] = 13;
 
-    tiling_display();
+    sparse_tiling_display();
     multisprite_save_overlay();
     multisprite_flip();
-    tiling_display();
+    sparse_tiling_display();
     multisprite_save_overlay();
     do {
         joystick_update();
         //if (joystick[0] & JOYSTICK_BUTTON1) {
             if (!button_pressed) {
                 button_pressed = 1;
-                tiling_scroll(2);
+                sparse_tiling_scroll(2);
                 while (*MSTAT & 0x80); // Make sure we are out of blank 
                 multisprite_flip();
-                tiling_scroll(2);
+                sparse_tiling_scroll(2);
             }
         //} else 
             button_pressed = 0;

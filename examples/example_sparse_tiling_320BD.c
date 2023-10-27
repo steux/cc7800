@@ -375,10 +375,10 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(white_tubes);
-    tiling_init(tilemap_data_ptrs);
+    sparse_tiling_init(tilemap_data_ptrs);
     joystick_init();
     
-    tiling_goto(x, y);
+    sparse_tiling_goto(x, y);
     *P0C1 = multisprite_color(0xbc); // Light turquoie
     *P0C2 = multisprite_color(0x33); // Red
     *P0C3 = multisprite_color(0xa5); // Dark turquoise
@@ -394,6 +394,6 @@ void main()
         else if (joystick[0] & JOYSTICK_RIGHT) x++;
         if (joystick[0] & JOYSTICK_UP) y--; 
         else if (joystick[0] & JOYSTICK_DOWN) y++;
-        tiling_goto(x, y);
+        sparse_tiling_goto(x, y);
     } while(1);
 }

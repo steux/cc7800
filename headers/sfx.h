@@ -32,8 +32,8 @@ void _sfx_schedule()
 #define channel X 
     channel = 0;
     if (_sfx_instrument[Y = 0] == 0x10) { // TIA sound
-        if (!(_sfx_ptr[0] >> 8)) channel = 1;
-        else if (!(_sfx_ptr[1] >> 8)) channel = 2;
+        if (_sfx_ptr[0] == NULL) channel = 1;
+        else if (_sfx_ptr[1] == NULL) channel = 2;
         else if (_sfx_instrument[++Y]) {
             if (_sfx_priority[1] < _sfx_priority[0]) {
                 channel = 2;

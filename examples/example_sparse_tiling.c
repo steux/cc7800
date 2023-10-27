@@ -180,11 +180,10 @@ void main()
 
     multisprite_init();
     multisprite_set_charbase(tiles);
-    tiling_init(tilemap_data_ptrs);
+    sparse_tiling_init(tilemap_data_ptrs);
     joystick_init();
     multisprite_display_tiles(0, 0, display_score_str, 5, 0);
     multisprite_save();
-    
 
     *P0C1 = multisprite_color(0x1c); // Setup Palette 0: Yellow
     *P0C2 = multisprite_color(0xc5); // Green
@@ -210,7 +209,7 @@ void main()
     *P6C1 = multisprite_color(0x3A);
     *P6C2 = 0x0f;
 
-    tiling_goto(0, 0);
+    sparse_tiling_goto(0, 0);
 
     // Main loop
     do {
@@ -220,7 +219,7 @@ void main()
         else if (joystick[0] & JOYSTICK_RIGHT) x++;
         if (joystick[0] & JOYSTICK_UP) y--; 
         else if (joystick[0] & JOYSTICK_DOWN) y++;
-        tiling_goto(x, y);
+        sparse_tiling_goto(x, y);
         score++;
         display_score_update();
     } while(1);
