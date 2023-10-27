@@ -20,15 +20,19 @@ void main()
     //multisprite_save();
     sparse_tiling_init(tilemap_level1_data_ptrs);
     
+    *P3C1 = multisprite_color(0xd0); 
+    *P3C3 = multisprite_color(0xd1); 
+    *P3C2 = multisprite_color(0xd2); 
+    
     // Beige palette
     *P4C1 = multisprite_color(0x12); 
     *P4C2 = multisprite_color(0x14); 
     *P4C3 = multisprite_color(0x16); 
     
-    // Greenish palette
-    *P5C1 = multisprite_color(0xd4);
-    *P5C2 = multisprite_color(0xd7);
-    *P5C3 = multisprite_color(0xdc); 
+    // Blue palette
+    *P5C1 = multisprite_color(0x84); // Dark blue 
+    *P5C2 = multisprite_color(0x87); // Light blue
+    *P5C3 = multisprite_color(0xac); // Turquoise 
 
     // Rose palette
     *P6C1 = multisprite_color(0x34); // Dark Rose
@@ -42,6 +46,25 @@ void main()
 
     _tiling_xpos[X = 0] = 13;
     _tiling_xpos[++X] = 13;
+
+    char c, y = 0;
+
+    for (c = 0; c != 3; c++) {
+        y += 16;
+        multisprite_display_sprite_ex(0, y, background_level1, 20, 3, 0);
+        multisprite_display_sprite_ex(80, y, background_level1, 24, 3, 0);
+        y += 16;
+        multisprite_display_sprite_ex(0, y, background_level1_1, 20, 3, 0);
+        multisprite_display_sprite_ex(80, y, background_level1_1, 24, 3, 0);
+        y += 16;
+        multisprite_display_sprite_ex(-8, y, background_level1, 20, 3, 0);
+        multisprite_display_sprite_ex(72, y, background_level1, 24, 3, 0);
+        y += 16;
+        multisprite_display_sprite_ex(-8, y, background_level1_1, 20, 3, 0);
+        multisprite_display_sprite_ex(72, y, background_level1_1, 24, 3, 0);
+    }
+
+    multisprite_save();
 
     sparse_tiling_display();
     multisprite_save_overlay();
