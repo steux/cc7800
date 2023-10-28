@@ -9,15 +9,49 @@
 // Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
 #include "example_RType_level1.c"
 
+char scroll_background_counter;
+
+void scroll_background()
+{
+    char c;
+    signed char pos1, pos2, pos3, pos4;
+    scroll_background_counter++;
+    if (scroll_background_counter == 16) scroll_background_counter = 0;
+    pos1 = -scroll_background_counter;
+    pos2 = pos1 + 80;
+    pos3 = pos1 - 8;
+    if (pos3 < -16) pos3 += 16;
+    pos4 = pos3 + 80;
+    if (_ms_buffer) {
+        X = _MS_DLL_ARRAY_SIZE + 1;
+        scroll_background_counter++;
+        if (scroll_background_counter == 16) scroll_background_counter = 0;
+    } else X = 1;
+    _ms_tmpptr = _ms_dls[X];
+    for (c = 0; c != 3; c++) {
+        _ms_tmpptr[Y = 4] = pos1;
+        _ms_tmpptr[Y = 8] = pos2;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos1;
+        _ms_tmpptr[Y = 8] = pos2;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos3;
+        _ms_tmpptr[Y = 8] = pos4;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos3;
+        _ms_tmpptr[Y = 8] = pos4;
+        _ms_tmpptr = _ms_dls[++X];
+    }
+}
+
 void main()
 {
     char button_pressed = 0;
+    scroll_background_counter = 0;
 
     joystick_init();
     multisprite_init();
     multisprite_set_charbase(brown_tiles1);
-    //multisprite_sparse_tiling(tilemap_level1_data_ptrs, 0, 0, 13);
-    //multisprite_save();
     sparse_tiling_init(tilemap_level1_data_ptrs);
     
     *P3C1 = multisprite_color(0xd0); 
@@ -44,26 +78,24 @@ void main()
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
 
-    _tiling_xpos[X = 0] = 13;
-    _tiling_xpos[++X] = 13;
-
+    // Background display
     char c, y = 0;
-
     for (c = 0; c != 3; c++) {
         y += 16;
         multisprite_display_sprite_ex(0, y, background_level1, 20, 3, 0);
-        multisprite_display_sprite_ex(80, y, background_level1, 24, 3, 0);
+        multisprite_display_sprite_fast(80, y, background_level1, 24, 3);
         y += 16;
         multisprite_display_sprite_ex(0, y, background_level1_1, 20, 3, 0);
-        multisprite_display_sprite_ex(80, y, background_level1_1, 24, 3, 0);
+        multisprite_display_sprite_fast(80, y, background_level1_1, 24, 3);
         y += 16;
         multisprite_display_sprite_ex(-8, y, background_level1, 20, 3, 0);
-        multisprite_display_sprite_ex(72, y, background_level1, 24, 3, 0);
+        multisprite_display_sprite_fast(72, y, background_level1, 24, 3);
         y += 16;
         multisprite_display_sprite_ex(-8, y, background_level1_1, 20, 3, 0);
-        multisprite_display_sprite_ex(72, y, background_level1_1, 24, 3, 0);
+        multisprite_display_sprite_fast(72, y, background_level1_1, 24, 3);
     }
 
+    // Save it
     multisprite_save();
 
     sparse_tiling_display();
@@ -71,18 +103,11 @@ void main()
     multisprite_flip();
     sparse_tiling_display();
     multisprite_save_overlay();
+
     do {
         joystick_update();
-        //if (joystick[0] & JOYSTICK_BUTTON1) {
-            if (!button_pressed) {
-                button_pressed = 1;
-                sparse_tiling_scroll(2);
-                while (*MSTAT & 0x80); // Make sure we are out of blank 
-                multisprite_flip();
-                sparse_tiling_scroll(2);
-            }
-        //} else 
-            button_pressed = 0;
+        scroll_background();
+        sparse_tiling_scroll(2);
         while (*MSTAT & 0x80); // Make sure we are out of blank 
         multisprite_flip();
     } while (1);
