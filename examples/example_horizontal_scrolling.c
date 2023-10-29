@@ -1,3 +1,4 @@
+#include "string.h"
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
 #include "sparse_tiling.h"
@@ -27,6 +28,7 @@ void scroll_background()
     } else X = 1;
     _ms_tmpptr = _ms_dls[X];
     for (c = 0; c != 3; c++) {
+        // Modify bytes 4 and 8 of the DLL entries (x position of background sprites=
         _ms_tmpptr[Y = 4] = pos1;
         _ms_tmpptr[Y = 8] = pos2;
         _ms_tmpptr = _ms_dls[++X];
@@ -42,6 +44,24 @@ void scroll_background()
     }
 }
 
+ramchip int score;
+ramchip char update_score;
+ramchip char display_score_str[5];
+
+void display_score_update()
+{
+    char display_score_ascii[6];
+    itoa(score, display_score_ascii, 10);
+    Y = strlen(display_score_ascii); 
+    for (X = 0; X != 5 - Y; X++) {
+        display_score_str[X] = 0; // '0'
+    }
+    X = 4;
+    do {
+        display_score_str[X--] = ((display_score_ascii[--Y] - '0') << 1);
+    } while (Y);
+}
+
 void main()
 {
     char button_pressed = 0;
@@ -49,9 +69,10 @@ void main()
 
     joystick_init();
     multisprite_init();
-    multisprite_set_charbase(brown_tiles1);
     sparse_tiling_init(tilemap_level1_data_ptrs);
-    
+    multisprite_set_charbase(digits);
+   
+    // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
     *P3C3 = multisprite_color(0xd1); 
     *P3C2 = multisprite_color(0xd2); 
@@ -75,6 +96,8 @@ void main()
     *P7C1 = 0x04; // Dark gray
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
+
+    multisprite_display_tiles(0, 13, display_score_str, 5, 5);
 
     // Background display
     char c, y = 0;
@@ -102,13 +125,17 @@ void main()
     sparse_tiling_display();
     multisprite_save_overlay();
 
+    _tiling_xpos[X = 0] = -1;
+    _tiling_xpos[X = 1] = -1;
+    
     do {
         joystick_update();
-        if (joystick[0] & JOYSTICK_BUTTON1) {
-            scroll_background();
-            sparse_tiling_scroll(2);
-            while (*MSTAT & 0x80); // Make sure we are out of blank 
-            multisprite_flip();
-        }
+        scroll_background();
+        sparse_tiling_scroll(2);
+        char x = _tiling_xpos[0]; 
+        score = x;
+        display_score_update();
+
+        multisprite_flip();
     } while (1);
 }
