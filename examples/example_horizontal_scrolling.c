@@ -15,8 +15,6 @@ void scroll_background()
 {
     char c;
     signed char pos1, pos2, pos3, pos4;
-    scroll_background_counter++;
-    if (scroll_background_counter == 16) scroll_background_counter = 0;
     pos1 = -scroll_background_counter;
     pos2 = pos1 + 80;
     pos3 = pos1 - 8;
@@ -106,9 +104,11 @@ void main()
 
     do {
         joystick_update();
-        scroll_background();
-        sparse_tiling_scroll(2);
-        while (*MSTAT & 0x80); // Make sure we are out of blank 
-        multisprite_flip();
+        if (joystick[0] & JOYSTICK_BUTTON1) {
+            scroll_background();
+            sparse_tiling_scroll(2);
+            while (*MSTAT & 0x80); // Make sure we are out of blank 
+            multisprite_flip();
+        }
     } while (1);
 }

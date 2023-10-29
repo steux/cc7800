@@ -169,7 +169,7 @@ void sparse_tiling_scroll(char offset)
         sparse_tiling_display();
         multisprite_save_overlay();
     }
-    if (_tiling_xoffset[X]) {
+    if (_tiling_xoffset[X = _ms_buffer]) {
         char xoffset = _tiling_xoffset[X];
         // Apply this offset to all the tilesets in overlay
         for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
