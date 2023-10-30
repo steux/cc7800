@@ -91,7 +91,7 @@ void sparse_tiling_display()
             data[1] = ptr[++Y];
             data[2] = ptr[++Y];
             data[3] = ptr[++Y];
-            char xpos = data[4] - txpos;
+            signed char xpos = data[4] - txpos;
             if (xpos < 0) { // Reduce the length of this tileset so that is doesn't get out of screen on the left
                 data[3] = (((data[3] | 0xe0) - xpos) & 0x1f) | (data[3] & 0xe0); 
                 // Advance pointer

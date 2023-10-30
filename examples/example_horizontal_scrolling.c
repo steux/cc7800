@@ -125,9 +125,6 @@ void main()
     sparse_tiling_display();
     multisprite_save_overlay();
 
-    _tiling_xpos[X = 0] = -1;
-    _tiling_xpos[X = 1] = -1;
-    
     do {
         joystick_update();
         scroll_background();
