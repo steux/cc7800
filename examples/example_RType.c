@@ -2,6 +2,7 @@
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
 #include "sparse_tiling.h"
+#include "joystick.h"
 
 // Generated from sprites7800 RType_tiles.yaml
 #include "example_RType_tiles.c"
@@ -63,8 +64,10 @@ void display_score_update()
 
 void main()
 {
+    char button_pressed = 0;
     scroll_background_counter = 0;
 
+    joystick_init();
     multisprite_init();
     sparse_tiling_init(tilemap_level1_data_ptrs);
     multisprite_set_charbase(digits);
@@ -118,17 +121,25 @@ void main()
 
     sparse_tiling_display();
     multisprite_flip();
-    sparse_tiling_scroll(1); // One pixel offset between the 2 buffers
+    sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
     sparse_tiling_display();
     multisprite_flip();
 
     do {
         scroll_background();
-        sparse_tiling_scroll(2); // Scroll 2 pixels to the right for this buffer (so 1 pixel from frame to frame due to double buffering)
+        sparse_tiling_scroll(2); // Offset of 2 compared to previous same buffer (1 pixel scrolling due to double buffering)
         char x = _tiling_xpos[0]; 
         score = x;
         display_score_update();
 
+/*        do {
+            joystick_update();
+        } while (joystick[0] & JOYSTICK_BUTTON1);
+*/
+        do {
+            joystick_update();
+        } while (!(joystick[0] & JOYSTICK_BUTTON1));
+        
         multisprite_flip();
     } while (1);
 }

@@ -27,7 +27,7 @@
 #endif
 
 ramchip char *_tiling_ptr[_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1];
-ramchip signed char _tiling_xpos[2], _tiling_xoffset[2];
+ramchip signed char _tiling_xpos[2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1)], _tiling_xoffset[2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1)];
 
 #define sparse_tiling_init(ptr) \
     _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
@@ -41,66 +41,103 @@ void _sparse_tiling_init()
         ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
         _tiling_ptr[Y] = ptr;
     }
-    _tiling_xpos[X = 0] = 0;
-    _tiling_xoffset[X] = 0;
-    _tiling_xoffset[++X] = 0;
-    _tiling_xpos[X] = 0;
+    for (X = 2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1) - 1; X >= 0; X--) {
+        _tiling_xpos[X] = 0;
+        _tiling_xoffset[X] = 0;
+    }
 }
 
-void sparse_tiling_display()
+void _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
-    signed char y, right;
-    char x, linedb, txpos = _tiling_xpos[X = _ms_buffer];
-
+    char x, linedl, txpos, xoffset, skip = 0;
+    signed char right, r, d;
+ 
+    if (_ms_buffer) {
+        X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+        linedl = y + _MS_DLL_ARRAY_SIZE;
+    } else {
+        X = y;
+        linedl = y;
+    }
+    txpos = _tiling_xpos[X]; 
+    xoffset = _tiling_xoffset[X]; 
     right = txpos + 22;
-    for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
-        signed char r, d;
-        char skip = 0;
-        ptr = _tiling_ptr[Y = y];
-        linedb = (_ms_buffer)?(y + _MS_DLL_ARRAY_SIZE):y;
-        _ms_tmpptr = _ms_dls[X = linedb];
-        // Find the first visible tileset on this line, if any
-        Y = 0;
-        do {
-            // Check if it's the last tileset
-            if (ptr[Y] == 96) {
-                if (ptr[++Y] == 0xff) {
-                    skip = 1;
-                    break;
-                } else Y--;
-            }
-            r = ptr[Y] - txpos;
-            if (r >= 0) break;
-            Y += _STS_SIZE;
-        } while (1);
-        if (skip) continue;
-        if (Y) { // Update the pointer
-            x = Y;
-            _tiling_ptr[X = y] += x;
+    ptr = _tiling_ptr[Y = y];
+    _ms_tmpptr = _ms_dls[X = linedl];
+    // Find the first visible tileset on this line, if any
+    Y = 0;
+    do {
+        // Check if it's the last tileset
+        if (ptr[Y] == 96) {
+            if (ptr[++Y] == 0xff) {
+                skip = 1;
+                break;
+            } else Y--;
         }
-        Y++; // Next byte
-        x = _ms_dlend[X = linedb];
-        data[4] = ptr[Y];
-        // First one: maybe is this too much on the left ?
+        r = ptr[Y] - txpos;
+        if (r >= 0) break;
+        Y += _STS_SIZE;
+    } while (1);
+    if (skip) return;
+    X = y; 
+    if (Y) { // Update the pointer
+        _tiling_ptr[X] += Y;
+    }
+    Y++; // Next byte
+    x = _ms_dlend_save[X];
+    data[4] = ptr[Y];
+    // First one: maybe is this too much on the left ?
+    d = right - data[4];
+
+    if (d >= 0) {
+        char off;
+        data[0] = ptr[++Y]; // 10 cycles
+        data[1] = ptr[++Y];
+        data[2] = ptr[++Y];
+        data[3] = ptr[++Y];
+        signed char xpos = data[4] - txpos;
+        if (xpos < 0) { // Reduce the length of this tileset so that is doesn't get out of screen on the left
+            data[3] = (((data[3] | 0xe0) - xpos) & 0x1f) | (data[3] & 0xe0); 
+            // Advance pointer
+            if (data[0] >= xpos) data[2]++;
+            data[0] -= xpos;
+            xpos = 0;
+        }
+        if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
+            data[3] = ((xpos - 23) & 0x1f) | (data[3] & 0xe0); 
+        } 
+#ifdef DMA_CHECK 
+        _ms_dldma[X] -= ptr[++Y]; // 18 cycles
+#else
+        ++Y;
+#endif
+        _save_y = Y;
+        Y = x; // 6 cycles
+        _ms_tmpptr[Y++] = data[0]; // 11 cycles
+        _ms_tmpptr[Y++] = data[1];
+        _ms_tmpptr[Y++] = data[2];
+        _ms_tmpptr[Y++] = data[3];
+        _ms_tmpptr[Y++] = (xpos << 3) - xoffset;
+        x = Y; // 21 cycles
+        Y = _save_y;
+
+        r = ptr[++Y];
+        data[4] = ptr[++Y];
         d = right - data[4];
-        
-        if (d >= 0) {
-            char off;
+
+        while (d >= 0) {
+            // Check termination
+            if (r == 96 && data[4] == 0xff) break;
+            r -= txpos;
+
             data[0] = ptr[++Y]; // 10 cycles
             data[1] = ptr[++Y];
             data[2] = ptr[++Y];
             data[3] = ptr[++Y];
-            signed char xpos = data[4] - txpos;
-            if (xpos < 0) { // Reduce the length of this tileset so that is doesn't get out of screen on the left
-                data[3] = (((data[3] | 0xe0) - xpos) & 0x1f) | (data[3] & 0xe0); 
-                // Advance pointer
-                if (data[0] >= xpos) data[2]++;
-                data[0] -= xpos;
-                xpos = 0;
-            }
             if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
-                data[3] = ((xpos - 23) & 0x1f) | (data[3] & 0xe0); 
+                data[3] = ((data[4] - txpos - 23) & 0x1f) | (data[3] & 0xe0); 
+                //data[3] = (((data[3] | 0xe0) + (21 - r)) & 0x1f) | (data[3] & 0xe0); 
             } 
 #ifdef DMA_CHECK 
             _ms_dldma[X] -= ptr[++Y]; // 18 cycles
@@ -113,55 +150,33 @@ void sparse_tiling_display()
             _ms_tmpptr[Y++] = data[1];
             _ms_tmpptr[Y++] = data[2];
             _ms_tmpptr[Y++] = data[3];
-            _ms_tmpptr[Y++] = xpos << 3;
+            _ms_tmpptr[Y++] = ((data[4] - txpos) << 3) - xoffset;
             x = Y; // 21 cycles
             Y = _save_y;
-            
+
             r = ptr[++Y];
             data[4] = ptr[++Y];
             d = right - data[4];
-            
-            while (d >= 0) {
-                // Check termination
-                if (r == 96 && data[4] == 0xff) break;
-                r -= txpos;
-
-                data[0] = ptr[++Y]; // 10 cycles
-                data[1] = ptr[++Y];
-                data[2] = ptr[++Y];
-                data[3] = ptr[++Y];
-                if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
-                    data[3] = ((data[4] - txpos - 23) & 0x1f) | (data[3] & 0xe0); 
-                    //data[3] = (((data[3] | 0xe0) + (21 - r)) & 0x1f) | (data[3] & 0xe0); 
-                } 
-#ifdef DMA_CHECK 
-                _ms_dldma[X] -= ptr[++Y]; // 18 cycles
-#else
-                ++Y;
-#endif
-                _save_y = Y;
-                Y = x; // 6 cycles
-                _ms_tmpptr[Y++] = data[0]; // 11 cycles
-                _ms_tmpptr[Y++] = data[1];
-                _ms_tmpptr[Y++] = data[2];
-                _ms_tmpptr[Y++] = data[3];
-                _ms_tmpptr[Y++] = ((data[4] - txpos) << 3);
-                x = Y; // 21 cycles
-                Y = _save_y;
-            
-                r = ptr[++Y];
-                data[4] = ptr[++Y];
-                d = right - data[4];
-            } 
         } 
-        _ms_dlend[X = linedb] = x;
-    }
+    } 
+    _ms_dlend[X = linedl] = x;
+    _ms_dlend_save_overlay[X] = x;
+}
+
+void sparse_tiling_display()
+{ 
+    signed char y;    
+    for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) { 
+        _sparse_tiling_load_line(y); 
+    } 
 }
 
 void sparse_tiling_scroll(char offset)
 {
     signed char y;
-    _tiling_xoffset[X = _ms_buffer] += offset;
+    char yy, linedl;
+    char lines_moved = 0;    
+    /*
     if (_tiling_xoffset[X] >= 8) {
         _tiling_xoffset[X] -= 8;
         _tiling_xpos[X]++;
@@ -169,23 +184,38 @@ void sparse_tiling_scroll(char offset)
         sparse_tiling_display();
         multisprite_save_overlay();
     }
-    if (_tiling_xoffset[X = _ms_buffer]) {
-        char xoffset = _tiling_xoffset[X];
-        // Apply this offset to all the tilesets in overlay
-        for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) {
-            if (_ms_buffer) {
-                _ms_tmpptr = _ms_dls[X = y + _MS_DLL_ARRAY_SIZE];
-            } else {
-                _ms_tmpptr = _ms_dls[X = y];
-            }
+    */
+    
+    if (_ms_buffer) {
+        yy = 2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1) - 1;
+        linedl = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE + _MS_DLL_ARRAY_SIZE;
+    } else {
+        yy = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE;
+        linedl = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE;
+    }
+
+    for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; yy--, linedl--, y--) {
+        X = yy;
+        _tiling_xoffset[X] += offset;
+        if (_tiling_xoffset[X] >= 16 && lines_moved < 3) {
+            do {
+                _tiling_xoffset[X] -= 16;
+                _tiling_xpos[X] += 2;
+            } while (_tiling_xoffset[X] >= 16);
+            _sparse_tiling_load_line(y);
+            lines_moved++;
+        } else {
+            // Apply this offset to all the tilesets in overlay
+            _ms_tmpptr = _ms_dls[X = linedl];
             Y = _ms_dlend_save[X = y]; 
+            X = linedl;
             while (Y < _ms_dlend[X]) {
                 if ((_ms_tmpptr[++Y] & 0x1f) == 0) {
                     // This is an extended header
                     Y++;
                 }
                 Y++; Y++;
-                _ms_tmpptr[Y] = ((_ms_tmpptr[Y] + 7) & 0xf8) - xoffset; 
+                _ms_tmpptr[Y] -= offset; 
                 Y++;
             }
         }
