@@ -10,6 +10,9 @@
 // Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
 #include "example_RType_level1.c"
 
+// Generated from sprites7800 RType_font.yaml
+#include "example_RType_font.c"
+
 char scroll_background_counter;
 
 void scroll_background()
@@ -74,8 +77,8 @@ void main()
    
     // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
-    *P3C3 = multisprite_color(0xd1); 
     *P3C2 = multisprite_color(0xd2); 
+    *P3C3 = multisprite_color(0xd1); 
     
     // Beige palette
     *P4C1 = multisprite_color(0x12); 

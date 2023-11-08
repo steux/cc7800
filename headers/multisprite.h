@@ -776,6 +776,23 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             }\
         }
 
+#define multisprite_display_sprite_aligned(x, y, gfx, width, palette, mode) \
+	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_SIZE - 7) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+            }\
+        }
+
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
         _ms_tmp = (y) & 0x0f; \
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
@@ -891,15 +908,15 @@ INIT_BANK void multisprite_init()
         // 19 blank lines for NTSC
         if (_ms_pal_detected) {
             // 16 blank lines
-            _ms_tmpptr[Y = 0] = 0x4f;  // 16 lines
+            _ms_tmpptr[Y = 0] = 0x0f;  // 16 lines
             _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
             _ms_tmpptr[++Y] = _ms_set_wm_dl;
             // 16 blank lines
-            _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+            _ms_tmpptr[++Y] = 0x2f;  // 16 lines.. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[Y = 0] = 0x48; // 9 lines
+            _ms_tmpptr[Y = 0] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
             _ms_tmpptr[++Y] = _ms_set_wm_dl;
         }
@@ -915,20 +932,20 @@ INIT_BANK void multisprite_init()
         _ms_tmpptr[++Y] = _ms_blank_dl;
         X++;
         if (_ms_pal_detected) {
-            // 15 blank lines
-            _ms_tmpptr[++Y] = 0x4f;  // 16 lines
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
             // 16 blank lines
-            _ms_tmpptr[++Y] = 0x4e;  // 15 lines
+            _ms_tmpptr[++Y] = 0x0f;  // 16 lines
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
-            // 5 blank lines
-            _ms_tmpptr[++Y] = 0x44;  // 5 lines
+            // 4 blank lines
+            _ms_tmpptr[++Y] = 0x03;  // 4 lines
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[++Y] = 0x48; // 9 lines
+            _ms_tmpptr[++Y] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         }
