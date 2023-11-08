@@ -293,7 +293,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             }\
         }
 
-#define multisprite_display_small_sprite(x, y, gfx, width, palette) \
+#define multisprite_display_small_sprite(x, y, gfx, width, palette, margin) \
         _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
@@ -309,7 +309,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
+                if (_ms_tmp >= margin) { \
                     X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
@@ -328,7 +328,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             }\
         }
 
-#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, mode) \
+#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, margin, mode) \
         _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
         _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
@@ -345,7 +345,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
+                if (_ms_tmp >= margin) { \
                     X = _ms_shift3[Y = _ms_tmp3 + 8]; \
                     _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
@@ -592,7 +592,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             }\
         }
 
-#define multisprite_display_small_sprite(x, y, gfx, width, palette) \
+#define multisprite_display_small_sprite(x, y, gfx, width, palette, margin) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
@@ -606,7 +606,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
+                if (_ms_tmp >= margin) { \
                     X++; \
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
@@ -625,7 +625,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             }\
         }
 
-#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, mode) \
+#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, margin, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
@@ -640,7 +640,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
+                if (_ms_tmp >= margin) { \
                     X++; \
                     _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \

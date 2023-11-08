@@ -51,7 +51,7 @@ void main()
                 (ypos >= MS_YMAX - 20 && (dy[Y] >> 8) >= 0)) {
                 sp_direction[X] = vertical_pingpong[Y];
             }
-            multisprite_display_small_sprite(xpos, ypos, missile, 1, 0); 
+            multisprite_display_small_sprite(xpos, ypos, missile, 1, 0, 8); 
         }
     } while(1);
 }

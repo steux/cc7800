@@ -532,7 +532,7 @@ void step()
             y = spaceship_ypos + 24;
             if (exhaust_state < 10) {
                 x = spaceship_xpos + 2;
-                multisprite_display_small_sprite_ex(x, y, exhauststart, 2, 3, 0);
+                multisprite_display_small_sprite_ex(x, y, exhauststart, 2, 3, 8, 0);
             } else {
                 char *gfxptr;
                 i = exhaust_state - 10;
@@ -639,7 +639,7 @@ void step()
                         bullet_first = X;
                     }
                 } else {
-                    multisprite_display_small_sprite_ex(xbullet, ybullet, bullet, 1, 3, 0); 
+                    multisprite_display_small_sprite_ex(xbullet, ybullet, bullet, 1, 3, 8, 0); 
                     if (spaceship_state == 0) {
                         multisprite_compute_collision(xbullet, ybullet, 4, 8, spaceship_xpos, spaceship_ypos, 12, 24, collision_bullet_spaceship);
                         if (multisprite_collision_detected) {

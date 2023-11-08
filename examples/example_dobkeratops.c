@@ -19,14 +19,17 @@ void draw_dobkeratops(char xpos, char ypos, char anim)
     char x, y, c, *gfx;
     char *tailx = dobkeratops_tail_x[X = anim];
     char *taily = dobkeratops_tail_y[X];
+    char margin = 16 - 12;
     // Draw tail
     gfx = tail1;
     for (c = 0; c != 17; c++) {
         x = tailx[Y = c] + xpos - 50;
         y = taily[Y] + ypos;
-        if (c == 6) gfx = tail2;
-        else if (c == 12) gfx = tail3;
-        multisprite_display_sprite_ex(x, y, gfx, 2, 0, 0);
+        if (c == 6) {
+            gfx = tail2;
+            margin = 16 - 10;
+        } else if (c == 12) gfx = tail3;
+        multisprite_display_small_sprite_ex(x, y, gfx, 2, 0, margin, 0);
     }
     x = tailx[Y = c] + xpos - 50;
     y = taily[Y] + ypos;
@@ -65,20 +68,30 @@ void init()
 
 void main()
 {
-    char counter = 0;
+    char counter_tail = 0;
+    char counter_move1 = 0, counter_move2 = 0;
+
     signed char tx = 0;
     multisprite_init();
     init();
 
     do {
         char x = 80 + tx;
-        draw_dobkeratops(x, 16, counter);
-        counter++;
-        if (counter & 1) {
-            if (counter < 30) tx++;
-            else tx--;
+        draw_dobkeratops(x, 16, counter_tail);
+        counter_tail++;
+        if (counter_tail == 60) counter_tail = 0;
+        counter_move1++;
+        if (counter_move1 == 5) {
+            counter_move1 = 0;
+            counter_move2++;
+            if (counter_move2 < 30) {
+               tx++;
+            } else {
+               tx--;
+               if (counter_move2 > 60) counter_move2 = 0;
+            }
         }
-        if (counter == 60) counter = 0;
+    
         multisprite_flip();
     } while(1);
 }
