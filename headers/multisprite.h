@@ -224,8 +224,8 @@ const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
-ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
-ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
+ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
+ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
 ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
 #ifdef MULTISPRITE_OVERLAY
@@ -893,6 +893,43 @@ char multisprite_pal_frame_skip()
     return 0;
 }
 
+inline void multisprite_start()
+{
+#ifdef VERTICAL_SCROLLING
+    _ms_vscroll_fine_offset = 0;
+    _ms_vscroll_coarse_offset = 0;
+    _ms_delayed_vscroll = 0;
+#ifdef BIDIR_VERTICAL_SCROLLING
+    _ms_top_sbuffer_size = 0;
+    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_bottom_sbuffer_size = 0;
+    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
+    _ms_scroll_buffers_refill = 3;
+#else
+    _ms_sbuffer_size = 0;
+    _ms_sbuffer_dma = _MS_DMA_START_VALUE;
+#endif
+#endif   
+ 
+#ifdef HORIZONTAL_SCROLLING
+    _ms_delayed_hscroll = 0;
+#endif
+
+    _ms_buffer = 0; // 0 is the current write buffer
+    _ms_dmaerror = 0;
+    *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
+    *DPPL = _ms_b1_dll;
+#ifdef MODE_320AC
+    *CTRL = 0x53;
+#else
+#ifdef MODE_320BD
+    *CTRL = 0x52;
+#else
+    *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
+#endif
+#endif
+}
+
 INIT_BANK void multisprite_init()
 {
     *BACKGRND = 0x0;
@@ -951,40 +988,7 @@ INIT_BANK void multisprite_init()
         }
         _ms_tmpptr = _ms_b1_dll;
     }
-
-#ifdef VERTICAL_SCROLLING
-    _ms_vscroll_fine_offset = 0;
-    _ms_vscroll_coarse_offset = 0;
-    _ms_delayed_vscroll = 0;
-#ifdef BIDIR_VERTICAL_SCROLLING
-    _ms_top_sbuffer_size = 0;
-    _ms_top_sbuffer_dma = _MS_DMA_START_VALUE;
-    _ms_bottom_sbuffer_size = 0;
-    _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
-    _ms_scroll_buffers_refill = 3;
-#else
-    _ms_sbuffer_size = 0;
-    _ms_sbuffer_dma = _MS_DMA_START_VALUE;
-#endif
-#endif   
- 
-#ifdef HORIZONTAL_SCROLLING
-    _ms_delayed_hscroll = 0;
-#endif
-
-    _ms_buffer = 0; // 0 is the current write buffer
-    _ms_dmaerror = 0;
-    *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
-    *DPPL = _ms_b1_dll;
-#ifdef MODE_320AC
-    *CTRL = 0x53;
-#else
-#ifdef MODE_320BD
-    *CTRL = 0x52;
-#else
-    *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
-#endif
-#endif
+    multisprite_start();
 }
 
 INIT_BANK void multisprite_clear()
@@ -997,6 +1001,9 @@ INIT_BANK void multisprite_clear()
 #endif
 #ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
+#endif
+#ifdef MULTISPRITE_OVERLAY
+        _ms_dlend_save_overlay[X] = 0;
 #endif
     }
     for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
@@ -1021,11 +1028,17 @@ void multisprite_top_display_clear()
         _ms_dldma[X] = _MS_DMA_START_VALUE;
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
 #endif
+#ifdef MULTISPRITE_OVERLAY
+        _ms_dlend_save_overlay[X] = 0;
+#endif
     }
     for (X = _MS_DLL_ARRAY_SIZE; X != _MS_TOP_DISPLAY + _MS_DLL_ARRAY_SIZE; X++) {
         _ms_dlend[X] = 0;
 #ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
+#endif
+#ifdef MULTISPRITE_OVERLAY
+        _ms_dlend_save_overlay[X] = 0;
 #endif
     }
 }
@@ -1959,7 +1972,7 @@ void _multisprite_disable_dli()
     _ms_b1_dll[X] &= 0x7f;
 }
 
-char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
+const char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
 // ~100 cycles max pixel accurate collision detection (60us)
 #define multisprite_compute_collision(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\

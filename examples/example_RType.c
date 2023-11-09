@@ -13,6 +13,21 @@
 // Generated from sprites7800 RType_font.yaml
 #include "example_RType_font.c"
 
+ramchip char save_acc, save_x, save_y;
+
+void interrupt dli()
+{
+    store(save_acc);
+    save_x = X;
+    save_y = Y;
+    multisprite_set_charbase(alphabet);
+    *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
+    X = save_x;
+    Y = save_y;
+    load(save_acc);
+}
+
+// Background scrolling
 char scroll_background_counter;
 
 void scroll_background()
@@ -57,13 +72,85 @@ void display_score_update()
     itoa(score, display_score_ascii, 10);
     Y = strlen(display_score_ascii); 
     for (X = 0; X != 5 - Y; X++) {
-        display_score_str[X] = 0; // '0'
+        display_score_str[X] = 26; // '0'
     }
     X = 4;
     do {
-        display_score_str[X--] = ((display_score_ascii[--Y] - '0') << 1);
+        display_score_str[X--] = 26 + (display_score_ascii[--Y] - '0');
     } while (Y);
 }
+
+void rtype_init()
+{
+    *BACKGRND = 0x0;
+    
+    multisprite_get_tv();
+    multisprite_clear();
+    multisprite_save();
+
+    _ms_tmpptr = _ms_b0_dll;
+    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
+        // Build DLL
+        // 69 blank lines for PAL
+        // 19 blank lines for NTSC
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_tmpptr[Y = 0] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_set_wm_dl;
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        } else {
+            _ms_tmpptr[Y = 0] = 0x08; // 9 lines
+            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_set_wm_dl;
+        }
+        // 16 pixel high regions
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 2; X++, _ms_tmp2++) {
+            _ms_tmpptr[++Y] = 0x4f; // 16 lines
+            _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
+        }
+        // 1 pixel high region to separate from 320A scoreboard 
+        _ms_tmpptr[++Y] = 0x00; // 1 line
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
+        // 8 pixel high regions (320A)
+        for (_ms_tmp2 = 0; _ms_tmp2 != 2; X++, _ms_tmp2++) {
+            _ms_tmpptr[++Y] = 0x07; // 8 lines
+            _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
+        }
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+            // 4 blank lines
+            _ms_tmpptr[++Y] = 0x03;  // 4 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        } else {
+            _ms_tmpptr[++Y] = 0x08; // 9 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        }
+        _ms_tmpptr = _ms_b1_dll;
+    }
+    multisprite_start();
+}
+
+const char oneup[3] = {27, 'U' - 'A', 'P' - 'A'};
+const char high[4] = {'H' - 'A', 'I' - 'A', 'G' - 'A', 'H' - 'A'};
+const char beam[4] = {'B' - 'A', 'E' - 'A', 'A' - 'A', 'M' - 'A'};
+const char gauge_out[17] = {45, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 47};
+const char gauge_in[15] = { 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48};
 
 void main()
 {
@@ -71,7 +158,7 @@ void main()
     scroll_background_counter = 0;
 
     joystick_init();
-    multisprite_init();
+    rtype_init();
     sparse_tiling_init(tilemap_level1_data_ptrs);
     multisprite_set_charbase(digits);
    
@@ -100,8 +187,14 @@ void main()
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
 
-    multisprite_display_tiles(0, 13, display_score_str, 5, 5);
-
+    multisprite_display_tiles(3 * 4, 14, oneup, 3, 5);
+    multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 7);
+    multisprite_display_tiles(16 * 4, 14, high, 4, 5);
+    multisprite_display_tiles(21 * 4, 14, display_score_str, 5, 7);
+    multisprite_display_tiles(8 * 4, 13, beam, 4, 5);
+    multisprite_display_tiles(13 * 4, 13, gauge_out, 17, 7);
+    multisprite_display_tiles(14 * 4, 13, gauge_in, 1, 5);
+   
     // Background display
     char c, y = 0;
     for (c = 0; c != 3; c++) {
@@ -122,6 +215,8 @@ void main()
     // Save it
     multisprite_save();
 
+    multisprite_enable_dli(13);
+    
     sparse_tiling_display();
     multisprite_flip();
     sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
@@ -135,14 +230,8 @@ void main()
         score = x;
         display_score_update();
 
-/*        do {
-            joystick_update();
-        } while (joystick[0] & JOYSTICK_BUTTON1);
-*/
-        do {
-            joystick_update();
-        } while (!(joystick[0] & JOYSTICK_BUTTON1));
-        
         multisprite_flip();
+        multisprite_set_charbase(digits);
+        *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
     } while (1);
 }
