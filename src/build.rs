@@ -921,10 +921,18 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             if let VariableDefinition::Value(vx) = &v.1.def  {
                 match vx {
                     VariableValue::Int(val) => gstate.write(&format!("{:23}\tEQU ${:x}\n", v.0, val)),
-                    VariableValue::LowPtr((s, offset)) => if *offset != 0 {
-                        gstate.write(&format!("{:23}\tEQU <({} + {})\n", v.0, s, offset))
+                    VariableValue::LowPtr((s, offset)) => if v.1.var_type == VariableType::CharPtr || v.1.var_type == VariableType::ShortPtr {
+                        if *offset != 0 {
+                            gstate.write(&format!("{:23}\tEQU {} + {}\n", v.0, s, offset))
+                        } else {
+                            gstate.write(&format!("{:23}\tEQU {}\n", v.0, s))
+                        }
                     } else {
-                        gstate.write(&format!("{:23}\tEQU <{}\n", v.0, s))
+                        if *offset != 0 {
+                            gstate.write(&format!("{:23}\tEQU <({} + {})\n", v.0, s, offset))
+                        } else {
+                            gstate.write(&format!("{:23}\tEQU <{}\n", v.0, s))
+                        }
                     },
                     VariableValue::HiPtr((s, offset)) => if *offset != 0 {
                         gstate.write(&format!("{:23}\tEQU >({} + {})\n", v.0, s, offset))
