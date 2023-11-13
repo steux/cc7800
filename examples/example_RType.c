@@ -41,13 +41,15 @@ ramchip char missile_first, missile_last;
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
 
-ramchip int score;
+ramchip unsigned int score, high_score;
 ramchip char update_score;
 ramchip char display_score_str[5];
+ramchip char display_high_score_str[5];
 
 void game_init()
 {
     score = 0;
+    high_score = 0;
     update_score = 1;
 
     // Init game state variables
@@ -93,6 +95,14 @@ void step()
     char draw_R9;
     if (R9_state == 0) {
         draw_R9 = 1;
+        // Check collision with background
+        char c = sparse_tiling_collision(R9_ypos + 6, R9_xpos, R9_xpos + 15);
+        if (c != -1) {
+            R9_state = 1;
+            R9_state_counter = 50;
+            score = c;
+            update_score = 1;
+        }
     } else if (R9_state == 1) {
         // Blinking returning R9
         draw_R9 = R9_state_counter & 8;
@@ -177,18 +187,18 @@ void scroll_background()
     }
 }
 
-void display_score_update()
+void display_score_update(char *score_str)
 {
     char display_score_ascii[6];
     itoa(score, display_score_ascii, 10);
-    Y = strlen(display_score_ascii); 
-    for (X = 0; X != 5 - Y; X++) {
-        display_score_str[X] = 26; // '0'
+    X = strlen(display_score_ascii); 
+    for (Y = 0; Y != 5 - X; Y++) {
+        score_str[Y] = 26; // '0'
     }
-    X = 4;
+    Y = 4;
     do {
-        display_score_str[X--] = 26 + (display_score_ascii[--Y] - '0');
-    } while (Y);
+        score_str[Y--] = 26 + (display_score_ascii[--X] - '0');
+    } while (X);
 }
 
 void display_init()
@@ -296,7 +306,7 @@ void rtype_init()
     multisprite_display_tiles(3 * 4, 14, oneup, 3, 5);
     multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 7);
     multisprite_display_tiles(16 * 4, 14, high, 4, 5);
-    multisprite_display_tiles(21 * 4, 14, display_score_str, 5, 7);
+    multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 7);
     multisprite_display_tiles(8 * 4, 13, beam, 4, 5);
     multisprite_display_tiles(13 * 4, 13, gauge_out, 17, 7);
     multisprite_display_tiles(14 * 4, 13, gauge_in, 1, 5);
@@ -347,7 +357,11 @@ void main()
         joystick_input();
         step();
         if (update_score) {
-            display_score_update();
+            display_score_update(display_score_str);
+            if (score >= high_score) {
+                high_score = score;
+                display_score_update(display_high_score_str);
+            }
             update_score = 0;
         }
 

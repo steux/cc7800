@@ -47,10 +47,71 @@ void _sparse_tiling_init()
     }
 }
 
+char sparse_tiling_collision(char top, char left, char right)
+{
+    char *ptr, intersect = -1, start, end, txpos, xoffset;
+    signed char xrc;
+    char lc = left >> 3;
+    char y = top >> 4;
+    if (_ms_buffer) {
+        X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+    } else {
+        X = y;
+    }
+    txpos = _tiling_xpos[X]; 
+    xoffset = _tiling_xoffset[X]; 
+    ptr = _tiling_ptr[Y = y];
+    // Find the first possibly intersecting tileset on this line
+    Y = 0;
+    do {
+        // Check if it's the last tileset
+        if (ptr[Y] == 96) {
+            if (ptr[++Y] == 0xff) {
+                return -1; // No intersection possible
+            } else Y--;
+        }
+        xrc = ptr[Y] - txpos;
+        if (xrc >= lc) break;
+        Y += _STS_SIZE;
+    } while (1);
+    // This one possibly intersects
+    end = (xrc << 3) - xoffset;
+    Y++;
+    start = ((ptr[Y++] - txpos) << 3) - xoffset;
+    while (right >= start) {
+        char l = (left < start)?start:left;
+        char r = (end < right)?end:right;
+        char n = r - l;
+        if (n >= 0) {
+            n >>= 3;
+            char tmp = ptr[Y++];
+            Y++;
+            char *ptr_tiles = tmp | (ptr[Y] << 8);
+            _save_y = Y;
+            Y = (l - start) >> 3;
+            for (X = n; X >= 0; Y++, X--) {
+                if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
+            }
+            Y = _save_y;
+        } else {
+            Y += 2;
+        }
+        Y += 3;
+        if (ptr[Y] == 96) {
+            if (ptr[++Y] == 0xff) {
+               break; 
+            } else Y--;
+        }
+        end = ((ptr[Y++] - txpos) << 3) - xoffset;
+        start = ((ptr[Y++] - txpos) << 3) - xoffset;
+    }
+    return intersect;
+}
+
 void _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
-    char x, linedl, txpos, xoffset, skip = 0;
+    char x, linedl, txpos, xoffset;
     signed char right, r, d;
  
     if (_ms_buffer) {
@@ -71,15 +132,13 @@ void _sparse_tiling_load_line(signed char y)
         // Check if it's the last tileset
         if (ptr[Y] == 96) {
             if (ptr[++Y] == 0xff) {
-                skip = 1;
-                break;
+                return;
             } else Y--;
         }
         r = ptr[Y] - txpos;
         if (r >= 0) break;
         Y += _STS_SIZE;
     } while (1);
-    if (skip) return;
     X = y; 
     if (Y) { // Update the pointer
         _tiling_ptr[X] += Y;
@@ -137,7 +196,6 @@ void _sparse_tiling_load_line(signed char y)
             data[3] = ptr[++Y];
             if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
                 data[3] = ((data[4] - txpos - 23) & 0x1f) | (data[3] & 0xe0); 
-                //data[3] = (((data[3] | 0xe0) + (21 - r)) & 0x1f) | (data[3] & 0xe0); 
             } 
 #ifdef DMA_CHECK 
             _ms_dldma[X] -= ptr[++Y]; // 18 cycles
