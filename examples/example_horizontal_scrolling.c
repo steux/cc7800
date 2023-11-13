@@ -43,31 +43,13 @@ void scroll_background()
     }
 }
 
-ramchip int score;
-ramchip char update_score;
-ramchip char display_score_str[5];
-
-void display_score_update()
-{
-    char display_score_ascii[6];
-    itoa(score, display_score_ascii, 10);
-    Y = strlen(display_score_ascii); 
-    for (X = 0; X != 5 - Y; X++) {
-        display_score_str[X] = 0; // '0'
-    }
-    X = 4;
-    do {
-        display_score_str[X--] = ((display_score_ascii[--Y] - '0') << 1);
-    } while (Y);
-}
-
 void main()
 {
     scroll_background_counter = 0;
 
     multisprite_init();
     sparse_tiling_init(tilemap_level1_data_ptrs);
-    multisprite_set_charbase(digits);
+    multisprite_set_charbase(brown_tiles1);
    
     // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
@@ -93,8 +75,6 @@ void main()
     *P7C1 = 0x04; // Dark gray
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
-
-    multisprite_display_tiles(0, 13, display_score_str, 5, 5);
 
     // Background display
     char c, y = 0;
@@ -125,10 +105,6 @@ void main()
     do {
         scroll_background();
         sparse_tiling_scroll(2); // Scroll 2 pixels to the right for this buffer (so 1 pixel from frame to frame due to double buffering)
-        char x = _tiling_xpos[0]; 
-        score = x;
-        display_score_update();
-
         multisprite_flip();
     } while (1);
 }

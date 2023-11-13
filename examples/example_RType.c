@@ -113,7 +113,7 @@ void rtype_init()
             _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
         }
-        // 1 pixel high region to separate from 320A scoreboard 
+        // 1 pixel high region to separate from 320A scoreboard. This gives some little room for the DLI to execute
         _ms_tmpptr[++Y] = 0x00; // 1 line
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
@@ -160,7 +160,7 @@ void main()
     joystick_init();
     rtype_init();
     sparse_tiling_init(tilemap_level1_data_ptrs);
-    multisprite_set_charbase(digits);
+    multisprite_set_charbase(brown_tiles1);
    
     // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
@@ -231,7 +231,7 @@ void main()
         display_score_update();
 
         multisprite_flip();
-        multisprite_set_charbase(digits);
+        multisprite_set_charbase(brown_tiles1);
         *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
     } while (1);
 }
