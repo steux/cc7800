@@ -75,8 +75,8 @@ void step()
         if (missile_xpos[X] != -1) {
             y = missile_ypos[X = i];
             x = missile_xpos[X] + MISSILES_SPEED;
-            if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 15) != -1 ) {
-                // Out of screen
+            if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
+                // Out of screen or collided with background
                 missile_xpos[X = i] = -1; // Removed
                 do {
                     X++;

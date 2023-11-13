@@ -1275,7 +1275,7 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
         tmp2 = ((-len) & 0x1f) | tmp3;
         if (first) {
             _ms_sbuffer[X++] = low;
-            _ms_sbuffer[X++] = 0x40;
+            _ms_sbuffer[X++] = 0x40; // 160A only
             _ms_sbuffer[X++] = high;
             _ms_sbuffer[X++] = tmp2;
             _ms_sbuffer_dma -= 5 + len + len2;

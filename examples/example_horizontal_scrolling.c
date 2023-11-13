@@ -1,6 +1,7 @@
 #include "string.h"
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
+//#define MULTISPRITE_USE_VIDEO_MEMORY
 #include "sparse_tiling.h"
 
 // Generated from sprites7800 RType_tiles.yaml
@@ -48,9 +49,13 @@ void main()
     scroll_background_counter = 0;
 
     multisprite_init();
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+    sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
+#else
     sparse_tiling_init(tilemap_level1_data_ptrs);
+#endif
     multisprite_set_charbase(brown_tiles1);
-   
+    
     // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
     *P3C3 = multisprite_color(0xd1); 

@@ -41,11 +41,11 @@ void draw_dobkeratops(char xpos, char ypos, char anim)
         y = dobkeratops_y[X] + ypos;
         gfx = dobkeratops_gfx[X];
         char nbbytes = dobkeratops_nbbytes[X];
-        if (nbbytes > 31) { // Maria can't display more than 31 bytes at once
-            multisprite_display_sprite_aligned(x, y, gfx, 31, 0, 1);
+        if (nbbytes > 32) { // Maria can't display more than 32 bytes at once
+            multisprite_display_sprite_aligned(x, y, gfx, 32, 0, 1);
             x += 62;
-            nbbytes -= 31;
-            gfx += 31;
+            nbbytes -= 32;
+            gfx += 32;
         }
         multisprite_display_sprite_aligned(x, y, gfx, nbbytes, 0, 1);
     }

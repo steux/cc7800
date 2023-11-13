@@ -26,13 +26,35 @@
 #define _MS_BOTTOM_SCROLLING_ZONE 0
 #endif
 
-ramchip char *_tiling_ptr[_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1];
-ramchip signed char _tiling_xpos[2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1)], _tiling_xoffset[2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1)];
+#define SPARSE_TILING_SCROLLING_ZONE (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1)
+ramchip char *_tiling_ptr[SPARSE_TILING_SCROLLING_ZONE];
+ramchip signed char _tiling_xpos[2 * SPARSE_TILING_SCROLLING_ZONE], _tiling_xoffset[2 * SPARSE_TILING_SCROLLING_ZONE];
 
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+ramchip char _sparse_tiling_vmem_ptr_low, _sparse_tiling_vmem_ptr_high, _sparse_tiling_charbase;
+#define IDATA_MAX 5
+ramchip char *_st_idata[IDATA_MAX * SPARSE_TILING_SCROLLING_ZONE];
+const char _st_idata_idx[_MS_DLL_ARRAY_SIZE] = { 0, IDATA_MAX, IDATA_MAX * 2, IDATA_MAX * 3, IDATA_MAX * 4, IDATA_MAX * 5, IDATA_MAX * 6, IDATA_MAX * 7, IDATA_MAX * 8, IDATA_MAX * 9, IDATA_MAX * 10, IDATA_MAX * 11, IDATA_MAX * 12, IDATA_MAX * 13, IDATA_MAX * 14 };
+ramchip char _st_idata_size[SPARSE_TILING_SCROLLING_ZONE];
+
+bank1 char multisprite_vmem[8192]; // Video memory in RAM
+bank1 const char sparse_tiling_vmem_use_rom[] = {1};
+
+#define sparse_tiling_init_vmem(ptr, tiles_ptr) \
+{ \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _sparse_tiling_charbase = (tiles_ptr) >> 8; \
+    _sparse_tiling_vmem_ptr_low = 0x00; \
+    _sparse_tiling_vmem_ptr_high = 0x40; \
+    _sparse_tiling_init(); \
+} 
+#else
 #define sparse_tiling_init(ptr) \
     _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
     _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
     _sparse_tiling_init()
+#endif
 
 void _sparse_tiling_init()
 {
@@ -45,74 +67,172 @@ void _sparse_tiling_init()
         _tiling_xpos[X] = 0;
         _tiling_xoffset[X] = 0;
     }
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+    for (X = SPARSE_TILING_SCROLLING_ZONE - 1; X >= 0; X--) {
+        _st_idata_size[X] = 0;     
+    }
+#endif
 }
 
-char sparse_tiling_collision(char top, char left, char right)
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+void _sparse_tiling_ROM_to_RAM(char *tmpptr, char w, char mode)
 {
-    char *ptr, intersect = -1, start, end, txpos, xoffset;
-    signed char xrc;
-    char lc = left >> 3;
-    char rc = right >> 3;
-    char y = top >> 4;
+
+}
+
+void _sparse_tiling_load_line(signed char y)
+{
+    char *ptr, data[5];
+    char *tmpptr, x, linedl, txpos, xoffset;
+    signed char right, r, d;
+    char st_idata_idx, st_idata_size;
+    char tileset_counter = 0;
+    char mode, w;
+     
     if (_ms_buffer) {
         X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+        linedl = y + _MS_DLL_ARRAY_SIZE;
     } else {
         X = y;
+        linedl = y;
     }
     txpos = _tiling_xpos[X]; 
     xoffset = _tiling_xoffset[X]; 
+    right = txpos + 22;
     ptr = _tiling_ptr[Y = y];
-    // Find the first possibly intersecting tileset on this line
+    st_idata_idx = _st_idata_idx[Y];
+    st_idata_size = _st_idata_size[Y];
+    _ms_tmpptr = _ms_dls[X = linedl];
+    // Find the first visible tileset on this line, if any
     Y = 0;
     do {
+        w = ptr[Y];
         // Check if it's the last tileset
-        if (ptr[Y] == 96) {
+        if (w == 96) {
             if (ptr[++Y] == 0xff) {
-                return -1; // No intersection possible
+                return;
             } else Y--;
         }
-        xrc = ptr[Y] - txpos;
-        if (xrc >= lc) break;
+        r = w - txpos;
+        if (r >= 0) break;
+        // Go to next tileset
         Y += _STS_SIZE;
+        // Remove it from video memory
+        for (X = st_idata_idx + st_idata_size; X > st_idata_idx; X--) {
+            tmpptr = _st_idata[X];
+            _st_idata[--X] = tmpptr;
+            X++;
+        }
+        if (st_idata_size) st_idata_size--;
     } while (1);
-    // This one possibly intersects
-    end = (xrc << 3) - xoffset;
-    Y++;
-    xrc = ptr[Y++] - txpos;
-    if (rc < xrc - 1) return -1;
-    start = (xrc << 3) - xoffset;
-    while (right >= start) {
-        char l = (left < start)?start:left;
-        char r = (end < right)?end:right;
-        char n = r - l;
-        if (n >= 0) {
-            n >>= 3;
-            char tmp = ptr[Y++];
-            Y++;
-            char *ptr_tiles = tmp | (ptr[Y] << 8);
-            _save_y = Y;
-            Y = (l - start) >> 3;
-            for (X = n; X >= 0; Y++, X--) {
-                if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
-            }
-            Y = _save_y;
-        } else {
-            Y += 2;
-        }
-        Y += 3;
-        if (ptr[Y] == 96) {
-            if (ptr[++Y] == 0xff) {
-               break; 
-            } else Y--;
-        }
-        end = ((ptr[Y++] - txpos) << 3) - xoffset;
-        xrc = ptr[Y++] - txpos;
-        if (rc < xrc - 1) return intersect;
-        start = (xrc << 3) - xoffset;
+    X = y; 
+    if (Y) { // Update the pointer
+        _tiling_ptr[X] += Y;
     }
-    return intersect;
-}
+    Y++; // Next byte
+    x = _ms_dlend_save[X];
+    data[4] = ptr[Y];
+    w = w - data[4] + 1;
+    // First one: maybe is this too much on the left ?
+    d = right - data[4];
+    if (d >= 0) {
+        
+        signed char xpos = data[4] - txpos;
+        
+        // Is it already transferred to video memory ?
+        if (tileset_counter < st_idata_size) {
+            // Yes. Let's get the matching pointer
+            _save_y = Y;
+            Y = _st_idata_idx + tileset_counter;
+            tmpptr = _st_idata[Y];
+            Y = _save_y;
+            data[0] = tmpptr; ++Y;
+            data[1] = ptr[++Y] & 0xc0; // Remove immediate mode bit
+            mode = data[1] & 0x80;
+            data[2] = tmpptr >> 8; ++Y;
+        } else {
+            // Let's transfer from ROM to RAM
+            data[0] = ptr[++Y]; 
+            data[1] = ptr[++Y] & 0xc0; // Remove immediate mode bit
+            mode = data[1] & 0x80;
+            tmpptr = data[0] | (ptr[++Y] << 8);
+            // Store the pointer for this tileset_counter
+            _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
+            data[0] = _sparse_tiling_vmem_ptr_low;
+            data[2] = _sparse_tiling_vmem_ptr_high;
+            _save_y = Y;
+            Y = _st_idata_idx + tileset_counter;
+            _st_idata[Y] = _sparse_tiling_vmem_ptr_low | (_sparse_tiling_vmem_ptr_high << 8);
+            st_idata_size++;
+            Y = _save_y;
+        }
 
+        if (xpos < 0) { // Reduce the length of this tileset so that is doesn't get out of screen on the left
+            w += xpos;
+            xpos = (mode)?(xpos << 2):(xpos << 1); 
+            // Advance pointer
+            if (data[0] >= xpos) data[2]++;
+            data[0] -= xpos;
+            xpos = 0;
+        } else if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
+            w -= (r - 24); 
+        }
+        data[3] = ptr[++Y];
+        w = (mode)?(w << 2):(w << 1); 
+
+        ++Y;
+        _save_y = Y;
+        Y = x; // 6 cycles
+        _ms_tmpptr[Y++] = data[0]; // 11 cycles
+        _ms_tmpptr[Y++] = data[1];
+        _ms_tmpptr[Y++] = data[2];
+        _ms_tmpptr[Y++] = ((-w) & 0x1f) | (data[3] & 0xe0);
+        _ms_tmpptr[Y++] = (xpos << 3) - xoffset;
+        x = Y; // 21 cycles
+        Y = _save_y;
+
+        r = ptr[++Y];
+        data[4] = ptr[++Y];
+        w = r - data[4] + 1;
+        d = right - data[4];
+
+        // TODO: Modify second part according to first
+        while (d >= 0) {
+            // Check termination
+            if (r == 96 && data[4] == 0xff) break;
+            
+            tileset_counter++;
+            r -= txpos;
+
+            data[0] = ptr[++Y]; // 10 cycles
+            data[1] = ptr[++Y];
+            data[2] = ptr[++Y];
+            data[3] = ptr[++Y];
+            if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
+                data[3] = ((data[4] - txpos - 23) & 0x1f) | (data[3] & 0xe0); 
+            } 
+            ++Y;
+            _save_y = Y;
+            Y = x; // 6 cycles
+            _ms_tmpptr[Y++] = data[0]; // 11 cycles
+            _ms_tmpptr[Y++] = data[1];
+            _ms_tmpptr[Y++] = data[2];
+            _ms_tmpptr[Y++] = data[3];
+            _ms_tmpptr[Y++] = ((data[4] - txpos) << 3) - xoffset;
+            x = Y; // 21 cycles
+            Y = _save_y;
+
+            r = ptr[++Y];
+            data[4] = ptr[++Y];
+            w = r - data[4] + 1;
+            d = right - data[4];
+        } 
+    } 
+    _ms_dlend[X = linedl] = x;
+    _ms_dlend_save_overlay[X] = x;
+    _st_idata_size[Y = y] = st_idata_size; // Store the updated immediate data size
+}
+#else
 void _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
@@ -155,7 +275,6 @@ void _sparse_tiling_load_line(signed char y)
     d = right - data[4];
 
     if (d >= 0) {
-        char off;
         data[0] = ptr[++Y]; // 10 cycles
         data[1] = ptr[++Y];
         data[2] = ptr[++Y];
@@ -224,6 +343,73 @@ void _sparse_tiling_load_line(signed char y)
     } 
     _ms_dlend[X = linedl] = x;
     _ms_dlend_save_overlay[X] = x;
+}
+#endif
+
+char sparse_tiling_collision(char top, char left, char right)
+{
+    char *ptr, intersect = -1, start, end, txpos, xoffset;
+    signed char xrc;
+    char lc = left >> 3;
+    char rc = right >> 3;
+    char y = top >> 4;
+    if (_ms_buffer) {
+        X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+    } else {
+        X = y;
+    }
+    txpos = _tiling_xpos[X]; 
+    xoffset = _tiling_xoffset[X]; 
+    ptr = _tiling_ptr[Y = y];
+    // Find the first possibly intersecting tileset on this line
+    Y = 0;
+    do {
+        // Check if it's the last tileset
+        if (ptr[Y] == 96) {
+            if (ptr[++Y] == 0xff) {
+                return -1; // No intersection possible
+            } else Y--;
+        }
+        xrc = ptr[Y] - txpos;
+        if (xrc >= lc) break;
+        Y += _STS_SIZE;
+    } while (1);
+    // This one possibly intersects
+    end = (xrc << 3) - xoffset;
+    Y++;
+    xrc = ptr[Y++] - txpos;
+    if (rc < xrc - 1) return -1;
+    start = (xrc << 3) - xoffset;
+    while (right >= start) {
+        char l = (left < start)?start:left;
+        char r = (end < right)?end:right;
+        char n = r - l;
+        if (n >= 0) {
+            n >>= 3;
+            char tmp = ptr[Y++];
+            Y++;
+            char *ptr_tiles = tmp | (ptr[Y] << 8);
+            _save_y = Y;
+            Y = (l - start) >> 3;
+            for (X = n; X >= 0; Y++, X--) {
+                if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
+            }
+            Y = _save_y;
+        } else {
+            Y += 2;
+        }
+        Y += 3;
+        if (ptr[Y] == 96) {
+            if (ptr[++Y] == 0xff) {
+               break; 
+            } else Y--;
+        }
+        end = ((ptr[Y++] - txpos) << 3) - xoffset;
+        xrc = ptr[Y++] - txpos;
+        if (rc < xrc - 1) return intersect;
+        start = (xrc << 3) - xoffset;
+    }
+    return intersect;
 }
 
 void sparse_tiling_display()
