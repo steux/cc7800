@@ -72,21 +72,20 @@ void step()
             i = 0;
             if (missile_last == 0) break;
         }
-        x = missile_xpos[X = i];
-        if (x != -1) {
+        if (missile_xpos[X] != -1) {
+            y = missile_ypos[X = i];
             x = missile_xpos[X] + MISSILES_SPEED;
-            if (x >= 160) {
+            if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 15) != -1 ) {
                 // Out of screen
-                missile_xpos[X] = -1; // Removed
+                missile_xpos[X = i] = -1; // Removed
                 do {
                     X++;
                     if (X == MISSILES_NB_MAX) X = 0;
                 } while (X != missile_last && missile_xpos[X] == -1);
                 missile_first = X;
             } else {
-                missile_xpos[X] = x;
+                missile_xpos[X = i] = x;
                 // Draw missile
-                y = missile_ypos[X];
                 multisprite_display_small_sprite_ex(x, y, missile, 2, 6, 13, 0);
             }
         }

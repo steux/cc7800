@@ -52,6 +52,7 @@ char sparse_tiling_collision(char top, char left, char right)
     char *ptr, intersect = -1, start, end, txpos, xoffset;
     signed char xrc;
     char lc = left >> 3;
+    char rc = right >> 3;
     char y = top >> 4;
     if (_ms_buffer) {
         X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
@@ -77,7 +78,9 @@ char sparse_tiling_collision(char top, char left, char right)
     // This one possibly intersects
     end = (xrc << 3) - xoffset;
     Y++;
-    start = ((ptr[Y++] - txpos) << 3) - xoffset;
+    xrc = ptr[Y++] - txpos;
+    if (rc < xrc - 1) return -1;
+    start = (xrc << 3) - xoffset;
     while (right >= start) {
         char l = (left < start)?start:left;
         char r = (end < right)?end:right;
@@ -103,7 +106,9 @@ char sparse_tiling_collision(char top, char left, char right)
             } else Y--;
         }
         end = ((ptr[Y++] - txpos) << 3) - xoffset;
-        start = ((ptr[Y++] - txpos) << 3) - xoffset;
+        xrc = ptr[Y++] - txpos;
+        if (rc < xrc - 1) return intersect;
+        start = (xrc << 3) - xoffset;
     }
     return intersect;
 }
