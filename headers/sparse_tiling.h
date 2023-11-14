@@ -75,9 +75,163 @@ void _sparse_tiling_init()
 }
 
 #ifdef MULTISPRITE_USE_VIDEO_MEMORY
-void _sparse_tiling_ROM_to_RAM(char *tmpptr, char w, char mode)
+void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
 {
+    char low, high, len, len2, tmp;
 
+    len2 = (mode)?(w << 1):w; // Number of entries in chptr
+    len = len2 << 1; // Number of actual bytes
+
+    low = _sparse_tiling_vmem_ptr_low;
+    high = _sparse_tiling_vmem_ptr_high;
+    // Allocate n bytes in vmem
+    tmp = low - len;
+    if (tmp < 0) {
+        low = -len;
+        high += 16;
+        if (high == 0x70) high = 0x40;
+    } else low = tmp;
+
+    _sparse_tiling_vmem_ptr_low = low;
+    _sparse_tiling_vmem_ptr_high = high;
+
+#ifdef 0
+    char *vmemptr, *chptr, byte;
+    chptr = _sparse_tiling_charbase << 8; 
+
+    // Solution 1 : 10ms max
+    for (Y = 15; Y >= 0; Y--) {
+        high++;
+        vmemptr = low | (high << 8);
+        chptr += 256;
+        _save_y = Y;
+        // Copy the row of chars for current step
+        for (Y = 0; Y != len2; Y++) {
+            tmp = Y;
+            Y = sptr[Y];
+            byte = chptr[Y++];
+            X = chptr[Y];
+            Y = tmp << 1;
+            vmemptr[Y++] = byte;
+            vmemptr[Y] = X;
+            Y = tmp;
+        } // 63 cycles loop
+        Y = _save_y;
+    }
+#else
+    char *vmemptr0, *vmemptr1, *vmemptr2, *vmemptr3, *vmemptr4, *vmemptr5, *vmemptr6, *vmemptr7, *vmemptr8, *vmemptr9, *vmemptr10, *vmemptr11, *vmemptr12, *vmemptr13, *vmemptr14, *vmemptr15;
+    char *chptr0, *chptr1, *chptr2, *chptr3, *chptr4, *chptr5, *chptr6, *chptr7, *chptr8, *chptr9, *chptr10, *chptr11, *chptr12, *chptr13, *chptr14, *chptr15;
+    char vtmp1[16], vtmp2[16];
+    
+    vmemptr0 = low | (high++ << 8);
+    vmemptr1 = low | (high++ << 8);
+    vmemptr2 = low | (high++ << 8);
+    vmemptr3 = low | (high++ << 8);
+    vmemptr4 = low | (high++ << 8);
+    vmemptr5 = low | (high++ << 8);
+    vmemptr6 = low | (high++ << 8);
+    vmemptr7 = low | (high++ << 8);
+    vmemptr8 = low | (high++ << 8);
+    vmemptr9 = low | (high++ << 8);
+    vmemptr10 = low | (high++ << 8);
+    vmemptr11 = low | (high++ << 8);
+    vmemptr12 = low | (high++ << 8);
+    vmemptr13 = low | (high++ << 8);
+    vmemptr14 = low | (high++ << 8);
+    vmemptr15 = low | (high++ << 8);
+
+    high = _sparse_tiling_charbase;
+    chptr0 = high++ << 8;
+    chptr1 = high++ << 8;
+    chptr2 = high++ << 8;
+    chptr3 = high++ << 8;
+    chptr4 = high++ << 8;
+    chptr5 = high++ << 8;
+    chptr6 = high++ << 8;
+    chptr7 = high++ << 8;
+    chptr8 = high++ << 8;
+    chptr9 = high++ << 8;
+    chptr10 = high++ << 8;
+    chptr11 = high++ << 8;
+    chptr12 = high++ << 8;
+    chptr13 = high++ << 8;
+    chptr14 = high++ << 8;
+    chptr15 = high++ << 8;
+
+    // Solution 2
+    for (Y = 0; Y != len2; Y++) {
+        tmp = Y;
+        Y = sptr[Y];
+        vtmp1[0] = chptr0[Y];
+        vtmp1[1] = chptr1[Y];
+        vtmp1[2] = chptr2[Y];
+        vtmp1[3] = chptr3[Y];
+        vtmp1[4] = chptr4[Y];
+        vtmp1[5] = chptr5[Y];
+        vtmp1[6] = chptr6[Y];
+        vtmp1[7] = chptr7[Y];
+        vtmp1[8] = chptr8[Y];
+        vtmp1[9] = chptr9[Y];
+        vtmp1[10] = chptr10[Y];
+        vtmp1[11] = chptr11[Y];
+        vtmp1[12] = chptr12[Y];
+        vtmp1[13] = chptr13[Y];
+        vtmp1[14] = chptr14[Y];
+        vtmp1[15] = chptr15[Y];
+        Y++;
+        vtmp2[0] = chptr0[Y];
+        vtmp2[1] = chptr1[Y];
+        vtmp2[2] = chptr2[Y];
+        vtmp2[3] = chptr3[Y];
+        vtmp2[4] = chptr4[Y];
+        vtmp2[5] = chptr5[Y];
+        vtmp2[6] = chptr6[Y];
+        vtmp2[7] = chptr7[Y];
+        vtmp2[8] = chptr8[Y];
+        vtmp2[9] = chptr9[Y];
+        vtmp2[10] = chptr10[Y];
+        vtmp2[11] = chptr11[Y];
+        vtmp2[12] = chptr12[Y];
+        vtmp2[13] = chptr13[Y];
+        vtmp2[14] = chptr14[Y];
+        vtmp2[15] = chptr15[Y];
+        Y = tmp << 1;
+        vmemptr0[Y] = vtmp1[0];
+        vmemptr1[Y] = vtmp1[1];
+        vmemptr2[Y] = vtmp1[2];
+        vmemptr3[Y] = vtmp1[3];
+        vmemptr4[Y] = vtmp1[4];
+        vmemptr5[Y] = vtmp1[5];
+        vmemptr6[Y] = vtmp1[6];
+        vmemptr7[Y] = vtmp1[7];
+        vmemptr8[Y] = vtmp1[8];
+        vmemptr9[Y] = vtmp1[9];
+        vmemptr10[Y] = vtmp1[10];
+        vmemptr11[Y] = vtmp1[11];
+        vmemptr12[Y] = vtmp1[12];
+        vmemptr13[Y] = vtmp1[13];
+        vmemptr14[Y] = vtmp1[14];
+        vmemptr15[Y] = vtmp1[15];
+        Y++;
+        vmemptr0[Y] = vtmp2[0];
+        vmemptr1[Y] = vtmp2[1];
+        vmemptr2[Y] = vtmp2[2];
+        vmemptr3[Y] = vtmp2[3];
+        vmemptr4[Y] = vtmp2[4];
+        vmemptr5[Y] = vtmp2[5];
+        vmemptr6[Y] = vtmp2[6];
+        vmemptr7[Y] = vtmp2[7];
+        vmemptr8[Y] = vtmp2[8];
+        vmemptr9[Y] = vtmp2[9];
+        vmemptr10[Y] = vtmp2[10];
+        vmemptr11[Y] = vtmp2[11];
+        vmemptr12[Y] = vtmp2[12];
+        vmemptr13[Y] = vtmp2[13];
+        vmemptr14[Y] = vtmp2[14];
+        vmemptr15[Y] = vtmp2[15];
+        Y = tmp;
+    } // 579 cycles x 16 (max) = 9264 cycles = 5.4ms (out of 16ms per frame).
+#endif
 }
 
 void _sparse_tiling_load_line(signed char y)
