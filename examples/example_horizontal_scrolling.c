@@ -1,7 +1,7 @@
 #include "string.h"
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
-//#define MULTISPRITE_USE_VIDEO_MEMORY
+#define MULTISPRITE_USE_VIDEO_MEMORY
 #include "sparse_tiling.h"
 
 // Generated from sprites7800 RType_tiles.yaml

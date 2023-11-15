@@ -1,6 +1,7 @@
 v0.2.17 (11/08/2023) :
-    - Moved to cc6502 v1.0.11
+    - Moved to cc6502 v1.0.12
     - Enhanced function level computation (too slow when recursion is found)
+    - Corrected zeropage variable usage count
 
 v0.2.16 (10/26/2023) :
     - Moved to cc6502 v1.0.10

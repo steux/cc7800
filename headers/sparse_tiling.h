@@ -122,41 +122,43 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
     char *vmemptr0, *vmemptr1, *vmemptr2, *vmemptr3, *vmemptr4, *vmemptr5, *vmemptr6, *vmemptr7, *vmemptr8, *vmemptr9, *vmemptr10, *vmemptr11, *vmemptr12, *vmemptr13, *vmemptr14, *vmemptr15;
     char *chptr0, *chptr1, *chptr2, *chptr3, *chptr4, *chptr5, *chptr6, *chptr7, *chptr8, *chptr9, *chptr10, *chptr11, *chptr12, *chptr13, *chptr14, *chptr15;
     char vtmp1[16], vtmp2[16];
-    
-    vmemptr0 = low | (high++ << 8);
-    vmemptr1 = low | (high++ << 8);
-    vmemptr2 = low | (high++ << 8);
-    vmemptr3 = low | (high++ << 8);
-    vmemptr4 = low | (high++ << 8);
-    vmemptr5 = low | (high++ << 8);
-    vmemptr6 = low | (high++ << 8);
-    vmemptr7 = low | (high++ << 8);
-    vmemptr8 = low | (high++ << 8);
-    vmemptr9 = low | (high++ << 8);
-    vmemptr10 = low | (high++ << 8);
-    vmemptr11 = low | (high++ << 8);
-    vmemptr12 = low | (high++ << 8);
-    vmemptr13 = low | (high++ << 8);
-    vmemptr14 = low | (high++ << 8);
-    vmemptr15 = low | (high++ << 8);
+   
+    Y = low;
+    X = high; 
+    vmemptr0 = Y | (X++ << 8);
+    vmemptr1 = Y | (X++ << 8);
+    vmemptr2 = Y | (X++ << 8);
+    vmemptr3 = Y | (X++ << 8);
+    vmemptr4 = Y | (X++ << 8);
+    vmemptr5 = Y | (X++ << 8);
+    vmemptr6 = Y | (X++ << 8);
+    vmemptr7 = Y | (X++ << 8);
+    vmemptr8 = Y | (X++ << 8);
+    vmemptr9 = Y | (X++ << 8);
+    vmemptr10 = Y | (X++ << 8);
+    vmemptr11 = Y | (X++ << 8);
+    vmemptr12 = Y | (X++ << 8);
+    vmemptr13 = Y | (X++ << 8);
+    vmemptr14 = Y | (X++ << 8);
+    vmemptr15 = Y | (X++ << 8);
 
-    high = _sparse_tiling_charbase;
-    chptr0 = high++ << 8;
-    chptr1 = high++ << 8;
-    chptr2 = high++ << 8;
-    chptr3 = high++ << 8;
-    chptr4 = high++ << 8;
-    chptr5 = high++ << 8;
-    chptr6 = high++ << 8;
-    chptr7 = high++ << 8;
-    chptr8 = high++ << 8;
-    chptr9 = high++ << 8;
-    chptr10 = high++ << 8;
-    chptr11 = high++ << 8;
-    chptr12 = high++ << 8;
-    chptr13 = high++ << 8;
-    chptr14 = high++ << 8;
-    chptr15 = high++ << 8;
+    X = _sparse_tiling_charbase;
+    chptr0 = X++ << 8;
+    chptr1 = X++ << 8;
+    chptr2 = X++ << 8;
+    chptr3 = X++ << 8;
+    chptr4 = X++ << 8;
+    chptr5 = X++ << 8;
+    chptr6 = X++ << 8;
+    chptr7 = X++ << 8;
+    chptr8 = X++ << 8;
+    chptr9 = X++ << 8;
+    chptr10 = X++ << 8;
+    chptr11 = X++ << 8;
+    chptr12 = X++ << 8;
+    chptr13 = X++ << 8;
+    chptr14 = X++ << 8;
+    chptr15 = X++ << 8;
 
     // Solution 2
     for (Y = 0; Y != len2; Y++) {
