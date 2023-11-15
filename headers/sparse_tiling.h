@@ -236,7 +236,7 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
 #endif
 }
 
-bank1 void _sparse_tiling_load_line(signed char y)
+void _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
     char *tmpptr, x, linedl, txpos, xoffset;
@@ -629,7 +629,7 @@ void sparse_tiling_scroll(char offset)
     for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; yy--, linedl--, y--) {
         X = yy;
         _tiling_xoffset[X] += offset;
-        if (_tiling_xoffset[X] >= 16 && lines_moved < 3) {
+        if (_tiling_xoffset[X] >= 16 && lines_moved < offset) {
             do {
                 _tiling_xoffset[X] -= 16;
                 _tiling_xpos[X] += 2;

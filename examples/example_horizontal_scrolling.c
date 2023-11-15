@@ -10,22 +10,27 @@
 // Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx -m 16
 #include "example_RType_level1.c"
 
-char scroll_background_counter;
+char scroll_background_counter1, scroll_background_counter2;
 
-void scroll_background()
+void scroll_background(char speed)
 {
     char c;
     signed char pos1, pos2, pos3, pos4;
-    pos1 = -scroll_background_counter;
+    scroll_background_counter1++;
+    if (scroll_background_counter1 == speed) {
+        scroll_background_counter1 = 0;
+        scroll_background_counter2++;
+        if (scroll_background_counter2 == 16) scroll_background_counter2 = 0;
+    }
+    pos1 = -scroll_background_counter2;
     pos2 = pos1 + 80;
     pos3 = pos1 - 8;
     if (pos3 < -16) pos3 += 16;
     pos4 = pos3 + 80;
     if (_ms_buffer) {
         X = _MS_DLL_ARRAY_SIZE + 1;
-        scroll_background_counter++;
-        if (scroll_background_counter == 16) scroll_background_counter = 0;
     } else X = 1;
+    
     _ms_tmpptr = _ms_dls[X];
     for (c = 0; c != 3; c++) {
         // Modify bytes 4 and 8 of the DLL entries (x position of background sprites=
@@ -46,7 +51,8 @@ void scroll_background()
 
 void main()
 {
-    scroll_background_counter = 0;
+    scroll_background_counter1 = 0;
+    scroll_background_counter2 = 0;
 
     multisprite_init();
 #ifdef MULTISPRITE_USE_VIDEO_MEMORY
@@ -108,8 +114,8 @@ void main()
     multisprite_flip();
 
     do {
-        scroll_background();
-        sparse_tiling_scroll(2); // Scroll 2 pixels to the right for this buffer (so 1 pixel from frame to frame due to double buffering)
+        scroll_background(4);
+        sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
         multisprite_flip();
     } while (1);
 }
