@@ -236,7 +236,7 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
 #endif
 }
 
-void _sparse_tiling_load_line(signed char y)
+bank1 void _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
     char *tmpptr, x, linedl, txpos, xoffset;
@@ -299,7 +299,7 @@ void _sparse_tiling_load_line(signed char y)
         if (tileset_counter < st_idata_size) {
             // Yes. Let's get the matching pointer
             _save_y = Y;
-            Y = _st_idata_idx + tileset_counter;
+            Y = st_idata_idx + tileset_counter;
             tmpptr = _st_idata[Y];
             Y = _save_y;
             data[0] = tmpptr; ++Y;
@@ -313,11 +313,11 @@ void _sparse_tiling_load_line(signed char y)
             mode = data[1] & 0x80;
             tmpptr = data[0] | (ptr[++Y] << 8);
             // Store the pointer for this tileset_counter
+            _save_y = Y;
             _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
             data[0] = _sparse_tiling_vmem_ptr_low;
             data[2] = _sparse_tiling_vmem_ptr_high;
-            _save_y = Y;
-            Y = _st_idata_idx + tileset_counter;
+            Y = st_idata_idx + tileset_counter;
             _st_idata[Y] = _sparse_tiling_vmem_ptr_low | (_sparse_tiling_vmem_ptr_high << 8);
             st_idata_size++;
             Y = _save_y;

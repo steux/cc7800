@@ -1,13 +1,13 @@
 #include "string.h"
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
-#define MULTISPRITE_USE_VIDEO_MEMORY
+//#define MULTISPRITE_USE_VIDEO_MEMORY
 #include "sparse_tiling.h"
 
 // Generated from sprites7800 RType_tiles.yaml
 #include "example_RType_tiles.c"
 
-// Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
+// Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx -m 16
 #include "example_RType_level1.c"
 
 char scroll_background_counter;
