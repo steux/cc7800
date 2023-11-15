@@ -255,7 +255,8 @@ bank1 void _sparse_tiling_load_line(signed char y)
     txpos = _tiling_xpos[X]; 
     xoffset = _tiling_xoffset[X]; 
     right = txpos + 22;
-    ptr = _tiling_ptr[Y = y];
+    Y = y;
+    ptr = _tiling_ptr[Y];
     st_idata_idx = _st_idata_idx[Y];
     st_idata_size = _st_idata_size[Y];
     _ms_tmpptr = _ms_dls[X = linedl];
@@ -274,10 +275,10 @@ bank1 void _sparse_tiling_load_line(signed char y)
         // Go to next tileset
         Y += _STS_SIZE;
         // Remove it from video memory
-        for (X = st_idata_idx + st_idata_size; X > st_idata_idx; X--) {
-            tmpptr = _st_idata[X];
+        _ms_tmp = st_idata_idx + st_idata_size;
+        for (X = st_idata_idx; X != _ms_tmp; X++) {
+            tmpptr = _st_idata[++X];
             _st_idata[--X] = tmpptr;
-            X++;
         }
         if (st_idata_size) st_idata_size--;
     } while (1);
@@ -296,10 +297,10 @@ bank1 void _sparse_tiling_load_line(signed char y)
         signed char xpos = data[4] - txpos;
         
         // Is it already transferred to video memory ?
-        if (tileset_counter < st_idata_size) {
+        if (st_idata_size) {
             // Yes. Let's get the matching pointer
             _save_y = Y;
-            Y = st_idata_idx + tileset_counter;
+            Y = st_idata_idx;
             tmpptr = _st_idata[Y];
             Y = _save_y;
             data[0] = tmpptr; ++Y;
@@ -317,9 +318,9 @@ bank1 void _sparse_tiling_load_line(signed char y)
             _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
             data[0] = _sparse_tiling_vmem_ptr_low;
             data[2] = _sparse_tiling_vmem_ptr_high;
-            Y = st_idata_idx + tileset_counter;
+            Y = st_idata_idx;
             _st_idata[Y] = _sparse_tiling_vmem_ptr_low | (_sparse_tiling_vmem_ptr_high << 8);
-            st_idata_size++;
+            st_idata_size = 1;
             Y = _save_y;
         }
 
@@ -352,7 +353,6 @@ bank1 void _sparse_tiling_load_line(signed char y)
         w = r - data[4] + 1;
         d = right - data[4];
 
-        // TODO: Modify second part according to first
         while (d >= 0) {
             // Check termination
             if (r == 96 && data[4] == 0xff) break;
@@ -360,20 +360,47 @@ bank1 void _sparse_tiling_load_line(signed char y)
             tileset_counter++;
             r -= txpos;
 
-            data[0] = ptr[++Y]; // 10 cycles
-            data[1] = ptr[++Y];
-            data[2] = ptr[++Y];
-            data[3] = ptr[++Y];
+            // Is it already transferred to video memory ?
+            if (tileset_counter < st_idata_size) {
+                // Yes. Let's get the matching pointer
+                _save_y = Y;
+                Y = st_idata_idx + tileset_counter;
+                tmpptr = _st_idata[Y];
+                Y = _save_y;
+                data[0] = tmpptr; ++Y;
+                data[1] = ptr[++Y] & 0xc0; // Remove immediate mode bit
+                mode = data[1] & 0x80;
+                data[2] = tmpptr >> 8; ++Y;
+            } else {
+                // Let's transfer from ROM to RAM
+                data[0] = ptr[++Y]; 
+                data[1] = ptr[++Y] & 0xc0; // Remove immediate mode bit
+                mode = data[1] & 0x80;
+                tmpptr = data[0] | (ptr[++Y] << 8);
+                // Store the pointer for this tileset_counter
+                _save_y = Y;
+                _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
+                data[0] = _sparse_tiling_vmem_ptr_low;
+                data[2] = _sparse_tiling_vmem_ptr_high;
+                Y = st_idata_idx + tileset_counter;
+                _st_idata[Y] = _sparse_tiling_vmem_ptr_low | (_sparse_tiling_vmem_ptr_high << 8);
+                st_idata_size++;
+                Y = _save_y;
+            }
+
             if (r >= 24) { // Reduce the length of this tileset so that it doesn't get out of screen on the right
-                data[3] = ((data[4] - txpos - 23) & 0x1f) | (data[3] & 0xe0); 
-            } 
+                w -= (r - 24); 
+            }
+            data[3] = ptr[++Y];
+            w = (mode)?(w << 2):(w << 1); 
+
             ++Y;
             _save_y = Y;
             Y = x; // 6 cycles
             _ms_tmpptr[Y++] = data[0]; // 11 cycles
             _ms_tmpptr[Y++] = data[1];
             _ms_tmpptr[Y++] = data[2];
-            _ms_tmpptr[Y++] = data[3];
+            _ms_tmpptr[Y++] = ((-w) & 0x1f) | (data[3] & 0xe0);
             _ms_tmpptr[Y++] = ((data[4] - txpos) << 3) - xoffset;
             x = Y; // 21 cycles
             Y = _save_y;
