@@ -160,10 +160,15 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
     chptr14 = X++ << 8;
     chptr15 = X++ << 8;
 
-    // Solution 2
     for (Y = 0; Y != len2; Y++) {
         tmp = Y;
         Y = sptr[Y];
+        X = Y & 1;
+        if (X) { 
+            // Vertical mirroring)
+            Y--;
+        }
+
         vtmp1[0] = chptr0[Y];
         vtmp1[1] = chptr1[Y];
         vtmp1[2] = chptr2[Y];
@@ -198,39 +203,76 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
         vtmp2[14] = chptr14[Y];
         vtmp2[15] = chptr15[Y];
         Y = tmp << 1;
-        vmemptr0[Y] = vtmp1[0];
-        vmemptr1[Y] = vtmp1[1];
-        vmemptr2[Y] = vtmp1[2];
-        vmemptr3[Y] = vtmp1[3];
-        vmemptr4[Y] = vtmp1[4];
-        vmemptr5[Y] = vtmp1[5];
-        vmemptr6[Y] = vtmp1[6];
-        vmemptr7[Y] = vtmp1[7];
-        vmemptr8[Y] = vtmp1[8];
-        vmemptr9[Y] = vtmp1[9];
-        vmemptr10[Y] = vtmp1[10];
-        vmemptr11[Y] = vtmp1[11];
-        vmemptr12[Y] = vtmp1[12];
-        vmemptr13[Y] = vtmp1[13];
-        vmemptr14[Y] = vtmp1[14];
-        vmemptr15[Y] = vtmp1[15];
-        Y++;
-        vmemptr0[Y] = vtmp2[0];
-        vmemptr1[Y] = vtmp2[1];
-        vmemptr2[Y] = vtmp2[2];
-        vmemptr3[Y] = vtmp2[3];
-        vmemptr4[Y] = vtmp2[4];
-        vmemptr5[Y] = vtmp2[5];
-        vmemptr6[Y] = vtmp2[6];
-        vmemptr7[Y] = vtmp2[7];
-        vmemptr8[Y] = vtmp2[8];
-        vmemptr9[Y] = vtmp2[9];
-        vmemptr10[Y] = vtmp2[10];
-        vmemptr11[Y] = vtmp2[11];
-        vmemptr12[Y] = vtmp2[12];
-        vmemptr13[Y] = vtmp2[13];
-        vmemptr14[Y] = vtmp2[14];
-        vmemptr15[Y] = vtmp2[15];
+        
+        if (X) {
+            vmemptr0[Y] = vtmp1[15];
+            vmemptr1[Y] = vtmp1[14];
+            vmemptr2[Y] = vtmp1[13];
+            vmemptr3[Y] = vtmp1[12];
+            vmemptr4[Y] = vtmp1[11];
+            vmemptr5[Y] = vtmp1[10];
+            vmemptr6[Y] = vtmp1[9];
+            vmemptr7[Y] = vtmp1[8];
+            vmemptr8[Y] = vtmp1[7];
+            vmemptr9[Y] = vtmp1[6];
+            vmemptr10[Y] = vtmp1[5];
+            vmemptr11[Y] = vtmp1[4];
+            vmemptr12[Y] = vtmp1[3];
+            vmemptr13[Y] = vtmp1[2];
+            vmemptr14[Y] = vtmp1[1];
+            vmemptr15[Y] = vtmp1[0];
+            Y++;
+            vmemptr0[Y] = vtmp2[15];
+            vmemptr1[Y] = vtmp2[14];
+            vmemptr2[Y] = vtmp2[13];
+            vmemptr3[Y] = vtmp2[12];
+            vmemptr4[Y] = vtmp2[11];
+            vmemptr5[Y] = vtmp2[10];
+            vmemptr6[Y] = vtmp2[9];
+            vmemptr7[Y] = vtmp2[8];
+            vmemptr8[Y] = vtmp2[7];
+            vmemptr9[Y] = vtmp2[6];
+            vmemptr10[Y] = vtmp2[5];
+            vmemptr11[Y] = vtmp2[4];
+            vmemptr12[Y] = vtmp2[3];
+            vmemptr13[Y] = vtmp2[2];
+            vmemptr14[Y] = vtmp2[1];
+            vmemptr15[Y] = vtmp2[0];
+        } else {
+            vmemptr0[Y] = vtmp1[0];
+            vmemptr1[Y] = vtmp1[1];
+            vmemptr2[Y] = vtmp1[2];
+            vmemptr3[Y] = vtmp1[3];
+            vmemptr4[Y] = vtmp1[4];
+            vmemptr5[Y] = vtmp1[5];
+            vmemptr6[Y] = vtmp1[6];
+            vmemptr7[Y] = vtmp1[7];
+            vmemptr8[Y] = vtmp1[8];
+            vmemptr9[Y] = vtmp1[9];
+            vmemptr10[Y] = vtmp1[10];
+            vmemptr11[Y] = vtmp1[11];
+            vmemptr12[Y] = vtmp1[12];
+            vmemptr13[Y] = vtmp1[13];
+            vmemptr14[Y] = vtmp1[14];
+            vmemptr15[Y] = vtmp1[15];
+            Y++;
+            vmemptr0[Y] = vtmp2[0];
+            vmemptr1[Y] = vtmp2[1];
+            vmemptr2[Y] = vtmp2[2];
+            vmemptr3[Y] = vtmp2[3];
+            vmemptr4[Y] = vtmp2[4];
+            vmemptr5[Y] = vtmp2[5];
+            vmemptr6[Y] = vtmp2[6];
+            vmemptr7[Y] = vtmp2[7];
+            vmemptr8[Y] = vtmp2[8];
+            vmemptr9[Y] = vtmp2[9];
+            vmemptr10[Y] = vtmp2[10];
+            vmemptr11[Y] = vtmp2[11];
+            vmemptr12[Y] = vtmp2[12];
+            vmemptr13[Y] = vtmp2[13];
+            vmemptr14[Y] = vtmp2[14];
+            vmemptr15[Y] = vtmp2[15];
+        }
         Y = tmp;
     } // 579 cycles x 16 (max) = 9264 cycles = 5.4ms (out of 16ms per frame).
 #endif
