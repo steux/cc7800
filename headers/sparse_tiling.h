@@ -309,6 +309,8 @@ void _sparse_tiling_load_line(signed char y)
         // Check if it's the last tileset
         if (w == 96) {
             if (ptr[++Y] == 0xff) {
+                // Finished
+                _ms_dlend[Y = linedl] = _ms_dlend_save[X = y];
                 return;
             } else Y--;
         }
