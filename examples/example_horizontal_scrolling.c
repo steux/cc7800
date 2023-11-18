@@ -1,30 +1,42 @@
 #include "string.h"
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
+#define MULTISPRITE_USE_VIDEO_MEMORY
 #include "sparse_tiling.h"
 
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+// Generated from sprites7800 RType_tiles_mirror.yaml
+#include "example_RType_tiles_mirror.c"
+// Generated from tiles7800 --sparse RType_tiles_mirror.yaml --varname tilemap_level1 RType_level1_mirror.tmx -m 16
+#include "example_RType_level1_mirror.c"
+#else
 // Generated from sprites7800 RType_tiles.yaml
 #include "example_RType_tiles.c"
-
-// Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
+// Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx -m 16
 #include "example_RType_level1.c"
+#endif
 
-char scroll_background_counter;
+char scroll_background_counter1, scroll_background_counter2;
 
-void scroll_background()
+void scroll_background(char speed)
 {
     char c;
     signed char pos1, pos2, pos3, pos4;
-    pos1 = -scroll_background_counter;
+    scroll_background_counter1++;
+    if (scroll_background_counter1 == speed) {
+        scroll_background_counter1 = 0;
+        scroll_background_counter2++;
+        if (scroll_background_counter2 == 16) scroll_background_counter2 = 0;
+    }
+    pos1 = -scroll_background_counter2;
     pos2 = pos1 + 80;
     pos3 = pos1 - 8;
     if (pos3 < -16) pos3 += 16;
     pos4 = pos3 + 80;
     if (_ms_buffer) {
         X = _MS_DLL_ARRAY_SIZE + 1;
-        scroll_background_counter++;
-        if (scroll_background_counter == 16) scroll_background_counter = 0;
     } else X = 1;
+    
     _ms_tmpptr = _ms_dls[X];
     for (c = 0; c != 3; c++) {
         // Modify bytes 4 and 8 of the DLL entries (x position of background sprites=
@@ -45,12 +57,17 @@ void scroll_background()
 
 void main()
 {
-    scroll_background_counter = 0;
+    scroll_background_counter1 = 0;
+    scroll_background_counter2 = 0;
 
     multisprite_init();
+#ifdef MULTISPRITE_USE_VIDEO_MEMORY
+    sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
+#else
     sparse_tiling_init(tilemap_level1_data_ptrs);
+#endif
     multisprite_set_charbase(brown_tiles1);
-   
+    
     // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
     *P3C3 = multisprite_color(0xd1); 
@@ -103,8 +120,8 @@ void main()
     multisprite_flip();
 
     do {
-        scroll_background();
-        sparse_tiling_scroll(2); // Scroll 2 pixels to the right for this buffer (so 1 pixel from frame to frame due to double buffering)
+        scroll_background(4);
+        sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
         multisprite_flip();
     } while (1);
 }
