@@ -1235,7 +1235,7 @@ ramchip char _ms_vscroll_sparse_step;
 ramchip char _ms_vscroll_sparse_vmem_ptr_low, _ms_vscroll_sparse_vmem_ptr_high, _ms_vscroll_charbase;
 char *_ms_sbuffer_sparse_tilemap_ptr;
 
-bank1 char multisprite_vmem[8192]; // Video memory in RAM
+bank1 char multisprite_vmem[12288]; // Video memory in RAM
 bank1 const char multisprite_vscroll_init_sparse_tiles_vmem_use_rom[] = {1};
 
 #define multisprite_vscroll_init_sparse_tiles_vmem(ptr, tiles_ptr) \

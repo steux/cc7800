@@ -37,7 +37,7 @@ ramchip char *_st_idata[IDATA_MAX * SPARSE_TILING_SCROLLING_ZONE];
 const char _st_idata_idx[_MS_DLL_ARRAY_SIZE] = { 0, IDATA_MAX, IDATA_MAX * 2, IDATA_MAX * 3, IDATA_MAX * 4, IDATA_MAX * 5, IDATA_MAX * 6, IDATA_MAX * 7, IDATA_MAX * 8, IDATA_MAX * 9, IDATA_MAX * 10, IDATA_MAX * 11, IDATA_MAX * 12, IDATA_MAX * 13, IDATA_MAX * 14 };
 ramchip char _st_idata_size[SPARSE_TILING_SCROLLING_ZONE];
 
-bank1 char multisprite_vmem[8192]; // Video memory in RAM
+bank1 char multisprite_vmem[12288]; // Video memory in RAM
 bank1 const char sparse_tiling_vmem_use_rom[] = {1};
 
 #define sparse_tiling_init_vmem(ptr, tiles_ptr) \
