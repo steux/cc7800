@@ -95,30 +95,6 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
     _sparse_tiling_vmem_ptr_low = low;
     _sparse_tiling_vmem_ptr_high = high;
 
-#ifdef 0
-    char *vmemptr, *chptr, byte;
-    chptr = _sparse_tiling_charbase << 8; 
-
-    // Solution 1 : 10ms max
-    for (Y = 15; Y >= 0; Y--) {
-        high++;
-        vmemptr = low | (high << 8);
-        chptr += 256;
-        _save_y = Y;
-        // Copy the row of chars for current step
-        for (Y = 0; Y != len2; Y++) {
-            tmp = Y;
-            Y = sptr[Y];
-            byte = chptr[Y++];
-            X = chptr[Y];
-            Y = tmp << 1;
-            vmemptr[Y++] = byte;
-            vmemptr[Y] = X;
-            Y = tmp;
-        } // 63 cycles loop
-        Y = _save_y;
-    }
-#else
     char *vmemptr0, *vmemptr1, *vmemptr2, *vmemptr3, *vmemptr4, *vmemptr5, *vmemptr6, *vmemptr7, *vmemptr8, *vmemptr9, *vmemptr10, *vmemptr11, *vmemptr12, *vmemptr13, *vmemptr14, *vmemptr15;
     char *chptr0, *chptr1, *chptr2, *chptr3, *chptr4, *chptr5, *chptr6, *chptr7, *chptr8, *chptr9, *chptr10, *chptr11, *chptr12, *chptr13, *chptr14, *chptr15;
     char vtmp1[16], vtmp2[16];
@@ -274,8 +250,7 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
             vmemptr15[Y] = vtmp2[15];
         }
         Y = tmp;
-    } // 579 cycles x 16 (max) = 9264 cycles = 5.4ms (out of 16ms per frame).
-#endif
+    } // ~600 cycles x 16 (max) = ~10000 cycles = 5.6ms (out of 16ms per frame).
 }
 
 void _sparse_tiling_load_line(signed char y)
@@ -311,6 +286,7 @@ void _sparse_tiling_load_line(signed char y)
             if (ptr[++Y] == 0xff) {
                 // Finished
                 _ms_dlend[Y = linedl] = _ms_dlend_save[X = y];
+                _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
                 return;
             } else Y--;
         }
