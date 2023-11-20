@@ -18,6 +18,8 @@
 // Generated from sprites7800 RType_font.yaml
 #include "example_RType_font.c"
 
+#include "example_dobkeratops_bank2.c"
+
 // DLI management
 ramchip char save_acc, save_x, save_y;
 
