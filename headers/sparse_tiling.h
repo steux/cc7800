@@ -74,6 +74,8 @@ void _sparse_tiling_init()
 #endif
 }
 
+const char _sparse_tiling_end_of_tileset[2] = { 96, 0xff};
+
 #ifdef MULTISPRITE_USE_VIDEO_MEMORY
 void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
 {
@@ -287,6 +289,7 @@ void _sparse_tiling_load_line(signed char y)
                 // Finished
                 _ms_dlend[Y = linedl] = _ms_dlend_save[X = y];
                 _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
+                _tiling_ptr[X] = _sparse_tiling_end_of_tileset; // To make sure this one is in bank0
                 return;
             } else Y--;
         }
@@ -460,6 +463,10 @@ void _sparse_tiling_load_line(signed char y)
         // Check if it's the last tileset
         if (ptr[Y] == 96) {
             if (ptr[++Y] == 0xff) {
+                // Finished
+                _ms_dlend[Y = linedl] = _ms_dlend_save[X = y];
+                _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
+                _tiling_ptr[X] = _sparse_tiling_end_of_tileset; // To make sure this one is in bank0
                 return;
             } else Y--;
         }

@@ -18,6 +18,7 @@
 // Generated from sprites7800 RType_font.yaml
 #include "example_RType_font.c"
 
+// Put the dobkeratops code in Bank 2
 #include "example_dobkeratops_bank2.c"
 
 // DLI management
@@ -47,12 +48,14 @@ ramchip unsigned int score, high_score;
 ramchip char update_score;
 ramchip char display_score_str[5];
 ramchip char display_high_score_str[5];
+ramchip unsigned int level_progress;
 
 void game_init()
 {
     score = 0;
     high_score = 0;
     update_score = 1;
+    level_progress = 0;
 
     // Init game state variables
     missile_first = 0;
@@ -88,7 +91,7 @@ void step()
             } else {
                 missile_xpos[X = i] = x;
                 // Draw missile
-                multisprite_display_small_sprite_ex(x, y, missile, 2, 6, 13, 0);
+                multisprite_display_small_sprite_ex(x, y, missile, 2, 0, 12, 0);
             }
         }
     }
@@ -116,7 +119,7 @@ void step()
     }
 
     if (draw_R9) {
-        multisprite_display_small_sprite_ex(R9_xpos, R9_ypos, R9, 8, 4, 4, 1);
+        multisprite_display_small_sprite_ex(R9_xpos, R9_ypos, R9, 8, 0, 4, 1);
     }
 }
 
@@ -273,22 +276,8 @@ void display_init()
     multisprite_start();
 }
 
-const char oneup[3] = {27, 'U' - 'A', 'P' - 'A'};
-const char high[4] = {'H' - 'A', 'I' - 'A', 'G' - 'A', 'H' - 'A'};
-const char beam[4] = {'B' - 'A', 'E' - 'A', 'A' - 'A', 'M' - 'A'};
-const char gauge_out[17] = {45, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 47};
-const char gauge_in[15] = { 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48};
-
-void rtype_init()
+bank1 void rtype_level1_palette()
 {
-    sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
-    multisprite_set_charbase(alphabet);
-   
-    // Green (background) color 
-    *P3C1 = multisprite_color(0xd0); 
-    *P3C2 = multisprite_color(0xd2); 
-    *P3C3 = multisprite_color(0xd1); 
-    
     // Beige palette
     *P4C1 = multisprite_color(0x12); 
     *P4C2 = multisprite_color(0x14); 
@@ -308,7 +297,41 @@ void rtype_init()
     *P7C1 = 0x04; // Dark gray
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
+}
 
+const char oneup[3] = {27, 'U' - 'A', 'P' - 'A'};
+const char high[4] = {'H' - 'A', 'I' - 'A', 'G' - 'A', 'H' - 'A'};
+const char beam[4] = {'B' - 'A', 'E' - 'A', 'A' - 'A', 'M' - 'A'};
+const char gauge_out[17] = {45, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 47};
+const char gauge_in[15] = { 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48};
+
+void rtype_init()
+{
+    sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
+    multisprite_set_charbase(alphabet);
+    rtype_level1_palette();
+
+    // Sprites palette
+    // Fire
+    *P0C1 = multisprite_color(0x37); // Orange
+    *P0C2 = multisprite_color(0x1c); // Yellow 
+    *P0C3 = 0x0f; // White
+    
+    // Blue & Red palette
+    *P1C1 = multisprite_color(0x84); // Dark blue 
+    *P1C2 = multisprite_color(0x34); // Red
+    *P1C3 = multisprite_color(0xac); // Turquoise 
+
+    // Grey palette
+    *P2C1 = 0x04; // Dark gray
+    *P2C2 = 0x08; // Medium gray
+    *P2C3 = 0x0c; // Dark gray
+
+    // Green (background) color 
+    *P3C1 = multisprite_color(0xd0); 
+    *P3C2 = multisprite_color(0xd2); 
+    *P3C3 = multisprite_color(0xd1); 
+    
     multisprite_display_tiles(3 * 4, 14, oneup, 3, 5);
     multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 7);
     multisprite_display_tiles(16 * 4, 14, high, 4, 5);
@@ -358,11 +381,15 @@ void main()
     game_init();
 
     do {
-        scroll_background(4);
-        sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
-
+        if (level_progress < 64 * 8 + 161) {
+            scroll_background(4);
+            sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
+            level_progress++;
+        }
         joystick_input();
         step();
+        score = level_progress;
+        update_score = 1;
         if (update_score) {
             display_score_update(display_score_str);
             if (score >= high_score) {
@@ -371,7 +398,6 @@ void main()
             }
             update_score = 0;
         }
-
         multisprite_flip();
         *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
     } while (1);
