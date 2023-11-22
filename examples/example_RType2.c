@@ -41,6 +41,10 @@ void interrupt dli()
 ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX];
 ramchip char missile_first, missile_last;
 
+#define CIRCLES_NB_MAX 5
+ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_state[MISSILES_NB_MAX];
+ramchip char circle_first, circle_last;
+
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
 
@@ -60,6 +64,8 @@ void game_init()
     // Init game state variables
     missile_first = 0;
     missile_last = 0;
+    circle_first = 0;
+    circle_last = 0;
 
     // Initialize spaceship state
     R9_xpos = 20;
@@ -70,7 +76,82 @@ void game_init()
 
 void step()
 {
-    char x, y, i;
+    char x, y, i, c, state;
+    char *gfx;
+
+    // Draw circles
+    for (i = circle_first; i != circle_last; i++) {
+        if (i == CIRCLES_NB_MAX) {
+            i = 0;
+            if (circle_last == 0) break;
+        }
+        if (circle_xpos[X] != -1) {
+            y = circle_ypos[X = i];
+            x = circle_xpos[X];
+            state = circle_state[X];
+            if (x >= 160) { // || sparse_tiling_collision(y + 8, x, x + 27) || sparse_tiling_collision(y + 23, x, x + 27) != -1 ) {
+                // Out of screen or collided with background
+                circle_xpos[X = i] = -1; // Removed
+                do {
+                    X++;
+                    if (X == MISSILES_NB_MAX) X = 0;
+                } while (X != circle_last && circle_xpos[X] == -1);
+                circle_first = X;
+            } else {
+                char w, xp, yp;
+                // Draw circle
+                if (state < 11) {
+                    for (c = 0; c != 2; c++) {
+                        if (c == 0) {
+                            gfx = big_circle_top;
+                            yp = y - 8;
+                        } else {
+                            gfx = big_circle_bottom;
+                            yp = y + 24;
+                        }
+                        if (state < 6) {
+                            w = state + 1;
+                        } else {
+                            w = state - 5;
+                            gfx += w;
+                            w = 11 - state;
+                        }
+                        multisprite_display_sprite_ex(x, yp, gfx, w, 1, 0);
+                    }   
+                }
+                if (state >= 5) {
+                    c = state - 5;
+                    if (c < 6) w = c + 1;
+                    else w = 7;
+                    if (state < 11) {
+                        gfx = circles_top;
+                        xp = x + 20 - (c << 2);
+                    } else {
+                        c = state - 10;
+                        gfx = circles_top + c; 
+                        xp = x;
+                    }
+                    multisprite_display_sprite_ex(xp, y, gfx, w, 1, 0);
+                    if (state < 11) {
+                        gfx = circles_bottom;
+                    } else {
+                        gfx = circles_bottom + c;
+                        if (state >= 17) state -= 7;
+                    }
+                    yp = y + 16;
+                    multisprite_display_sprite_ex(xp, yp, gfx, w, 1, 0);
+                }
+                if (state >= 5) {
+                    x += 4;
+                    circle_xpos[X = i] = x;
+                    if (state == 10) x += 20;
+                }
+                state++;
+                circle_state[X = i] = state;
+            }
+        }
+    }
+
     // Draw missiles
     for (i = missile_first; i != missile_last; i++) {
         if (i == MISSILES_NB_MAX) {
@@ -125,12 +206,22 @@ void step()
 
 void fire()
 {
+    /*
     X = missile_last++;
     if (missile_last == MISSILES_NB_MAX) missile_last = 0;
     if (missile_last != missile_first) {
         missile_xpos[X] = R9_xpos + 8;
         missile_ypos[X] = R9_ypos + 6;
     } else missile_last = X;
+    */
+
+    X = circle_last++;
+    if (circle_last == CIRCLES_NB_MAX) circle_last = 0;
+    if (circle_last != circle_first) {
+        circle_xpos[X] = R9_xpos + 8;
+        circle_ypos[X] = R9_ypos - 10;
+        circle_state[X] = 0;
+    } else circle_last = X;
 }
 
 void joystick_input()
