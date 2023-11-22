@@ -996,9 +996,6 @@ INIT_BANK void multisprite_clear()
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
-#ifdef MULTISPRITE_CLEAR
-        _ms_dlend_save_overlay[X] = 0;
-#endif
 #ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
 #endif

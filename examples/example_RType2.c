@@ -48,18 +48,22 @@ ramchip char circle_first, circle_last;
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
 
+#define R9_CIRCLE_FIRE 4
+
 ramchip unsigned int score, high_score;
 ramchip char update_score;
 ramchip char display_score_str[5];
 ramchip char display_high_score_str[5];
-ramchip unsigned int level_progress;
+ramchip char level_progress_low, level_progress_high;
+ramchip char counter_tail;
 
 void game_init()
 {
     score = 0;
     high_score = 0;
     update_score = 1;
-    level_progress = 0;
+    level_progress_high = 0;
+    level_progress_low = 0;
 
     // Init game state variables
     missile_first = 0;
@@ -70,22 +74,26 @@ void game_init()
     // Initialize spaceship state
     R9_xpos = 20;
     R9_ypos = 80;
-    R9_state = 1;
+    R9_state = R9_CIRCLE_FIRE; // 1
     R9_state_counter = 100;
+
+    // Initialize boss
+    counter_tail = 0;
 }
 
 void step()
 {
     char x, y, i, c, state;
     char *gfx;
-
+    char draw_R9;
+    
     // Draw circles
     for (i = circle_first; i != circle_last; i++) {
         if (i == CIRCLES_NB_MAX) {
             i = 0;
             if (circle_last == 0) break;
         }
-        if (circle_xpos[X] != -1) {
+        if (circle_xpos[X = i] != -1) {
             y = circle_ypos[X = i];
             x = circle_xpos[X];
             state = circle_state[X];
@@ -158,7 +166,7 @@ void step()
             i = 0;
             if (missile_last == 0) break;
         }
-        if (missile_xpos[X] != -1) {
+        if (missile_xpos[X = i] != -1) {
             y = missile_ypos[X = i];
             x = missile_xpos[X] + MISSILES_SPEED;
             if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
@@ -176,9 +184,8 @@ void step()
             }
         }
     }
-
-    char draw_R9;
-    if (R9_state == 0) {
+    
+    if ((R9_state & 1) == 0) {
         draw_R9 = 1;
         // Check collision with background
         char c = sparse_tiling_collision(R9_ypos + 6, R9_xpos, R9_xpos + 15);
@@ -206,22 +213,22 @@ void step()
 
 void fire()
 {
-    /*
-    X = missile_last++;
-    if (missile_last == MISSILES_NB_MAX) missile_last = 0;
-    if (missile_last != missile_first) {
-        missile_xpos[X] = R9_xpos + 8;
-        missile_ypos[X] = R9_ypos + 6;
-    } else missile_last = X;
-    */
-
-    X = circle_last++;
-    if (circle_last == CIRCLES_NB_MAX) circle_last = 0;
-    if (circle_last != circle_first) {
-        circle_xpos[X] = R9_xpos + 8;
-        circle_ypos[X] = R9_ypos - 10;
-        circle_state[X] = 0;
-    } else circle_last = X;
+    if (R9_state & R9_CIRCLE_FIRE) {
+        X = circle_last++;
+        if (circle_last == CIRCLES_NB_MAX) circle_last = 0;
+        if (circle_last != circle_first) {
+            circle_xpos[X] = R9_xpos + 8;
+            circle_ypos[X] = R9_ypos - 10;
+            circle_state[X] = 0;
+        } else circle_last = X;
+    } else {
+        X = missile_last++;
+        if (missile_last == MISSILES_NB_MAX) missile_last = 0;
+        if (missile_last != missile_first) {
+            missile_xpos[X] = R9_xpos + 8;
+            missile_ypos[X] = R9_ypos + 6;
+        } else missile_last = X;
+    }
 }
 
 void joystick_input()
@@ -395,6 +402,17 @@ const char high[4] = {'H' - 'A', 'I' - 'A', 'G' - 'A', 'H' - 'A'};
 const char beam[4] = {'B' - 'A', 'E' - 'A', 'A' - 'A', 'M' - 'A'};
 const char gauge_out[17] = {45, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 47};
 const char gauge_in[15] = { 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48};
+    
+void scoreboard_display()
+{
+    multisprite_display_tiles(3 * 4, 14, oneup, 3, 2);
+    multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 0);
+    multisprite_display_tiles(16 * 4, 14, high, 4, 2);
+    multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 0);
+    multisprite_display_tiles(8 * 4, 13, beam, 4, 2);
+    multisprite_display_tiles(13 * 4, 13, gauge_out, 17, 2);
+    multisprite_display_tiles(14 * 4, 13, gauge_in, 1, 1);
+}
 
 void rtype_init()
 {
@@ -422,14 +440,6 @@ void rtype_init()
     *P3C1 = multisprite_color(0xd0); 
     *P3C2 = multisprite_color(0xd2); 
     *P3C3 = multisprite_color(0xd1); 
-    
-    multisprite_display_tiles(3 * 4, 14, oneup, 3, 5);
-    multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 7);
-    multisprite_display_tiles(16 * 4, 14, high, 4, 5);
-    multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 7);
-    multisprite_display_tiles(8 * 4, 13, beam, 4, 5);
-    multisprite_display_tiles(13 * 4, 13, gauge_out, 17, 7);
-    multisprite_display_tiles(14 * 4, 13, gauge_in, 1, 5);
    
     // Background display
     char c, y = 0;
@@ -448,6 +458,7 @@ void rtype_init()
         multisprite_display_sprite_fast(72, y, background_level1_1, 24, 3);
     }
 
+    scoreboard_display();
     // Save it
     multisprite_save();
 
@@ -458,6 +469,20 @@ void rtype_init()
     sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
     sparse_tiling_display();
     multisprite_flip();
+}
+
+void background_fade1()
+{
+    *P3C1 = multisprite_color(0x00); 
+    *P3C2 = multisprite_color(0xd1); 
+    *P3C3 = multisprite_color(0xd0); 
+}
+
+void background_fade2()
+{
+    *P3C1 = multisprite_color(0x00); 
+    *P3C2 = multisprite_color(0xd0); 
+    *P3C3 = multisprite_color(0x00); 
 }
 
 void main()
@@ -471,16 +496,44 @@ void main()
     rtype_init();
     game_init();
 
+#define DOBKERATOPS_GETS_IN (((64 * 8) + 160) / 32) 
     do {
-        if (level_progress < 64 * 8 + 161) {
+        if (level_progress_high < DOBKERATOPS_GETS_IN) {
             scroll_background(4);
             sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
-            level_progress++;
+            level_progress_low++;
+            if (level_progress_low == 32) {
+                level_progress_high++;
+                if (level_progress_high == DOBKERATOPS_GETS_IN - 4) {
+                    background_fade1();
+                } else if (level_progress_high == DOBKERATOPS_GETS_IN - 2) {
+                    background_fade2();
+                }
+                level_progress_low = 0;
+            }
+        } else {
+            if (level_progress_low == 0) {
+                if (level_progress_high == DOBKERATOPS_GETS_IN) {
+                    multisprite_clear();
+                    scoreboard_display();
+                    multisprite_save();
+                    init_dobkeratops();
+                }
+            }
+            char x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
+            draw_dobkeratops(x, 16, counter_tail);
+            counter_tail++;
+            if (counter_tail == 60) counter_tail = 0;
+            if (level_progress_high < 120) {
+                level_progress_low++;
+                if (level_progress_low == 4) {
+                    level_progress_high++;
+                    level_progress_low = 0;
+                }
+            }
         }
         joystick_input();
         step();
-        score = level_progress;
-        update_score = 1;
         if (update_score) {
             display_score_update(display_score_str);
             if (score >= high_score) {

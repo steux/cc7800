@@ -26,11 +26,11 @@ bank2 void draw_dobkeratops(char xpos, char ypos, char anim)
             gfx = tail2;
             margin = 16 - 10;
         } else if (c == 12) gfx = tail3;
-        multisprite_display_small_sprite_ex(x, y, gfx, 2, 0, margin, 0);
+        multisprite_display_small_sprite_ex(x, y, gfx, 2, 4, margin, 0);
     }
     x = tailx[Y = c] + xpos - 50;
     y = taily[Y] + ypos;
-    multisprite_display_sprite_ex(x, y, tail4, 4, 0, 1);
+    multisprite_display_sprite_ex(x, y, tail4, 4, 4, 1);
     // Draw ugly alien body
     for (c = 0; c != 11; c++) {
         x = dobkeratops_x[X = c] + xpos;
@@ -38,30 +38,30 @@ bank2 void draw_dobkeratops(char xpos, char ypos, char anim)
         gfx = dobkeratops_gfx[X];
         char nbbytes = dobkeratops_nbbytes[X];
         if (nbbytes > 32) { // Maria can't display more than 32 bytes at once
-            multisprite_display_sprite_aligned(x, y, gfx, 32, 0, 1);
+            multisprite_display_sprite_aligned(x, y, gfx, 32, 4, 1);
             x += 62;
             nbbytes -= 32;
             gfx += 32;
         }
-        multisprite_display_sprite_aligned(x, y, gfx, nbbytes, 0, 1);
+        multisprite_display_sprite_aligned(x, y, gfx, nbbytes, 4, 1);
     }
 }
 
 bank2 void init_dobkeratops()
 {
     // Dobkeratops palette
-    *P0C1 = multisprite_color(0x3c); 
-    *P0C2 = multisprite_color(0x39); 
-    *P0C3 = multisprite_color(0x36); 
-    *P1C1 = multisprite_color(0x24); 
-    *P1C2 = multisprite_color(0x22); 
-    *P1C3 = 0x0e; 
-    *P2C1 = 0x0a; 
-    *P2C2 = 0x04; 
-    *P2C3 = 0x02; 
-    *P3C1 = multisprite_color(0xc9); 
-    *P3C2 = multisprite_color(0xc6); 
-    *P3C3 = multisprite_color(0x43); // Red (unused)
+    *P4C1 = multisprite_color(0x3c); 
+    *P4C2 = multisprite_color(0x39); 
+    *P4C3 = multisprite_color(0x36); 
+    *P5C1 = multisprite_color(0x24); 
+    *P5C2 = multisprite_color(0x22); 
+    *P5C3 = 0x0e; 
+    *P6C1 = 0x0a; 
+    *P6C2 = 0x04; 
+    *P6C3 = 0x02; 
+    *P7C1 = multisprite_color(0xc9); 
+    *P7C2 = multisprite_color(0xc6); 
+    *P7C3 = multisprite_color(0x43); // Red (unused)
 }
 
 bank2 void dobkeratops()

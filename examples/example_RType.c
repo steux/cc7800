@@ -72,7 +72,7 @@ void step()
             i = 0;
             if (missile_last == 0) break;
         }
-        if (missile_xpos[X] != -1) {
+        if (missile_xpos[X = i] != -1) {
             y = missile_ypos[X = i];
             x = missile_xpos[X] + MISSILES_SPEED;
             if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
@@ -86,13 +86,13 @@ void step()
             } else {
                 missile_xpos[X = i] = x;
                 // Draw missile
-                multisprite_display_small_sprite_ex(x, y, missile, 2, 6, 13, 0);
+                multisprite_display_small_sprite_ex(x, y, missile, 2, 6, 12, 0);
             }
         }
     }
 
     char draw_R9;
-    if (R9_state == 0) {
+    if (R9_state & 1 == 0) {
         draw_R9 = 1;
         // Check collision with background
         char c = sparse_tiling_collision(R9_ypos + 6, R9_xpos, R9_xpos + 15);
