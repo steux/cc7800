@@ -47,6 +47,8 @@ ramchip char circle_first, circle_last;
 
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
+ramchip char R9_satellite_counter, R9_satellite_state;
+const char *R9_satellite_sequence[] = {satellite1, satellite2, satellite3, satellite4};
 
 #define R9_CIRCLE_FIRE 4
 
@@ -76,6 +78,8 @@ void game_init()
     R9_ypos = 80;
     R9_state = R9_CIRCLE_FIRE; // 1
     R9_state_counter = 100;
+    R9_satellite_counter = 0;
+    R9_satellite_state = 0;
 
     // Initialize boss
     counter_tail = 0;
@@ -208,6 +212,18 @@ void step()
 
     if (draw_R9) {
         multisprite_display_small_sprite_ex(R9_xpos, R9_ypos, R9, 8, 0, 4, 1);
+        if (R9_state & R9_CIRCLE_FIRE) {
+            R9_satellite_counter++;
+            if (R9_satellite_counter == 5) {
+                R9_satellite_counter = 0;
+                R9_satellite_state++;
+                if (R9_satellite_state == 4) R9_satellite_state = 0;
+            }
+            gfx = R9_satellite_sequence[X = R9_satellite_state];
+            x = R9_xpos + 17;
+            y = R9_ypos - 1;
+            multisprite_display_sprite_ex(x, y, gfx, 4, 0, 1);
+        }
     }
 }
 
@@ -217,7 +233,7 @@ void fire()
         X = circle_last++;
         if (circle_last == CIRCLES_NB_MAX) circle_last = 0;
         if (circle_last != circle_first) {
-            circle_xpos[X] = R9_xpos + 8;
+            circle_xpos[X] = R9_xpos + 20;
             circle_ypos[X] = R9_ypos - 10;
             circle_state[X] = 0;
         } else circle_last = X;
