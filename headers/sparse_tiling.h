@@ -26,7 +26,7 @@
 #define _MS_BOTTOM_SCROLLING_ZONE 0
 #endif
 
-#define SPARSE_TILING_SCROLLING_ZONE (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1)
+#define SPARSE_TILING_SCROLLING_ZONE (14 - _MS_BOTTOM_SCROLLING_ZONE)
 ramchip char *_tiling_ptr[SPARSE_TILING_SCROLLING_ZONE];
 ramchip signed char _tiling_xpos[2 * SPARSE_TILING_SCROLLING_ZONE], _tiling_xoffset[2 * SPARSE_TILING_SCROLLING_ZONE];
 
@@ -34,7 +34,7 @@ ramchip signed char _tiling_xpos[2 * SPARSE_TILING_SCROLLING_ZONE], _tiling_xoff
 ramchip char _sparse_tiling_vmem_ptr_low, _sparse_tiling_vmem_ptr_high, _sparse_tiling_charbase;
 #define IDATA_MAX 5
 ramchip char *_st_idata[IDATA_MAX * SPARSE_TILING_SCROLLING_ZONE];
-const char _st_idata_idx[_MS_DLL_ARRAY_SIZE] = { 0, IDATA_MAX, IDATA_MAX * 2, IDATA_MAX * 3, IDATA_MAX * 4, IDATA_MAX * 5, IDATA_MAX * 6, IDATA_MAX * 7, IDATA_MAX * 8, IDATA_MAX * 9, IDATA_MAX * 10, IDATA_MAX * 11, IDATA_MAX * 12, IDATA_MAX * 13, IDATA_MAX * 14 };
+const char _st_idata_idx[14] = { 0, IDATA_MAX, IDATA_MAX * 2, IDATA_MAX * 3, IDATA_MAX * 4, IDATA_MAX * 5, IDATA_MAX * 6, IDATA_MAX * 7, IDATA_MAX * 8, IDATA_MAX * 9, IDATA_MAX * 10, IDATA_MAX * 11, IDATA_MAX * 12, IDATA_MAX * 13 };
 ramchip char _st_idata_size[SPARSE_TILING_SCROLLING_ZONE];
 
 bank1 char multisprite_vmem[12288]; // Video memory in RAM
@@ -59,11 +59,11 @@ bank1 const char sparse_tiling_vmem_use_rom[] = {1};
 void _sparse_tiling_init()
 {
     char *ptr;
-    for (Y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; Y >= 0; Y--) {
+    for (Y = SPARSE_TILING_SCROLLING_ZONE - 1; Y >= 0; Y--) {
         ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
         _tiling_ptr[Y] = ptr;
     }
-    for (X = 2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1) - 1; X >= 0; X--) {
+    for (X = 2 * SPARSE_TILING_SCROLLING_ZONE - 1; X >= 0; X--) {
         _tiling_xpos[X] = 0;
         _tiling_xoffset[X] = 0;
     }
@@ -265,7 +265,7 @@ void _sparse_tiling_load_line(signed char y)
     char mode, w;
      
     if (_ms_buffer) {
-        X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+        X = y + SPARSE_TILING_SCROLLING_ZONE;
         linedl = y + _MS_DLL_ARRAY_SIZE;
     } else {
         X = y;
@@ -446,7 +446,7 @@ void _sparse_tiling_load_line(signed char y)
     signed char right, r, d;
  
     if (_ms_buffer) {
-        X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+        X = y + SPARSE_TILING_SCROLLING_ZONE;
         linedl = y + _MS_DLL_ARRAY_SIZE;
     } else {
         X = y;
@@ -564,7 +564,7 @@ char sparse_tiling_collision(char top, char left, char right)
     char rc = right >> 3;
     char y = top >> 4;
     if (_ms_buffer) {
-        X = y + (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1);
+        X = y + SPARSE_TILING_SCROLLING_ZONE;
     } else {
         X = y;
     }
@@ -625,7 +625,7 @@ char sparse_tiling_collision(char top, char left, char right)
 void sparse_tiling_display()
 { 
     signed char y;    
-    for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; y--) { 
+    for (y = SPARSE_TILING_SCROLLING_ZONE - 1; y >= 0; y--) { 
         _sparse_tiling_load_line(y); 
     } 
 }
@@ -646,14 +646,14 @@ void sparse_tiling_scroll(char offset)
     */
     
     if (_ms_buffer) {
-        yy = 2 * (_MS_DLL_ARRAY_SIZE - _MS_BOTTOM_SCROLLING_ZONE - 1) - 1;
-        linedl = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE + _MS_DLL_ARRAY_SIZE;
+        yy = 2 * SPARSE_TILING_SCROLLING_ZONE - 1;
+        linedl = SPARSE_TILING_SCROLLING_ZONE - 1 + _MS_DLL_ARRAY_SIZE;
     } else {
-        yy = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE;
-        linedl = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE;
+        yy = SPARSE_TILING_SCROLLING_ZONE - 1;
+        linedl = SPARSE_TILING_SCROLLING_ZONE - 1;
     }
 
-    for (y = _MS_DLL_ARRAY_SIZE - 2 - _MS_BOTTOM_SCROLLING_ZONE; y >= 0; yy--, linedl--, y--) {
+    for (y = SPARSE_TILING_SCROLLING_ZONE - 1; y >= 0; yy--, linedl--, y--) {
         X = yy;
         _tiling_xoffset[X] += offset;
         if (_tiling_xoffset[X] >= 16 && lines_moved < offset) {
@@ -711,10 +711,10 @@ void _sparse_tiling_goto()
         _ms_tmp -= _tiling_ypos;
         _ms_tmp2 = 0;
     }
-    if (_tiling_ypos + (_MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE - TILING_HEIGHT) >= 0) {
+    if (_tiling_ypos + (15 - _MS_TOP_SCROLLING_ZONE - TILING_HEIGHT) >= 0) {
         bottom = _MS_TOP_SCROLLING_ZONE + TILING_HEIGHT - _tiling_ypos;
     } else {
-        bottom = _MS_DLL_ARRAY_SIZE;
+        bottom = 15;
     }
     if (_ms_buffer) {
         _ms_tmp += _MS_DLL_ARRAY_SIZE; 

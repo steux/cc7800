@@ -6,6 +6,7 @@
     
     v0.1: First working version
     v0.2: Added DMA Masking vertical scrolling support
+    v0.3: Refactored scrolling to avoid memory copy from region to region when coarse scrolling 
 */
 
 #ifndef __ATARI7800_MULTISPRITE__
@@ -13,6 +14,11 @@
 
 #include "prosystem.h"
 #include "stdlib.h"
+#include "assert.h"
+
+#ifndef INIT_BANK
+#define INIT_BANK
+#endif
 
 #ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64
@@ -25,6 +31,10 @@
 #define _MS_DLL_ARRAY_SIZE 15
 #define _MS_DMA_START_VALUE (402 / 2)
 
+#ifndef _MS_TOP_SCROLLING_ZONE
+#define _MS_TOP_SCROLLING_ZONE 0
+#endif
+
 // Zeropage variables
 char _ms_dmaerror;
 #define _ms_tmpptr _libc_tmpptr
@@ -32,6 +42,8 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 signed char _ms_tmp3;
+char _ms_tmp4, _ms_tmp5;
+char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 
 #ifdef BIDIR_VERTICAL_SCROLLING
 #ifndef VERTICAL_SCROLLING
@@ -40,8 +52,11 @@ signed char _ms_tmp3;
 #endif
 
 #ifdef VERTICAL_SCROLLING
-ramchip signed char _ms_vscroll_offset;
+signed char _ms_vscroll_fine_offset;
+ramchip char _ms_vscroll_coarse_offset;
+char _ms_vscroll_coarse_offset_shifted;
 ramchip char _ms_delayed_vscroll;
+ramchip char _ms_delayed_vscroll_remove;
 #ifdef BIDIR_VERTICAL_SCROLLING
 ramchip char _ms_top_sbuffer_size;
 ramchip char _ms_top_sbuffer_dma;
@@ -53,10 +68,6 @@ ramchip char _ms_scroll_buffers_refill;
 #else
 ramchip char _ms_sbuffer_size;
 ramchip char _ms_sbuffer_dma;
-#endif
-
-#ifndef _MS_TOP_SCROLLING_ZONE
-#define _MS_TOP_SCROLLING_ZONE 0
 #endif
 
 #ifdef BIDIR_VERTICAL_SCROLLING
@@ -72,13 +83,120 @@ ramchip signed char _ms_hscroll;
 ramchip signed char _ms_delayed_hscroll;
 #endif
 
+#ifndef _MS_TOP_DISPLAY
+#ifdef _MS_TOP_SCROLLING_ZONE
+#define _MS_TOP_DISPLAY _MS_TOP_SCROLLING_ZONE
+#else
+#define _MS_TOP_DISPLAY 0
+#endif
+#endif
+
 ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
 ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0)], _ms_b1_dl1[_MS_DL_MALLOC(1)], _ms_b1_dl2[_MS_DL_MALLOC(2)], _ms_b1_dl3[_MS_DL_MALLOC(3)], _ms_b1_dl4[_MS_DL_MALLOC(4)], _ms_b1_dl5[_MS_DL_MALLOC(5)], _ms_b1_dl6[_MS_DL_MALLOC(6)], _ms_b1_dl7[_MS_DL_MALLOC(7)], _ms_b1_dl8[_MS_DL_MALLOC(8)], _ms_b1_dl9[_MS_DL_MALLOC(9)], _ms_b1_dl10[_MS_DL_MALLOC(10)], _ms_b1_dl11[_MS_DL_MALLOC(11)], _ms_b1_dl12[_MS_DL_MALLOC(12)], _ms_b1_dl13[_MS_DL_MALLOC(13)], _ms_b1_dl14[_MS_DL_MALLOC(14)];
-const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
-};
 
+#ifdef VERTICAL_SCROLLING
+#if _MS_TOP_SCROLLING_ZONE == 0
+aligned(256) const char _ms_shift3[] = {
+    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0
+};
+#else
+#if _MS_TOP_SCROLLING_ZONE == 1
+aligned(256) const char _ms_shift3[] = {
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1
+};
+#else
+#if _MS_TOP_SCROLLING_ZONE == 2
+aligned(256) const char _ms_shift3[] = {
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
+    3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3, 3, _MS_DLL_ARRAY_SIZE + 3,
+    4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4, 4, _MS_DLL_ARRAY_SIZE + 4,
+    5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5, 5, _MS_DLL_ARRAY_SIZE + 5,
+    6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6, 6, _MS_DLL_ARRAY_SIZE + 6,
+    7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7, 7, _MS_DLL_ARRAY_SIZE + 7,
+    8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8, 8, _MS_DLL_ARRAY_SIZE + 8,
+    9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9, 9, _MS_DLL_ARRAY_SIZE + 9,
+    10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10, 10, _MS_DLL_ARRAY_SIZE + 10,
+    11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
+    12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
+    13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
+    2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2
+};
+#endif
+#endif
+#endif
+#else
 const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
     1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
@@ -96,36 +214,56 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
     14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
 };
-const char _ms_set_wm_dl[5] = {0, 0x40, 0x21, 0xff, 160}; // Write mode 0
+#endif
+const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
+};
+
+
+const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
-ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
-ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 5) * 3];
+ramchip char _ms_b0_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
+ramchip char _ms_b1_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
 ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE * 2];
-ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
-ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
+#ifdef MULTISPRITE_OVERLAY
+ramchip char _ms_dlend_save_overlay[_MS_DLL_ARRAY_SIZE * 2];
+#endif
 
 ramchip char _ms_buffer; // Double buffer state
 ramchip char _ms_pal_detected;
 ramchip char _ms_pal_frame_skip_counter;
 
-void multisprite_init();
-void multisprite_clear();
-void multisprite_save();
+INIT_BANK void multisprite_init();
+INIT_BANK void multisprite_clear();
+INIT_BANK void multisprite_save();
 void multisprite_restore();
 void multisprite_flip();
 
-#ifdef VERTICAL_SCROLLING
-#define multisprite_display_sprite(x, y, gfx, width, palette) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
-	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+#ifdef DMA_CHECK
+ramchip char _ms_dldma[_MS_DLL_ARRAY_SIZE * 2];
+ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
+#define _MS_DMA_CHECK(x) \
+        _ms_dldma[X] -= (x); \
         if (_ms_dldma[X] < 0) { \
             _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+            _ms_dldma[X] += (x); \
+        } else  
+#define _MS_DMA_SUB(x) _ms_dldma[X] -= (x)
+#else
+#define _MS_DMA_SUB(x)
+#define _MS_DMA_CHECK(x) 
+#endif 
+
+#ifdef VERTICAL_SCROLLING
+#define multisprite_display_sprite(x, y, gfx, width, palette) \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
+	_ms_tmp = _ms_tmp2 & 0x0f; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -136,13 +274,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp2 & 0x0f) { \
-                    X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                if (_ms_tmp) { \
+	            X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -159,15 +293,12 @@ void multisprite_flip();
             }\
         }
 
-#define multisprite_display_small_sprite(x, y, gfx, width, palette) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+#define multisprite_display_small_sprite(x, y, gfx, width, palette, margin) \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -178,13 +309,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
-                    X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                if (_ms_tmp >= margin) { \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -201,15 +328,12 @@ void multisprite_flip();
             }\
         }
 
-#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, mode) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, margin, mode) \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -221,13 +345,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
-                    X++; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                if (_ms_tmp >= margin) { \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -246,35 +366,30 @@ void multisprite_flip();
         }
 
 #define multisprite_display_big_sprite(x, y, gfx, width, palette, height, mode) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
                 _ms_dmaerror++; \
             } else { \
+                _ms_tmp5 = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (gfx); \
                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
-                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = _ms_tmp5; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp2 & 0x0f) { \
+                if (_ms_tmp) { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x10) | _ms_tmp; \
-                    for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
-                        X++; \
-                        _ms_dldma[X] -= (20 + 3 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (20 + 3 + width * 3 + 1) / 2; \
-                        } else { \
+                    for (_ms_tmp4 = (height) - 1; _ms_tmp4 != 0; _ms_tmp4--) { \
+                        _ms_tmp3 += 8; \
+                        X = _ms_shift3[Y = _ms_tmp3]; \
+                        _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 12) { \
@@ -283,24 +398,20 @@ void multisprite_flip();
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
-                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = _ms_tmp5; \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_tmpptr2 += width; \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = (_ms_tmpptr2 >> 8) | _ms_tmp; \
-                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = _ms_tmp5; \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_dlend[X] = Y; \
                             } \
                         } \
                     } \
-                    X++; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -309,7 +420,7 @@ void multisprite_flip();
                             _ms_tmpptr[Y++] = _ms_tmpptr2; \
                             _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                             _ms_tmpptr[Y++] = _ms_tmp2; \
-                            _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                            _ms_tmpptr[Y++] = _ms_tmp5; \
                             _ms_tmpptr[Y++] = (x); \
                             _ms_dlend[X] = Y; \
                         } \
@@ -317,14 +428,11 @@ void multisprite_flip();
                 } else { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = (_ms_tmpptr2 >> 8) | _ms_tmp; \
-                    for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
-                        X++; \
+                    for (_ms_tmp4 = (height) - 1; _ms_tmp4 != 0; _ms_tmp4--) { \
+                        _ms_tmp3 += 8; \
+                        X = _ms_shift3[Y = _ms_tmp3]; \
                         _ms_tmpptr2 += width; \
-                        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 7) { \
@@ -333,7 +441,7 @@ void multisprite_flip();
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
-                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = _ms_tmp5; \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_dlend[X] = Y; \
                             } \
@@ -344,14 +452,11 @@ void multisprite_flip();
         }
 
 #define multisprite_display_sprite_ex(x, y, gfx, width, palette, mode) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
 	_ms_tmp = _ms_tmp2 & 0x0f; \
-	X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -363,13 +468,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp2 & 0x0f) { \
-                    X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                if (_ms_tmp) { \
+                    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -387,11 +488,47 @@ void multisprite_flip();
             }\
         }
 
+#define multisprite_display_sprite_aligned(x, y, gfx, width, palette, mode) \
+        Y = ((((y) >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_SIZE - 7) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+            }\
+        }
+
+#define multisprite_display_sprite_top(x, y, gfx, width, palette, mode) \
+	if (_ms_buffer) X = y + _MS_DLL_ARRAY_SIZE; else X = y; \
+        _MS_DMA_CHECK((8 + (width << 1) + width + 1) >> 1) { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_SIZE - 7) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+            }\
+        }
+
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
         _ms_tmp = _ms_tmp2 & 0x0f; \
-        X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_SUB((8 + width * 3 + 1) / 2); \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
         _ms_tmpptr[Y++] = (gfx); \
@@ -399,9 +536,9 @@ void multisprite_flip();
         _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
         _ms_tmpptr[Y++] = (x); \
         _ms_dlend[X] = Y; \
-        if (_ms_tmp2 & 0x0f) { \
-            X++; \
-            _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        if (_ms_tmp) { \
+	    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+            _MS_DMA_SUB((8 + width * 3 + 1) / 2); \
             _ms_tmpptr = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
             _ms_tmpptr[Y++] = (gfx); \
@@ -412,23 +549,21 @@ void multisprite_flip();
         }
 
 #define multisprite_reserve_dma(y, nb_sprites, width) \
-        _ms_tmp2 = (y) + _ms_vscroll_offset; \
-        X = _ms_shift4[Y = (_ms_tmp2 & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
+        _ms_tmp3 = (((_ms_tmp2 >> 1) + _ms_vscroll_coarse_offset_shifted) & 0xfe | _ms_buffer); \
+	X = _ms_shift3[Y = _ms_tmp3]; \
+        _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         if (_ms_tmp2 & 0x0f) { \
-            X++; \
-            _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+	    X = _ms_shift3[Y = _ms_tmp3 + 8]; \
+            _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         }
 
 #else
+// No vertical scrolling display sprites macros
 #define multisprite_display_sprite(x, y, gfx, width, palette) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -439,13 +574,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if ((y) & 0x0f) { \
+                if (_ms_tmp) { \
                     X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -462,14 +593,10 @@ void multisprite_flip();
             }\
         }
 
-#define multisprite_display_small_sprite(x, y, gfx, width, palette) \
+#define multisprite_display_small_sprite(x, y, gfx, width, palette, margin) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 6) { \
@@ -480,13 +607,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
+                if (_ms_tmp >= margin) { \
                     X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 6) { \
@@ -503,14 +626,10 @@ void multisprite_flip();
             }\
         }
 
-#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, mode) \
+#define multisprite_display_small_sprite_ex(x, y, gfx, width, palette, margin, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -522,13 +641,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if (_ms_tmp >= 8) { \
+                if (_ms_tmp >= margin) { \
                     X++; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -549,11 +664,7 @@ void multisprite_flip();
 #define multisprite_display_big_sprite(x, y, gfx, width, palette, height, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -565,16 +676,12 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if ((y) & 0x0f) { \
+                if (_ms_tmp) { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x10) | _ms_tmp; \
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
                         X++; \
-                        _ms_dldma[X] -= (20 + 3 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (20 + 3 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 12) { \
@@ -596,11 +703,7 @@ void multisprite_flip();
                         } \
                     } \
                     X++; \
-                    _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -620,11 +723,7 @@ void multisprite_flip();
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
                         X++; \
                         _ms_tmpptr2 += width; \
-                        _ms_dldma[X] -= (10 + width * 3 + 1) / 2; \
-                        if (_ms_dldma[X] < 0) { \
-                            _ms_dmaerror++; \
-                            _ms_dldma[X] += (10 + width * 3 + 1) / 2; \
-                        } else { \
+                        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
                             if (Y >= _MS_DL_SIZE - 7) { \
@@ -646,11 +745,7 @@ void multisprite_flip();
 #define multisprite_display_sprite_ex(x, y, gfx, width, palette, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-        if (_ms_dldma[X] < 0) { \
-            _ms_dmaerror++; \
-            _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-        } else { \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
             if (Y >= _MS_DL_SIZE - 7) { \
@@ -662,13 +757,9 @@ void multisprite_flip();
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
-                if ((y) & 0x0f) { \
+                if (_ms_tmp) { \
                     X++; \
-                    _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
-                    if (_ms_dldma[X] < 0) { \
-                        _ms_dmaerror++; \
-                        _ms_dldma[X] += (8 + width * 3 + 1) / 2; \
-                    } else { \
+                    _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
                         if (Y >= _MS_DL_SIZE - 7) { \
@@ -686,10 +777,27 @@ void multisprite_flip();
             }\
         }
 
+#define multisprite_display_sprite_aligned(x, y, gfx, width, palette, mode) \
+	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_SIZE - 7) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+            }\
+        }
+
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
         _ms_tmp = (y) & 0x0f; \
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+        _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
         _ms_tmpptr[Y++] = (gfx); \
@@ -697,9 +805,9 @@ void multisprite_flip();
         _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
         _ms_tmpptr[Y++] = (x); \
         _ms_dlend[X] = Y; \
-        if ((y) & 0x0f) { \
+        if (_ms_tmp) { \
             X++; \
-            _ms_dldma[X] -= (8 + width * 3 + 1) / 2; \
+            _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
             _ms_tmpptr = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
             _ms_tmpptr[Y++] = (gfx); \
@@ -712,10 +820,10 @@ void multisprite_flip();
 #define multisprite_reserve_dma(y, nb_sprites, width) \
         _ms_tmp = (y) & 0x0f; \
         X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
-        _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+        _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         if ((y) & 0x0f) { \
             X++; \
-            _ms_dldma[X] -= nb_sprites * (8 + width * 3 + 1) / 2; \
+            _MS_DMA_SUB(nb_sprites * (8 + width * 3 + 1) / 2); \
         }
 
 #endif
@@ -723,11 +831,7 @@ void multisprite_flip();
 #define multisprite_display_tiles(x, y, tiles, size, palette) \
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
-    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
-    if (_ms_dldma[X] < 0) { \
-        _ms_dmaerror++; \
-        _ms_dldma[X] += (10 + 3 + size * 9 + 1) / 2; \
-    } else { \
+    _MS_DMA_CHECK((10 + 3 + size * 9 + 1) / 2) { \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
         if (Y >= _MS_DL_SIZE - 7) { \
@@ -745,7 +849,7 @@ void multisprite_flip();
 #define multisprite_display_tiles_fast(x, y, tiles, size, palette) \
     X = (y); \
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
-    _ms_dldma[X] -= (10 + 3 + size * 9 + 1) / 2; \
+    _MS_DMA_SUB((10 + 3 + size * 9 + 1) / 2); \
     _ms_tmpptr = _ms_dls[X]; \
     Y = _ms_dlend[X]; \
     _ms_tmpptr[Y++] = (tiles); \
@@ -763,7 +867,7 @@ void multisprite_flip();
 #define multisprite_enable_dli(line) _ms_tmp = line; _multisprite_enable_dli()
 #define multisprite_disable_dli(line) _ms_tmp = line; _multisprite_disable_dli()
 
-void multisprite_get_tv()
+INIT_BANK void multisprite_get_tv()
 {
     while (!(*MSTAT & 0x80)); // Wait for VBLANK
     while (*MSTAT & 0x80); // Wait for end of VBLANK
@@ -790,67 +894,11 @@ char multisprite_pal_frame_skip()
     return 0;
 }
 
-void multisprite_init()
+inline void multisprite_start()
 {
-    *BACKGRND = 0x0;
-    
-    multisprite_get_tv();
-    multisprite_clear();
-    multisprite_save();
-
-    _ms_tmpptr = _ms_b0_dll;
-    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
-        // Build DLL
-        // 69 blank lines for PAL
-        // 19 blank lines for NTSC
-        if (_ms_pal_detected) {
-            // 16 blank lines
-            _ms_tmpptr[Y = 0] = 0x4f;  // 16 lines
-            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_set_wm_dl;
-            // 16 blank lines
-            _ms_tmpptr[++Y] = 0x4f;  // 16 lines
-            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_blank_dl;
-        } else {
-            _ms_tmpptr[Y = 0] = 0x41; // 2 lines
-            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_set_wm_dl;
-        }
-        // 16 pixel high regions
-        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 1; X++, _ms_tmp2++) {
-            _ms_tmpptr[++Y] = 0x4f; // 16 lines
-            _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
-            _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
-        }
-        // 1 pixel high region for the last display list (for vertical scrolling)
-        _ms_tmpptr[++Y] = 0x40; // 1 line
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
-        X++;
-        if (_ms_pal_detected) {
-            // 15 blank lines
-            _ms_tmpptr[++Y] = 0x4f;  // 16 lines
-            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_blank_dl;
-            // 16 blank lines
-            _ms_tmpptr[++Y] = 0x4e;  // 15 lines
-            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_blank_dl;
-            // 5 blank lines
-            _ms_tmpptr[++Y] = 0x44;  // 5 lines
-            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_blank_dl;
-        } else {
-            _ms_tmpptr[++Y] = 0x4f; // 16 lines
-            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-            _ms_tmpptr[++Y] = _ms_blank_dl;
-        }
-        _ms_tmpptr = _ms_b1_dll;
-    }
-
 #ifdef VERTICAL_SCROLLING
-    _ms_vscroll_offset = 0;
+    _ms_vscroll_fine_offset = 0;
+    _ms_vscroll_coarse_offset = 0;
     _ms_delayed_vscroll = 0;
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_top_sbuffer_size = 0;
@@ -883,27 +931,130 @@ void multisprite_init()
 #endif
 }
 
-void multisprite_clear()
+INIT_BANK void multisprite_init()
+{
+    *BACKGRND = 0x0;
+    
+    multisprite_get_tv();
+    multisprite_clear();
+    multisprite_save();
+
+    _ms_tmpptr = _ms_b0_dll;
+    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
+        // Build DLL
+        // 69 blank lines for PAL
+        // 19 blank lines for NTSC
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_tmpptr[Y = 0] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_set_wm_dl;
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x2f;  // 16 lines.. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        } else {
+            _ms_tmpptr[Y = 0] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_set_wm_dl;
+        }
+        // 16 pixel high regions
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 1; X++, _ms_tmp2++) {
+            _ms_tmpptr[++Y] = (_ms_tmp2 < _MS_TOP_DISPLAY)?0x0f:0x4f; // 16 lines
+            _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
+        }
+        // 1 pixel high region for the last display list (for vertical scrolling)
+        _ms_tmpptr[++Y] = 0x40; // 1 line
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
+        X++;
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+            // 4 blank lines
+            _ms_tmpptr[++Y] = 0x03;  // 4 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        } else {
+            _ms_tmpptr[++Y] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        }
+        _ms_tmpptr = _ms_b1_dll;
+    }
+    multisprite_start();
+}
+
+INIT_BANK void multisprite_clear()
 {
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_dlend[X] = 0;
+#ifdef DMA_CHECK
         _ms_dldma[X] = _MS_DMA_START_VALUE;
+#endif
+#ifdef MULTISPRITE_OVERLAY
+        _ms_dlend_save_overlay[X] = 0;
+#endif
     }
     for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
         _ms_dlend_save[X] = 0;
+#ifdef DMA_CHECK
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
+#endif
+    }
+#ifdef VERTICAL_SCROLLING
+    _ms_sbuffer_size = 0;
+    _ms_delayed_vscroll = 0;
+#endif
+}
+
+void multisprite_top_display_clear()
+{
+    // Reset DL ends for both buffers
+    for (X = 0; X != _MS_TOP_DISPLAY; X++) {
+        _ms_dlend[X] = 0;
+        _ms_dlend_save[X] = 0;
+#ifdef DMA_CHECK
+        _ms_dldma[X] = _MS_DMA_START_VALUE;
+        _ms_dldma_save[X] = _MS_DMA_START_VALUE;
+#endif
+#ifdef MULTISPRITE_OVERLAY
+        _ms_dlend_save_overlay[X] = 0;
+#endif
+    }
+    for (X = _MS_DLL_ARRAY_SIZE; X != _MS_TOP_DISPLAY + _MS_DLL_ARRAY_SIZE; X++) {
+        _ms_dlend[X] = 0;
+#ifdef DMA_CHECK
+        _ms_dldma[X] = _MS_DMA_START_VALUE;
+#endif
+#ifdef MULTISPRITE_OVERLAY
+        _ms_dlend_save_overlay[X] = 0;
+#endif
     }
 }
 
 // This one should be done during VBLANK, since we are copying from write buffer to currently displayed buffer
-void multisprite_save()
+INIT_BANK void multisprite_save()
 {
     while (!(*MSTAT & 0x80)); // Wait for VBLANK
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend_save[X] = _ms_dlend[Y];
+#ifdef MULTISPRITE_OVERLAY
+            _ms_dlend_save_overlay[Y] = _ms_dlend[Y];
+            _ms_dlend_save_overlay[X] = _ms_dlend[Y];
+#endif
+#ifdef DMA_CHECK
             _ms_dldma_save[X] = _ms_dldma[Y];
+#endif
         }
         // Copy the DLs from current write buffer to all buffers
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
@@ -916,8 +1067,16 @@ void multisprite_save()
     } else {
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlend_save[X] = _ms_dlend[X];
+#ifdef DMA_CHECK
             _ms_dldma_save[X] = _ms_dldma[X];
+#endif
         }
+#ifdef MULTISPRITE_OVERLAY
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend_save_overlay[Y] = _ms_dlend[X];
+            _ms_dlend_save_overlay[X] = _ms_dlend[X];
+        }
+#endif
         // Copy the DLs from current write buffer to all buffers
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
@@ -929,17 +1088,51 @@ void multisprite_save()
     }
 }
 
+#ifdef MULTISPRITE_OVERLAY
+void multisprite_save_overlay()
+{
+    if (_ms_buffer) {
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend_save_overlay[Y] = _ms_dlend[Y];
+        }
+    } else {
+        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+            _ms_dlend_save_overlay[X] = _ms_dlend[X];
+        }
+    }
+}
+
+void multisprite_clear_overlay()
+{
+    if (_ms_buffer) {
+        for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+            _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
+            _ms_dlend[Y] = _ms_dlend_save[X];
+        }
+    } else {
+        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+            _ms_dlend_save_overlay[X] = _ms_dlend_save[X];
+            _ms_dlend[X] = _ms_dlend_save[X];
+        }
+    }
+}
+#endif
+
 void multisprite_restore()
 {
     if (_ms_buffer) {
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
             _ms_dlend[Y] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
             _ms_dldma[Y] = _ms_dldma_save[X];
+#endif
         }
     } else {
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_dlend[X] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
             _ms_dldma[X] = _ms_dldma_save[X];
+#endif
         }
     }
 }
@@ -1009,16 +1202,15 @@ void multisprite_restore()
 
 #define multisprite_vscroll_buffer_empty() (!_ms_sbuffer_size)
 
-char *_ms_vscroll_sparse_tiles_ptr_high, *_ms_vscroll_sparse_tiles_ptr_low;
 #define multisprite_vscroll_init_sparse_tiles(ptr) \
-    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0];\
-    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1];
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0];\
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1];
 
 void multisprite_vscroll_buffer_sparse_tiles(char c)
 {
     char *stiles, tmp;
     Y = c;
-    stiles = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    stiles = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
     Y = 1;
     tmp = stiles[Y];
     X = _ms_sbuffer_size;
@@ -1041,13 +1233,13 @@ ramchip char _ms_vscroll_sparse_step;
 ramchip char _ms_vscroll_sparse_vmem_ptr_low, _ms_vscroll_sparse_vmem_ptr_high, _ms_vscroll_charbase;
 char *_ms_sbuffer_sparse_tilemap_ptr;
 
-bank1 char multisprite_vmem[8192]; // Video memory in RAM
+bank1 char multisprite_vmem[12288]; // Video memory in RAM
 bank1 const char multisprite_vscroll_init_sparse_tiles_vmem_use_rom[] = {1};
 
 #define multisprite_vscroll_init_sparse_tiles_vmem(ptr, tiles_ptr) \
 { \
-    _ms_vscroll_sparse_tiles_ptr_high = ptr[Y = 0]; \
-    _ms_vscroll_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
     _ms_vscroll_charbase = (tiles_ptr) >> 8; \
     _ms_vscroll_sparse_vmem_ptr_low = 0x00; \
     _ms_vscroll_sparse_vmem_ptr_high = 0x40; \
@@ -1061,7 +1253,7 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
     low = _ms_vscroll_sparse_vmem_ptr_low;
     high = _ms_vscroll_sparse_vmem_ptr_high;
     Y = c;
-    _ms_sbuffer_sparse_tilemap_ptr = _ms_vscroll_sparse_tiles_ptr_low[Y] | (_ms_vscroll_sparse_tiles_ptr_high[Y] << 8);   
+    _ms_sbuffer_sparse_tilemap_ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
     Y = 0;
     len = _ms_sbuffer_sparse_tilemap_ptr[Y++];
     tmp = _ms_sbuffer_sparse_tilemap_ptr[Y];
@@ -1081,7 +1273,7 @@ void multisprite_vscroll_buffer_sparse_tiles_vmem(char c)
         tmp2 = ((-len) & 0x1f) | tmp3;
         if (first) {
             _ms_sbuffer[X++] = low;
-            _ms_sbuffer[X++] = 0x40;
+            _ms_sbuffer[X++] = 0x40; // 160A only
             _ms_sbuffer[X++] = high;
             _ms_sbuffer[X++] = tmp2;
             _ms_sbuffer_dma -= 5 + len + len2;
@@ -1161,28 +1353,38 @@ char multisprite_vscroll_buffer_sparse_tiles_vmem_step()
 
 void _ms_move_dlls_down()
 {
-    if (_ms_buffer) {
-        for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE + 1 + _MS_TOP_SCROLLING_ZONE; X--) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[--X];
-            Y = _ms_dlend[X];
-            _ms_dlend[++X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
-        }
+    if (_ms_pal_detected) {
+        Y = 6 + (_MS_TOP_SCROLLING_ZONE * 3);
     } else {
-        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1 + _MS_TOP_SCROLLING_ZONE; X--) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[--X];
-            Y = _ms_dlend[X];
-            _ms_dlend[++X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
-        }
+        Y = 3 + (_MS_TOP_SCROLLING_ZONE * 3);
     }
-    // Copy the scroll buffer to the first zone 
+    if (_ms_buffer) {
+        _ms_tmpptr = _ms_b1_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == 2 *_MS_DLL_ARRAY_SIZE) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
+        }
+        // Copy the scroll buffer to the first zone 
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+    } else {
+        _ms_tmpptr = _ms_b0_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == _MS_DLL_ARRAY_SIZE) X = _MS_TOP_SCROLLING_ZONE;
+        }
+        // Copy the scroll buffer to the first zone 
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+    }
     _ms_tmpptr = _ms_dls[X];
 #ifdef BIDIR_VERTICAL_SCROLLING
     Y = _ms_top_sbuffer_size;
@@ -1201,15 +1403,13 @@ void _ms_move_dlls_down()
 
 void _ms_move_save_down()
 {
-    for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 1 + _MS_TOP_SCROLLING_ZONE; X--) {
-        Y = _ms_dldma_save[--X];
-        _ms_dldma_save[++X] = Y;
-        Y = _ms_dlend_save[--X];
-        _ms_dlend_save[++X] = Y;
-    }
+    X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_top_sbuffer_size;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_top_sbuffer_dma;
+#endif
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_top_sbuffer_size = 0;
@@ -1217,7 +1417,9 @@ void _ms_move_save_down()
     _ms_scroll_buffers_refill = MS_SCROLL_UP;
 #else
     _ms_dlend_save[X] = _ms_sbuffer_size & 0x7f;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_sbuffer_dma;
+#endif
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
@@ -1225,28 +1427,47 @@ void _ms_move_save_down()
 
 void _ms_move_dlls_up()
 {
+    // Move the DLLs
+    if (_ms_pal_detected) {
+        Y = 6 + (_MS_TOP_SCROLLING_ZONE * 3);
+    } else {
+        Y = 3 + (_MS_TOP_SCROLLING_ZONE * 3);
+    }
     if (_ms_buffer) {
-        for (X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE; X < _MS_DLL_ARRAY_SIZE * 2 - 1; X++) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[++X];
-            Y = _ms_dlend[X];
-            _ms_dlend[--X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
+        _ms_tmpptr = _ms_b1_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == 2 *_MS_DLL_ARRAY_SIZE) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
+        }
+        // Copy the scroll buffer to the last zone 
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE - 1 + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
         }
     } else {
-        for (X = _MS_TOP_SCROLLING_ZONE; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
-            _ms_tmpptr = _ms_dls[X];
-            _ms_tmpptr2 = _ms_dls[++X];
-            Y = _ms_dlend[X];
-            _ms_dlend[--X] = Y;
-            for (Y--; Y >= 0; Y--) { 
-                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
-            }
+        _ms_tmpptr = _ms_b0_dll;
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
+        // 16 pixel high regions
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
+            X++;
+            if (X == _MS_DLL_ARRAY_SIZE) X = _MS_TOP_SCROLLING_ZONE;
+        }
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE - 1 + _ms_vscroll_coarse_offset;
         }
     }
-    // Copy the scroll buffer to the first zone 
+    // Copy the scroll buffer to the last zone 
     _ms_tmpptr = _ms_dls[X];
 #ifdef BIDIR_VERTICAL_SCROLLING
     Y = _ms_bottom_sbuffer_size;
@@ -1265,15 +1486,17 @@ void _ms_move_dlls_up()
 
 void _ms_move_save_up()
 {
-    for (X = _MS_TOP_SCROLLING_ZONE ; X < _MS_DLL_ARRAY_SIZE - 1; X++) {
-        Y = _ms_dldma_save[++X];
-        _ms_dldma_save[--X] = Y;
-        Y = _ms_dlend_save[++X];
-        _ms_dlend_save[--X] = Y;
+    if (_ms_vscroll_coarse_offset == 0) {
+        X = _MS_DLL_ARRAY_SIZE - 1;
+    } else {
+        X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
     }
+
 #ifdef BIDIR_VERTICAL_SCROLLING
     _ms_dlend_save[X] = _ms_bottom_sbuffer_size;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_bottom_sbuffer_dma;
+#endif
     _ms_bottom_sbuffer_size = 0;
     _ms_bottom_sbuffer_dma = _MS_DMA_START_VALUE;
     _ms_top_sbuffer_size = 0;
@@ -1281,7 +1504,9 @@ void _ms_move_save_up()
     _ms_scroll_buffers_refill = MS_SCROLL_DOWN;
 #else
     _ms_dlend_save[X] = _ms_sbuffer_size & 0x7f;
+#ifdef DMA_CHECK
     _ms_dldma_save[X] = _ms_sbuffer_dma;
+#endif
     _ms_sbuffer_size = 0;
     _ms_sbuffer_dma = _MS_DMA_START_VALUE;
 #endif
@@ -1296,14 +1521,21 @@ void multisprite_flip()
 {
 #ifdef VERTICAL_SCROLLING
     // Insert DMA masking objects 
-    if (_ms_vscroll_offset) {
+    if (_ms_vscroll_fine_offset) {
         if (_ms_buffer) {
-            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
-            _ms_tmpptr = _ms_b1_dl14;
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+            }
         } else {
-            X = _MS_DLL_ARRAY_SIZE - 1;
-            _ms_tmpptr = _ms_b0_dl14;
-        }
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+            }
+        } 
+        _ms_tmpptr = _ms_dls[X];
         if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
@@ -1315,20 +1547,20 @@ void multisprite_flip()
             Y = 0;
             _ms_tmpptr[Y++] = 0; 
             _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
-            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
             _ms_tmpptr[Y++] = 0;
             _ms_tmpptr[Y++] = 161; 
             for (_ms_tmp = 0; _ms_tmp != 3; _ms_tmp++) {
                 _ms_tmpptr[Y++] = 0; 
                 _ms_tmpptr[Y++] = 0xe1;
-                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
                 _ms_tmpptr[Y++] = 161; 
             }
             _ms_dlend[X] += 17;
         } else {
-            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_fine_offset;
             for (Y = 7, _ms_tmp = 0; _ms_tmp != 3; Y += 4, _ms_tmp++) {
-                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_fine_offset;
             }
         }
     }
@@ -1362,6 +1594,16 @@ void multisprite_flip()
                 _ms_move_dlls_down();
                 _ms_move_save_down();
             } else if (_ms_delayed_vscroll == 2) {
+                _ms_tmpptr = _ms_dls[X = _ms_delayed_vscroll_remove];
+                if (_ms_dlend[X] >= 17 && _ms_tmpptr[Y = 4] == 161) {
+                    // Remove the DMA masking objects 
+                    // First, move all objects on this line 17 bytes to the left 
+                    _ms_tmpptr2 = _ms_tmpptr + 17;
+                    for (Y = 0; Y != _ms_dlend[X]; Y++) { 
+                        _ms_tmpptr[Y] = _ms_tmpptr2[Y];
+                    }
+                    _ms_dlend[X] -= 17;
+                }
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
@@ -1371,12 +1613,21 @@ void multisprite_flip()
 #endif
         // Restore saved state 
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+#ifdef MULTISPRITE_OVERLAY
+            _ms_dlend[X] = _ms_dlend_save_overlay[X];
+#else
             _ms_dlend[X] = _ms_dlend_save[X];
+#endif
+#ifdef DMA_CHECK
             _ms_dldma[X] = _ms_dldma_save[X];
+#endif
         }
 #ifdef VERTICAL_SCROLLING
-        X = _MS_DLL_ARRAY_SIZE - 1;
-        _ms_tmpptr = _ms_b0_dl14;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+        }
 #endif
     } else {
         // Add DL end entry on each DL
@@ -1407,6 +1658,16 @@ void multisprite_flip()
                 _ms_move_dlls_down();
                 _ms_move_save_down();
             } else if (_ms_delayed_vscroll == 2) {
+                _ms_tmpptr = _ms_dls[X = _ms_delayed_vscroll_remove];
+                if (_ms_dlend[X] >= 17 && _ms_tmpptr[Y = 4] == 161) {
+                    // Remove the DMA masking objects 
+                    // First, move all objects on this line 17 bytes to the left 
+                    _ms_tmpptr2 = _ms_tmpptr + 17;
+                    for (Y = 0; Y != _ms_dlend[X]; Y++) { 
+                        _ms_tmpptr[Y] = _ms_tmpptr2[Y];
+                    }
+                    _ms_dlend[X] -= 17;
+                }
                 _ms_move_dlls_up();
                 _ms_move_save_up();
             }
@@ -1416,18 +1677,30 @@ void multisprite_flip()
 #endif
         // Restore saved state 
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
+#ifdef MULTISPRITE_OVERLAY
+            _ms_dlend[Y] = _ms_dlend_save_overlay[Y];
+#else
             _ms_dlend[Y] = _ms_dlend_save[X];
+#endif
+#ifdef DMA_CHECK
             _ms_dldma[Y] = _ms_dldma_save[X];
+#endif
         }
 #ifdef VERTICAL_SCROLLING
-        X = _MS_DLL_ARRAY_SIZE * 2 - 1;
-        _ms_tmpptr = _ms_b1_dl14;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+        }
 #endif
     }
 #ifdef VERTICAL_SCROLLING
     // Insert DMA masking objects 
-    if (_ms_vscroll_offset) {
+    if (_ms_vscroll_fine_offset) {
+        _ms_tmpptr = _ms_dls[X];
+#ifdef DMA_CHECK
         _ms_dldma[X] -= (13 * 4) / 2;
+#endif
         if (_ms_dlend[X] == 0 || _ms_tmpptr[Y = 4] != 161) {
             // Insert the object
             Y = _ms_dlend[X];
@@ -1439,19 +1712,19 @@ void multisprite_flip()
             Y = 0;
             _ms_tmpptr[Y++] = 0; 
             _ms_tmpptr[Y++] = 0xc0; // WM = 1, Direct mode
-            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
             _ms_tmpptr[Y++] = 0;
             _ms_tmpptr[Y++] = 161; 
             for (_ms_tmp = 0; _ms_tmp != 3; _ms_tmp++) {
                 _ms_tmpptr[Y++] = 0; 
                 _ms_tmpptr[Y++] = 0xe1;
-                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y++] = 0xa0 | _ms_vscroll_fine_offset;
                 _ms_tmpptr[Y++] = 161; 
             }
         } else {
-            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_offset;
+            _ms_tmpptr[Y = 2] = 0xa0 | _ms_vscroll_fine_offset;
             for (Y = 7, _ms_tmp = 0; _ms_tmp != 3; Y += 4, _ms_tmp++) {
-                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_offset;
+                _ms_tmpptr[Y] = 0xa0 | _ms_vscroll_fine_offset;
             }
         }
         _ms_dlend[X] += 17;
@@ -1468,22 +1741,27 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
 {
     if (_ms_buffer) {
         _ms_tmpptr = _ms_b1_dll;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+        }
     } else {
         _ms_tmpptr = _ms_b0_dll;
+        if (_ms_vscroll_coarse_offset == 0) {
+            X = _MS_DLL_ARRAY_SIZE - 1;
+        } else {
+            X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+        }
     }
     if (_ms_pal_detected) { Y = 6 + 3 * _MS_TOP_SCROLLING_ZONE; } else { Y = 3 + 3 * _MS_TOP_SCROLLING_ZONE; }
-    _ms_tmpptr[Y] = (15 - _ms_vscroll_offset) | 0x40;
+    _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | (15 - _ms_vscroll_fine_offset); // 16 - _ms_vscroll_fine_offset lines
     Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1 - _MS_TOP_SCROLLING_ZONE);
-    if (_ms_vscroll_offset) {
+    if (_ms_vscroll_fine_offset) {
         _ms_tmpptr[Y] = 0x4f; // 16 lines
-        if (_ms_buffer) {
-            _ms_tmpptr[++Y] = _ms_b1_dl14 >> 8;
-            _ms_tmpptr[++Y] = _ms_b1_dl14;
-        } else {
-            _ms_tmpptr[++Y] = _ms_b0_dl14 >> 8;
-            _ms_tmpptr[++Y] = _ms_b0_dl14;
-        }
-        _ms_tmpptr[++Y] = _ms_vscroll_offset | 0x40;  // _ms_vscroll_offset lines
+        _ms_tmpptr[++Y] = _ms_dls[X] >> 8;
+        _ms_tmpptr[++Y] = _ms_dls[X];
+        _ms_tmpptr[++Y] = _ms_vscroll_fine_offset | 0x40;  // _ms_vscroll_fine_offset + 1 lines
     } else {
         _ms_tmpptr[Y] = 0x40; // 1 line
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
@@ -1494,14 +1772,50 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
 
 void _ms_vertical_scrolling()
 {
-    _ms_vscroll_offset -= _ms_tmp;
-    if (_ms_vscroll_offset < 0) {
+    _ms_vscroll_fine_offset -= _ms_tmp;
+    if (_ms_vscroll_fine_offset < 0) {
+        _ms_vscroll_coarse_offset--; 
+        if (_ms_vscroll_coarse_offset == 255)
+            _ms_vscroll_coarse_offset = _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE - 1;
+        _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_down();
-        _ms_vscroll_offset += 16;
+        _ms_vscroll_fine_offset += 16;
         _ms_delayed_vscroll = 1;
-    } else if (_ms_vscroll_offset >= 16) {
+    } else if (_ms_vscroll_fine_offset >= 16) {
+        
+        // Check the current last zone and remove the DMA masking object
+        if (_ms_buffer) {
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
+            }
+            _ms_delayed_vscroll_remove = X - _MS_DLL_ARRAY_SIZE;
+        } else {
+            if (_ms_vscroll_coarse_offset == 0) {
+                X = _MS_DLL_ARRAY_SIZE - 1;
+            } else {
+                X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
+            }
+            _ms_delayed_vscroll_remove = X + _MS_DLL_ARRAY_SIZE;
+        } 
+        _ms_tmpptr = _ms_dls[X];
+        if (_ms_dlend[X] >= 17 && _ms_tmpptr[Y = 4] == 161) {
+            // Remove the object
+            // First, move all objects on this line 17 bytes to the left 
+            _ms_tmpptr2 = _ms_tmpptr + 17;
+            for (Y = 0; Y != _ms_dlend[X]; Y++) { 
+                _ms_tmpptr[Y] = _ms_tmpptr2[Y];
+            }
+            _ms_dlend[X] -= 17;
+        }
+
+        _ms_vscroll_coarse_offset++; 
+        if (_ms_vscroll_coarse_offset == _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE)
+            _ms_vscroll_coarse_offset = 0;
+        _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_up();
-        _ms_vscroll_offset -= 16;
+        _ms_vscroll_fine_offset -= 16;
         _ms_delayed_vscroll = 2;
     } else {
         _ms_delayed_vscroll = 3;
@@ -1656,15 +1970,15 @@ void _multisprite_disable_dli()
     _ms_b1_dll[X] &= 0x7f;
 }
 
-char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
+const char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
-// ~100 cycles pixel accurate collision detection (60us)
+// ~100 cycles max pixel accurate collision detection (60us)
 #define multisprite_compute_collision(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\
     _ms_tmp3 = 0; \
     _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
     if (_ms_tmp2 >= 0) { \
-        if ((x1) - (x2) < (w2)) { \
-            if ((y1) - (y2) < (h2)) { \
+        if ((x1) <= (x2) + ((w2) - 1)) { \
+            if ((y1) <= (y2) + ((h2) - 1)) { \
                 _ms_tmp = (x1) + ((w1) - 1) - (x2); \
                 if (_ms_tmp >= 0) { \
                     Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
@@ -1682,8 +1996,8 @@ char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 #define multisprite_compute_box_collision(x1, y1, w1, h1, x2, y2, w2, h2) {\
     _ms_tmp3 = 0; \
     if ((y1) + ((h1) - 1) >= (y2)) { \
-        if ((x1) - (x2) < (w2)) { \
-            if ((y1) - (y2) < (h2)) { \
+        if ((x1) <= (x2) + ((w2) - 1)) { \
+            if ((y1) <= (y2) + ((h2) - 1)) { \
                 if ((x1) + ((w1) - 1) >= (x2)) { \
                     _ms_tmp3 = 1; \
                 } \
@@ -1693,6 +2007,88 @@ char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 }
 
 #define multisprite_collision_detected (_ms_tmp3)
+
+#define multisprite_sparse_tiling(ptr, top, left, height) \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_sparse_tiling(top, left, height);
+
+// Sparse tiling simple display
+void _ms_sparse_tiling(char top, char left, char height)
+{
+    char *ptr, data[5], y, bottom;
+    _ms_tmp2 = 0;
+
+    bottom = top + height;
+    if (_ms_buffer) {
+        top += _MS_DLL_ARRAY_SIZE; 
+        bottom += _MS_DLL_ARRAY_SIZE;
+    }
+
+    for (X = top; X < bottom; _ms_tmp2++) {
+        Y = _ms_tmp2;
+        ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
+        _ms_tmpptr = _ms_dls[X];
+        Y = 1;
+        y = _ms_dlend[X];
+        data[4] = ptr[Y];
+        while (data[4] != 0xff) {
+            data[0] = ptr[++Y];
+            data[1] = ptr[++Y];
+            data[2] = ptr[++Y];
+            data[3] = ptr[++Y];
+#ifdef DMA_CHECK 
+            _ms_dldma[X] -= ptr[++Y]; // 18 cycles
+#else
+            ++Y;
+#endif
+            _save_y = Y;
+            Y = y; // 6 cycles
+            _ms_tmpptr[Y++] = data[0]; // 11 cycles
+            _ms_tmpptr[Y++] = data[1];
+            _ms_tmpptr[Y++] = data[2];
+            _ms_tmpptr[Y++] = data[3];
+            _ms_tmpptr[Y++] = (data[4] << 3) + left;
+            y = Y; // 21 cycles
+            Y = _save_y;
+            Y++;
+            data[4] = ptr[++Y];
+        } 
+        _ms_dlend[X++] = y;
+    }
+}
+
+char multisprite_sparse_tiling_collision(char top, char left, char right)
+{
+    char *ptr, start, end, intersect = -1;
+    Y = top;
+    ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);
+    // Find the first possibly intersecting tileset on this line
+    Y = 0;
+    while (ptr[Y] < left) Y += 7;
+    // This one possibly intersects
+    end = ptr[Y++];
+    start = ptr[Y++];
+    while (right >= start) {
+        char l = (left < start)?start:left;
+        char r = (end < right)?end:right;
+        char n = r - l;
+        assert(n >= 0);
+        char tmp = ptr[Y++];
+        Y++;
+        char *ptr_tiles = tmp | (ptr[Y] << 8);
+        _save_y = Y;
+        Y = l - start;
+        for (X = n; X >= 0; Y++, X--) {
+            if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
+        }
+        Y = _save_y;
+        Y += 3;
+        end = ptr[Y++];
+        start = ptr[Y++];
+    }
+    return intersect;
+}
 
 #endif // __ATARI7800_MULTISPRITE__
  

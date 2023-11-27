@@ -351,8 +351,8 @@ void display_init()
             _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
             _ms_tmpptr[++Y] = _ms_set_wm_dl;
         }
-        // 16 pixel high regions
-        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 2; X++, _ms_tmp2++) {
+        // 16 pixel high regions (208 pixels = 13 regions)
+        for (_ms_tmp2 = 0; _ms_tmp2 != 13; X++, _ms_tmp2++) {
             _ms_tmpptr[++Y] = 0x4f; // 16 lines
             _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
@@ -367,6 +367,7 @@ void display_init()
             _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
         }
+        X++;
         if (_ms_pal_detected) {
             // 16 blank lines
             _ms_tmpptr[++Y] = 0x0f;  // 16 lines

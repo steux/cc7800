@@ -471,7 +471,7 @@ void display_init()
     _ms_b0_dll[++X] = topborder_dl;  
     _ms_b1_dll[X] = topborder_dl;
     // Bottom border in overscan
-    X += (_MS_DLL_ARRAY_SIZE - 1) * 3 + 1;
+    X += 14 * 3 + 1;
     _ms_b0_dll[X] = 0x08; // 9 lines  
     _ms_b1_dll[X] = 0x08; // 9 lines 
     _ms_b0_dll[++X] = bottomborder_dl >> 8;  

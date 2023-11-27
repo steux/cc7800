@@ -7,6 +7,7 @@
     v0.1: First working version
     v0.2: Added DMA Masking vertical scrolling support
     v0.3: Refactored scrolling to avoid memory copy from region to region when coarse scrolling 
+    v0.4: Moved _MS_DLL_ARRAY_SIZE to 16 in order to find a way to display off-screen sprites
 */
 
 #ifndef __ATARI7800_MULTISPRITE__
@@ -28,7 +29,7 @@
 #endif
 
 #define MS_YMAX 224
-#define _MS_DLL_ARRAY_SIZE 15
+#define _MS_DLL_ARRAY_SIZE 16
 #define _MS_DMA_START_VALUE (402 / 2)
 
 #ifndef _MS_TOP_SCROLLING_ZONE
@@ -197,7 +198,7 @@ aligned(256) const char _ms_shift3[] = {
 #endif
 #endif
 #else
-const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
+aligned(256) const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0, 0, _MS_DLL_ARRAY_SIZE + 0,
     1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1, 1, _MS_DLL_ARRAY_SIZE + 1,
     2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2, 2, _MS_DLL_ARRAY_SIZE + 2,
@@ -212,14 +213,14 @@ const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
     11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11, 11, _MS_DLL_ARRAY_SIZE + 11,
     12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12, 12, _MS_DLL_ARRAY_SIZE + 12,
     13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13, 13, _MS_DLL_ARRAY_SIZE + 13,
+    14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14,
     14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14, 14, _MS_DLL_ARRAY_SIZE + 14
 };
 #endif
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14, _ms_b0_dl0,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14, _ms_b1_dl0
 };
-
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
@@ -957,8 +958,8 @@ INIT_BANK void multisprite_init()
             _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
             _ms_tmpptr[++Y] = _ms_set_wm_dl;
         }
-        // 16 pixel high regions
-        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE - 1; X++, _ms_tmp2++) {
+        // 16 pixel high regions (14 regions = 224 pixels)
+        for (_ms_tmp2 = 0; _ms_tmp2 != 14; X++, _ms_tmp2++) {
             _ms_tmpptr[++Y] = (_ms_tmp2 < _MS_TOP_DISPLAY)?0x0f:0x4f; // 16 lines
             _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
@@ -967,7 +968,7 @@ INIT_BANK void multisprite_init()
         _ms_tmpptr[++Y] = 0x40; // 1 line
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
-        X++;
+        X++; X++;
         if (_ms_pal_detected) {
             // 16 blank lines
             _ms_tmpptr[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
@@ -1056,7 +1057,7 @@ INIT_BANK void multisprite_save()
 #endif
         }
         // Copy the DLs from current write buffer to all buffers
-        for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
+        for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 2; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
             _ms_tmpptr2 = _ms_dls[X = _ms_tmp];
             for (Y = _ms_dlend[X] - 1; Y >= 0; Y--) {
@@ -1077,7 +1078,7 @@ INIT_BANK void multisprite_save()
         }
 #endif
         // Copy the DLs from current write buffer to all buffers
-        for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
+        for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 2; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
             _ms_tmpptr2 = _ms_dls[X = _ms_tmp];
             for (Y = _ms_dlend[X] - 1; Y >= 0; Y--) {
@@ -1361,12 +1362,12 @@ void _ms_move_dlls_down()
         _ms_tmpptr = _ms_b1_dll;
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
         // 16 pixel high regions
-        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != 15; _ms_tmp2++) {
             Y++;
             _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
             X++;
-            if (X == 2 *_MS_DLL_ARRAY_SIZE) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
+            if (X == _MS_DLL_ARRAY_SIZE + 15) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
         }
         // Copy the scroll buffer to the first zone 
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
@@ -1374,12 +1375,12 @@ void _ms_move_dlls_down()
         _ms_tmpptr = _ms_b0_dll;
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
         // 16 pixel high regions
-        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != 15; _ms_tmp2++) {
             Y++;
             _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
             X++;
-            if (X == _MS_DLL_ARRAY_SIZE) X = _MS_TOP_SCROLLING_ZONE;
+            if (X == 15) X = _MS_TOP_SCROLLING_ZONE;
         }
         // Copy the scroll buffer to the first zone 
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
@@ -1436,16 +1437,16 @@ void _ms_move_dlls_up()
         _ms_tmpptr = _ms_b1_dll;
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
         // 16 pixel high regions
-        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != 15; _ms_tmp2++) {
             Y++;
             _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
             X++;
-            if (X == 2 *_MS_DLL_ARRAY_SIZE) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
+            if (X == _MS_DLL_ARRAY_SIZE + 15) X = _MS_DLL_ARRAY_SIZE + _MS_TOP_SCROLLING_ZONE;
         }
         // Copy the scroll buffer to the last zone 
         if (_ms_vscroll_coarse_offset == 0) {
-            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            X = _MS_DLL_ARRAY_SIZE * 2 - 2;
         } else {
             X = _MS_TOP_SCROLLING_ZONE - 1 + _ms_vscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
         }
@@ -1453,15 +1454,15 @@ void _ms_move_dlls_up()
         _ms_tmpptr = _ms_b0_dll;
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset;
         // 16 pixel high regions
-        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+        for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != 15; _ms_tmp2++) {
             Y++;
             _ms_tmpptr[Y++] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[Y++] = _ms_dls[X]; // Low address
             X++;
-            if (X == _MS_DLL_ARRAY_SIZE) X = _MS_TOP_SCROLLING_ZONE;
+            if (X == 15) X = _MS_TOP_SCROLLING_ZONE;
         }
         if (_ms_vscroll_coarse_offset == 0) {
-            X = _MS_DLL_ARRAY_SIZE - 1;
+            X = _MS_DLL_ARRAY_SIZE - 2;
         } else {
             X = _MS_TOP_SCROLLING_ZONE - 1 + _ms_vscroll_coarse_offset;
         }
@@ -1486,7 +1487,7 @@ void _ms_move_dlls_up()
 void _ms_move_save_up()
 {
     if (_ms_vscroll_coarse_offset == 0) {
-        X = _MS_DLL_ARRAY_SIZE - 1;
+        X = _MS_DLL_ARRAY_SIZE - 2;
     } else {
         X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
     }
@@ -1523,13 +1524,13 @@ void multisprite_flip()
     if (_ms_vscroll_fine_offset) {
         if (_ms_buffer) {
             if (_ms_vscroll_coarse_offset == 0) {
-                X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+                X = _MS_DLL_ARRAY_SIZE * 2 - 2;
             } else {
                 X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
             }
         } else {
             if (_ms_vscroll_coarse_offset == 0) {
-                X = _MS_DLL_ARRAY_SIZE - 1;
+                X = _MS_DLL_ARRAY_SIZE - 2;
             } else {
                 X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
             }
@@ -1566,7 +1567,7 @@ void multisprite_flip()
 #endif
     if (_ms_buffer) {
         // Add DL end entry on each DL
-        for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
+        for (X = _MS_DLL_ARRAY_SIZE * 2 - 2; X >= _MS_DLL_ARRAY_SIZE; X--) {
             _ms_tmpptr = _ms_dls[X];
             Y = _ms_dlend[X];
             _ms_tmpptr[++Y] = 0; 
@@ -1623,14 +1624,14 @@ void multisprite_flip()
         }
 #ifdef VERTICAL_SCROLLING
         if (_ms_vscroll_coarse_offset == 0) {
-            X = _MS_DLL_ARRAY_SIZE - 1;
+            X = _MS_DLL_ARRAY_SIZE - 2;
         } else {
             X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
         }
 #endif
     } else {
         // Add DL end entry on each DL
-        for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+        for (X = _MS_DLL_ARRAY_SIZE - 2; X >= 0; X--) {
             _ms_tmpptr = _ms_dls[X];
             Y = _ms_dlend[X];
             _ms_tmpptr[++Y] = 0; 
@@ -1687,7 +1688,7 @@ void multisprite_flip()
         }
 #ifdef VERTICAL_SCROLLING
         if (_ms_vscroll_coarse_offset == 0) {
-            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            X = _MS_DLL_ARRAY_SIZE * 2 - 2;
         } else {
             X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
         }
@@ -1741,21 +1742,21 @@ void _ms_vertical_scrolling_adjust_bottom_of_screen()
     if (_ms_buffer) {
         _ms_tmpptr = _ms_b1_dll;
         if (_ms_vscroll_coarse_offset == 0) {
-            X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+            X = _MS_DLL_ARRAY_SIZE * 2 - 2;
         } else {
             X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
         }
     } else {
         _ms_tmpptr = _ms_b0_dll;
         if (_ms_vscroll_coarse_offset == 0) {
-            X = _MS_DLL_ARRAY_SIZE - 1;
+            X = _MS_DLL_ARRAY_SIZE - 2;
         } else {
             X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
         }
     }
     if (_ms_pal_detected) { Y = 6 + 3 * _MS_TOP_SCROLLING_ZONE; } else { Y = 3 + 3 * _MS_TOP_SCROLLING_ZONE; }
     _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | (15 - _ms_vscroll_fine_offset); // 16 - _ms_vscroll_fine_offset lines
-    Y +=  3 * (_MS_DLL_ARRAY_SIZE - 1 - _MS_TOP_SCROLLING_ZONE);
+    Y +=  3 * (14 - _MS_TOP_SCROLLING_ZONE);
     if (_ms_vscroll_fine_offset) {
         _ms_tmpptr[Y] = 0x4f; // 16 lines
         _ms_tmpptr[++Y] = _ms_dls[X] >> 8;
@@ -1775,7 +1776,7 @@ void _ms_vertical_scrolling()
     if (_ms_vscroll_fine_offset < 0) {
         _ms_vscroll_coarse_offset--; 
         if (_ms_vscroll_coarse_offset == 255)
-            _ms_vscroll_coarse_offset = _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE - 1;
+            _ms_vscroll_coarse_offset = 14 - _MS_TOP_SCROLLING_ZONE;
         _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_down();
         _ms_vscroll_fine_offset += 16;
@@ -1785,14 +1786,14 @@ void _ms_vertical_scrolling()
         // Check the current last zone and remove the DMA masking object
         if (_ms_buffer) {
             if (_ms_vscroll_coarse_offset == 0) {
-                X = _MS_DLL_ARRAY_SIZE * 2 - 1;
+                X = _MS_DLL_ARRAY_SIZE * 2 - 2;
             } else {
                 X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1 + _MS_DLL_ARRAY_SIZE;
             }
             _ms_delayed_vscroll_remove = X - _MS_DLL_ARRAY_SIZE;
         } else {
             if (_ms_vscroll_coarse_offset == 0) {
-                X = _MS_DLL_ARRAY_SIZE - 1;
+                X = _MS_DLL_ARRAY_SIZE - 2;
             } else {
                 X = _MS_TOP_SCROLLING_ZONE + _ms_vscroll_coarse_offset - 1;
             }
@@ -1810,7 +1811,7 @@ void _ms_vertical_scrolling()
         }
 
         _ms_vscroll_coarse_offset++; 
-        if (_ms_vscroll_coarse_offset == _MS_DLL_ARRAY_SIZE - _MS_TOP_SCROLLING_ZONE)
+        if (_ms_vscroll_coarse_offset == 15 - _MS_TOP_SCROLLING_ZONE)
             _ms_vscroll_coarse_offset = 0;
         _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_up();
