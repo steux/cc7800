@@ -419,9 +419,9 @@ void scoreboard_display()
 
 void rtype_init()
 {
+    rtype_level1_palette(); // In bank1, so that everything thet follow is in bank1 also
     sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
     multisprite_set_charbase(alphabet);
-    rtype_level1_palette();
 
     // Sprites palette
     // Fire
@@ -577,6 +577,7 @@ void main()
     scroll_background_counter2 = 0;
     button_pressed = 0;
 
+    copy_dobkeratops_to_ram();
     joystick_init();
     display_init();
     rtype_init();
@@ -606,23 +607,22 @@ void main()
         else {
             if (level_progress_low == 0) {
                 if (level_progress_high == DOBKERATOPS_GETS_IN) {
+                    multisprite_enable_dli(1);
+                    multisprite_enable_dli(12);
                     multisprite_clear();
                     scoreboard_display();
                     multisprite_save();
-                    init_dobkeratops();
                     sparse_tiling_scroll(1); // Scroll 1 pixels to the right to align this buffer to the next 
                     sparse_tiling_display();
                     multisprite_flip();
                     sparse_tiling_display();
-                    multisprite_enable_dli(1);
-                    multisprite_enable_dli(12);
                 }
             }
             char x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
             draw_dobkeratops(x, 16, counter_tail);
             counter_tail++;
             if (counter_tail == 60) counter_tail = 0;
-            if (level_progress_high < 110) {
+            if (level_progress_high < 114) {
                 level_progress_low++;
                 if (level_progress_low == 4) {
                     level_progress_high++;

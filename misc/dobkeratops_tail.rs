@@ -14,7 +14,7 @@ fn main()
     let mut ty = [0.0; NB_ELTS];
     for c in 0..NB_ANIM {
         for i in 0..NB_ELTS {
-            let ii = i as f64;
+            let ii = (i + 1) as f64;
             let wave = wave_amplitude * ((ii * (NB_ANIM as f64 / NB_ELTS as f64) - c as f64) * 2.0 * PI / NB_ANIM as f64).sin(); 
             let angle = (start_angle + 2.0 * ii + wave) * PI / 180.0;
             tx[i] = xstart - ii * angle.cos() * elt_width / 1.6; 

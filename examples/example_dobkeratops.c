@@ -24,7 +24,7 @@ void draw_dobkeratops(char xpos, char ypos, char anim)
     // Draw tail
     gfx = tail1;
     for (c = 0; c != 17; c++) {
-        x = tailx[Y = c] + xpos - 50;
+        x = tailx[Y = c] + xpos - 46;
         y = taily[Y] + ypos;
         if (c == 6) {
             gfx = tail2;
@@ -32,7 +32,7 @@ void draw_dobkeratops(char xpos, char ypos, char anim)
         } else if (c == 12) gfx = tail3;
         multisprite_display_small_sprite_ex(x, y, gfx, 2, 0, margin, 0);
     }
-    x = tailx[Y = c] + xpos - 50;
+    x = tailx[Y = c] + xpos - 46;
     y = taily[Y] + ypos;
     multisprite_display_sprite_ex(x, y, tail4, 4, 0, 1);
     // Draw ugly alien body

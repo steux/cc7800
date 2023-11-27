@@ -11,6 +11,8 @@ bank1 const char *dobkeratops_gfx[] = {dob1, dob2, dob3, dob4, dob5, dob6, dob7,
 // ./dobkeratops_tail > examples/example_dobkeratops_tail.c
 #include "example_dobkeratops_tail_bank1.c"
 
+bank1 char dobkeratops_ram[4096]; // Should be at 0x7000 after VRAM (12kB at 0x4000)
+
 bank1 void draw_dobkeratops(char xpos, char ypos, char anim)
 {
     char x, y, c, *gfx;
@@ -20,7 +22,7 @@ bank1 void draw_dobkeratops(char xpos, char ypos, char anim)
     // Draw tail
     gfx = tail1;
     for (c = 0; c != 17; c++) {
-        x = tailx[Y = c] + xpos - 50;
+        x = tailx[Y = c] + xpos - 46;
         y = taily[Y] + ypos;
         if (c == 6) {
             gfx = tail2;
@@ -28,7 +30,7 @@ bank1 void draw_dobkeratops(char xpos, char ypos, char anim)
         } else if (c == 12) gfx = tail3;
         multisprite_display_small_sprite_ex(x, y, gfx, 2, 4, margin, 0);
     }
-    x = tailx[Y = c] + xpos - 50;
+    x = tailx[Y = c] + xpos - 46;
     y = taily[Y] + ypos;
     multisprite_display_sprite_ex(x, y, tail4, 4, 4, 1);
     // Draw ugly alien body
@@ -36,53 +38,23 @@ bank1 void draw_dobkeratops(char xpos, char ypos, char anim)
         x = dobkeratops_x[X = c] + xpos;
         y = dobkeratops_y[X] + ypos;
         gfx = dobkeratops_gfx[X];
+        // Move gfx reference to RAM
+        gfx &= 0x0fff; // Keep lower 4kb bits
+        gfx |= 0x7000; // dobkeratops_ram
         char nbbytes = dobkeratops_nbbytes[X];
         multisprite_display_sprite_aligned(x, y, gfx, nbbytes, 4, 1);
     }
 }
 
-bank1 void init_dobkeratops()
+bank2 void copy_dobkeratops_to_ram()
 {
-    // Dobkeratops palette
-    *P4C1 = multisprite_color(0x3c); 
-    *P4C2 = multisprite_color(0x39); 
-    *P4C3 = multisprite_color(0x36); 
-    *P5C1 = multisprite_color(0x24); 
-    *P5C2 = multisprite_color(0x22); 
-    *P5C3 = 0x0e; 
-    *P6C1 = 0x0a; 
-    *P6C2 = 0x04; 
-    *P6C3 = 0x02; 
-    *P7C1 = multisprite_color(0xc9); 
-    *P7C2 = multisprite_color(0xc6); 
-    *P7C3 = multisprite_color(0x43); // Red (unused)
-}
-
-bank1 void dobkeratops()
-{
-    char counter_tail = 0;
-    char counter_move1 = 0, counter_move2 = 0;
-
-    signed char tx = 0;
-    init_dobkeratops();
-
-    do {
-        char x = 80 + tx;
-        draw_dobkeratops(x, 16, counter_tail);
-        counter_tail++;
-        if (counter_tail == 60) counter_tail = 0;
-        counter_move1++;
-        if (counter_move1 == 5) {
-            counter_move1 = 0;
-            counter_move2++;
-            if (counter_move2 < 30) {
-               tx++;
-            } else {
-               tx--;
-               if (counter_move2 > 60) counter_move2 = 0;
-            }
+    char *dest = dobkeratops_ram, *src = dob1;
+    for (X = 15; X >= 0; X--) {
+        for (Y = 255; Y != 0; Y--) {
+            dest[Y] = src[Y];
         }
-    
-        multisprite_flip();
-    } while(1);
+        dest[Y] = src[Y];
+        dest += 256;
+        src += 256;
+    }
 }
