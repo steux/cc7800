@@ -588,8 +588,10 @@ char sparse_tiling_collision(char top, char left, char right)
     end = (xrc << 3) - xoffset;
     Y++;
     xrc = ptr[Y++] - txpos;
-    if (rc < xrc - 1) return -1;
+    if (xrc < 0) xrc = 0;
+    else if (rc < xrc - 1) return -1;
     start = (xrc << 3) - xoffset;
+    if (start < 0) start = 0;
     while (right >= start) {
         char l = (left < start)?start:left;
         char r = (end < right)?end:right;

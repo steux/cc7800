@@ -18,22 +18,8 @@
 // Generated from sprites7800 RType_font.yaml
 #include "example_RType_font.c"
 
-// Put the dobkeratops code in Bank 2
-#include "example_dobkeratops_bank2.c"
-
-// DLI management
-ramchip char save_acc, save_x, save_y;
-
-void interrupt dli()
-{
-    store(save_acc);
-    save_x = X;
-    save_y = Y;
-    *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
-    X = save_x;
-    Y = save_y;
-    load(save_acc);
-}
+// Put the dobkeratops code in Bank 1 & gfx in Bank 2
+#include "example_dobkeratops_banked.c"
 
 // Game state management
 #define MISSILES_SPEED 4 
@@ -502,8 +488,91 @@ void background_fade2()
     *P3C3 = multisprite_color(0x00); 
 }
 
+#define DOBKERATOPS_GETS_IN (((64 * 8) + 160) / 32) 
+
+// DLI management
+ramchip char save_acc, save_x, save_y;
+ramchip char dli_counter;
+
+void interrupt dli()
+{
+    store(save_acc);
+    save_x = X;
+    save_y = Y;
+    if (level_progress_high >= DOBKERATOPS_GETS_IN) {
+        if (dli_counter == 0) {
+            // Switch to dobkeratops palette    
+            if (_ms_pal_detected) {
+                *P4C1 = 0x4c; 
+                *P4C2 = 0x49; 
+                *P4C3 = 0x46; 
+                *P5C1 = 0x34; 
+                *P5C2 = 0x32; 
+                *P7C1 = 0xd9; 
+                *P7C2 = 0xd6; 
+                *P7C3 = 0x53; // Red (unused)
+            } else {
+                *P4C1 = 0x3c; 
+                *P4C2 = 0x39; 
+                *P4C3 = 0x36; 
+                *P5C1 = 0x24; 
+                *P5C2 = 0x22; 
+                *P7C1 = 0xc9; 
+                *P7C2 = 0xc6; 
+                *P7C3 = 0x43; // Red (unused)
+            }
+            *P5C3 = 0x0e; 
+            *P6C1 = 0x0a; 
+            *P6C2 = 0x04; 
+            *P6C3 = 0x02; 
+        } else if (dli_counter == 1) {
+            // Switch to level1 palette
+            if (_ms_pal_detected) {
+                // Beige palette
+                *P4C1 = 0x22; 
+                *P4C2 = 0x24; 
+                *P4C3 = 0x26; 
+                // Blue palette
+                *P5C1 = 0x94; // Dark blue 
+                *P5C2 = 0x97; // Light blue
+                *P5C3 = 0xbc; // Turquoise 
+                              // Rose palette
+                *P6C1 = 0x44; // Dark Rose
+                *P6C2 = 0x48; // Rose 
+                *P6C3 = 0x4c; // Light Rose 
+            } else {
+                // Beige palette
+                *P4C1 = 0x12; 
+                *P4C2 = 0x14; 
+                *P4C3 = 0x16; 
+                // Blue palette
+                *P5C1 = 0x84; // Dark blue 
+                *P5C2 = 0x87; // Light blue
+                *P5C3 = 0xac; // Turquoise 
+                              // Rose palette
+                *P6C1 = 0x34; // Dark Rose
+                *P6C2 = 0x38; // Rose 
+                *P6C3 = 0x3c; // Light Rose 
+            }
+            // Grey palette 
+            *P7C1 = 0x04; // Dark gray
+            *P7C2 = 0x08; // Medium gray
+            *P7C3 = 0x0c; // Dark gray
+        } else {
+            *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
+        }
+    } else {
+        *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
+    }
+    dli_counter++;
+    X = save_x;
+    Y = save_y;
+    load(save_acc);
+}
+
 void main()
 {
+    dli_counter = 0;
     scroll_background_counter1 = 0;
     scroll_background_counter2 = 0;
     button_pressed = 0;
@@ -513,7 +582,6 @@ void main()
     rtype_init();
     game_init();
 
-#define DOBKERATOPS_GETS_IN (((64 * 8) + 160) / 32) 
     do {
         if (level_progress_high < DOBKERATOPS_GETS_IN) {
             scroll_background(4);
@@ -528,20 +596,33 @@ void main()
                 }
                 level_progress_low = 0;
             }
-        } else {
+        } /*else {
+            char c = sparse_tiling_collision(208 - 14 + 6, 0, 15);
+            if (c != -1) {
+                score = 1000 + c;
+                update_score = 1;
+            }
+        } */
+        else {
             if (level_progress_low == 0) {
                 if (level_progress_high == DOBKERATOPS_GETS_IN) {
                     multisprite_clear();
                     scoreboard_display();
                     multisprite_save();
                     init_dobkeratops();
+                    sparse_tiling_scroll(1); // Scroll 1 pixels to the right to align this buffer to the next 
+                    sparse_tiling_display();
+                    multisprite_flip();
+                    sparse_tiling_display();
+                    multisprite_enable_dli(1);
+                    multisprite_enable_dli(12);
                 }
             }
             char x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
             draw_dobkeratops(x, 16, counter_tail);
             counter_tail++;
             if (counter_tail == 60) counter_tail = 0;
-            if (level_progress_high < 120) {
+            if (level_progress_high < 110) {
                 level_progress_low++;
                 if (level_progress_low == 4) {
                     level_progress_high++;
@@ -560,6 +641,7 @@ void main()
             update_score = 0;
         }
         multisprite_flip();
+        dli_counter = 0;
         *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
     } while (1);
 }
