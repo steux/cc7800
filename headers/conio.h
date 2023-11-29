@@ -8,10 +8,16 @@
 #ifndef __CONIO_H__
 #define __CONIO_H__
 
-ramchip char _conio_screen[25 * 40]; 
+#define CONIO_NB_LINES 25 
+ramchip char _conio_screen[CONIO_NB_LINES * 40]; 
 
 // Conio shares the memory with multisprite DLLs, as well as PAL/NTSC auto detection
 #include "multisprite.h"
+
+const char *_ms_conio_dls[CONIO_NB_LINES] = {
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9
+};
 
 reversed scattered(8,1) char font[1024]={
 	// ................................
@@ -108,7 +114,7 @@ void clrscr()
     _conio_x = 0;
     _conio_y = 0;
     _conio_ptr = _conio_screen;
-    X = 25; 
+    X = CONIO_NB_LINES; 
     _ms_tmpptr = _conio_screen;
     do {
         Y = 39;
@@ -134,9 +140,9 @@ void clrscr()
     multisprite_get_tv();
     
     Y = 1;
-    for (X = 0; X != 25; X++) {
+    for (X = 0; X != CONIO_NB_LINES; X++) {
         _ms_dlend[X] = 0;
-        _ms_tmpptr = _ms_dls[X];
+        _ms_tmpptr = _ms_conio_dls[X];
         _ms_tmpptr[Y] = 0; // Stops the DL
     }
     
@@ -167,10 +173,10 @@ void clrscr()
         _ms_tmpptr[++Y] = _ms_blank_dl;
     }
     // 8 pixel high regions
-    for (X = 0; X != 25; X++) {
+    for (X = 0; X != CONIO_NB_LINES; X++) {
         _ms_tmpptr[++Y] = 0x27; // 8 lines, Holey DMA enabled
-        _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
-        _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
+        _ms_tmpptr[++Y] = _ms_conio_dls[X] >> 8; // High address
+        _ms_tmpptr[++Y] = _ms_conio_dls[X]; // Low address
     }
     if (_ms_pal_detected) {
         // 16 blank lines
@@ -207,7 +213,7 @@ void delline()
         _ms_tmpptr[Y--] = ' ';
     } while (Y >= 0);
     _ms_dlend[X = _conio_y] = 0;
-    _ms_tmpptr = _ms_dls[X = _conio_y];
+    _ms_tmpptr = _ms_conio_dls[X = _conio_y];
     _ms_tmpptr[Y = 1] = 0;
 }
 
@@ -260,7 +266,7 @@ void _conio_cputs2()
         _ms_tmpptr[Y] = _ms_tmpptr2[Y];
     }
     // Check the display and look for one with the same palette
-    _ms_tmpptr = _ms_dls[X = _conio_y];
+    _ms_tmpptr = _ms_conio_dls[X = _conio_y];
     for (Y = 3; Y < _ms_dlend[X = _conio_y]; Y += 5) {
         if ((_ms_tmpptr[Y] & 0xe0) == _conio_palette) {
             // Yes ! It has the same palette !
@@ -344,7 +350,7 @@ void _conio_putch()
     _ms_tmpptr = _conio_ptr;
     _ms_tmpptr[Y = 0] = _ms_tmp;
     // Check the display and look for one with the same palette
-    _ms_tmpptr = _ms_dls[X = _conio_y];
+    _ms_tmpptr = _ms_conio_dls[X = _conio_y];
     for (Y = 3; Y < _ms_dlend[X = _conio_y]; Y += 5) {
         if ((_ms_tmpptr[Y] & 0xe0) == _conio_palette) {
             // Yes ! It has the same palette !
