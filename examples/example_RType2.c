@@ -24,7 +24,7 @@
 // Game state management
 #define MISSILES_SPEED 4 
 #define MISSILES_NB_MAX 5
-ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX];
+ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX], missile_type[MISSILES_NB_MAX];
 ramchip char missile_first, missile_last;
 
 #define CIRCLES_NB_MAX 5
@@ -34,9 +34,12 @@ ramchip char circle_first, circle_last;
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
 ramchip char R9_satellite_counter, R9_satellite_state;
+ramchip char R9_charging_counter, R9_charging_counter2;
 const char *R9_satellite_sequence[] = {satellite1, satellite2, satellite3, satellite4};
+const char *R9_charging_sequence[] = {beam1, beam2, beam3};
 
-#define R9_CIRCLE_FIRE 4
+#define R9_CIRCLE_FIRE  4
+#define R9_CHARGING     8
 
 ramchip unsigned int score, high_score;
 ramchip char update_score;
@@ -66,6 +69,8 @@ void game_init()
     R9_state_counter = 100;
     R9_satellite_counter = 0;
     R9_satellite_state = 0;
+    R9_charging_counter = 0;
+    R9_charging_counter2 = 0;
 
     // Initialize boss
     counter_tail = 0;
@@ -170,7 +175,11 @@ void step()
             } else {
                 missile_xpos[X = i] = x;
                 // Draw missile
-                multisprite_display_small_sprite_ex(x, y, missile, 2, 0, 12, 0);
+                if (missile_type[X = i] == 1) {
+                    multisprite_display_sprite_ex(x, y, bigfire, 8, 1, 0);
+                } else {
+                    multisprite_display_small_sprite_ex(x, y, missile, 2, 0, 12, 0);
+                }
             }
         }
     }
@@ -210,6 +219,20 @@ void step()
             y = R9_ypos - 1;
             multisprite_display_sprite_ex(x, y, gfx, 4, 0, 1);
         }
+        if ((R9_state & R9_CHARGING) && R9_charging_counter >= 5) {
+            gfx = R9_charging_sequence[X = (R9_charging_counter2 >> 2)];
+            if (R9_state & R9_CIRCLE_FIRE) {
+                x = R9_xpos + 17 + 8;
+            } else {
+                x = R9_xpos + 16;
+            }
+            y = R9_ypos + 1;
+            multisprite_display_small_sprite_ex(x, y, gfx, 2, 0, 5, 0);
+            R9_charging_counter2++;
+            if (R9_charging_counter2 == 12) {
+                R9_charging_counter2 = 0;
+            }
+        }
     }
 }
 
@@ -228,10 +251,18 @@ void fire()
         if (missile_last == MISSILES_NB_MAX) missile_last = 0;
         if (missile_last != missile_first) {
             missile_xpos[X] = R9_xpos + 8;
-            missile_ypos[X] = R9_ypos + 6;
+            if (R9_charging_counter >= 16) {
+                missile_ypos[X] = R9_ypos;
+                missile_type[X] = 1;
+            } else {
+                missile_ypos[X] = R9_ypos + 6;
+                missile_type[X] = 0;
+            }
         } else missile_last = X;
     }
 }
+
+void beam_meter_update();
 
 void joystick_input()
 {
@@ -249,11 +280,24 @@ void joystick_input()
         }
     }
     if (joystick[0] & JOYSTICK_BUTTON1) {
-        if (!button_pressed) {
+        if (button_pressed) {
+            if (R9_charging_counter != 32) {
+                R9_charging_counter++;
+                beam_meter_update();
+            }
+        } else {
             button_pressed = 1;
-            if (R9_state != 2) fire();
+            R9_state |= R9_CHARGING;
         }
-    } else button_pressed = 0;
+    } else {
+        button_pressed = 0;
+        R9_state &= ~R9_CHARGING;
+        if (R9_charging_counter != 0 && R9_state != 2) {
+            fire();
+            R9_charging_counter = 0;
+            beam_meter_update();
+        }
+    }
 }
 
 // Background scrolling
@@ -294,20 +338,6 @@ void scroll_background(char speed)
         _ms_tmpptr[Y = 8] = pos4;
         _ms_tmpptr = _ms_dls[++X];
     }
-}
-
-void display_score_update(char *score_str)
-{
-    char display_score_ascii[6];
-    itoa(score, display_score_ascii, 10);
-    X = strlen(display_score_ascii); 
-    for (Y = 0; Y != 5 - X; Y++) {
-        score_str[Y] = 26; // '0'
-    }
-    Y = 4;
-    do {
-        score_str[Y--] = 26 + (display_score_ascii[--X] - '0');
-    } while (X);
 }
 
 void display_init()
@@ -400,19 +430,41 @@ bank1 void rtype_level1_palette()
     *P7C3 = 0x0c; // Dark gray
 }
 
+// Scoreboard display functions
 const char oneup[3] = {27, 'U' - 'A', 'P' - 'A'};
 const char high[4] = {'H' - 'A', 'I' - 'A', 'G' - 'A', 'H' - 'A'};
 const char beam[4] = {'B' - 'A', 'E' - 'A', 'A' - 'A', 'M' - 'A'};
     
 void scoreboard_display()
 {
+    multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_in, 1, 1, 0);
     multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_out, 18, 2, 0);
-    multisprite_display_sprite_aligned(14 * 4, 13 * 16, beam_meter_in, 16, 1, 0);
     multisprite_display_tiles(3 * 4, 14, oneup, 3, 2);
     multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 0);
     multisprite_display_tiles(16 * 4, 14, high, 4, 2);
     multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 0);
     multisprite_display_tiles(8 * 4, 13, beam, 4, 2);
+}
+
+void beam_meter_update()
+{
+    char i = (-((R9_charging_counter >> 1) + 1) & 0x1f) | (1 << 5);
+    _ms_b0_dl13[X = 3] = i; // 13th zone
+    _ms_b1_dl13[X] = i; // on the second buffer
+}
+
+void display_score_update(char *score_str)
+{
+    char display_score_ascii[6];
+    itoa(score, display_score_ascii, 10);
+    X = strlen(display_score_ascii); 
+    for (Y = 0; Y != 5 - X; Y++) {
+        score_str[Y] = 26; // '0'
+    }
+    Y = 4;
+    do {
+        score_str[Y--] = 26 + (display_score_ascii[--X] - '0');
+    } while (X);
 }
 
 void rtype_init()
