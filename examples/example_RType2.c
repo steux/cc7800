@@ -403,18 +403,16 @@ bank1 void rtype_level1_palette()
 const char oneup[3] = {27, 'U' - 'A', 'P' - 'A'};
 const char high[4] = {'H' - 'A', 'I' - 'A', 'G' - 'A', 'H' - 'A'};
 const char beam[4] = {'B' - 'A', 'E' - 'A', 'A' - 'A', 'M' - 'A'};
-const char gauge_out[17] = {45, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 46, 47};
-const char gauge_in[15] = { 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48};
     
 void scoreboard_display()
 {
+    multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_out, 18, 2, 0);
+    multisprite_display_sprite_aligned(14 * 4, 13 * 16, beam_meter_in, 16, 1, 0);
     multisprite_display_tiles(3 * 4, 14, oneup, 3, 2);
     multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 0);
     multisprite_display_tiles(16 * 4, 14, high, 4, 2);
     multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 0);
     multisprite_display_tiles(8 * 4, 13, beam, 4, 2);
-    multisprite_display_tiles(13 * 4, 13, gauge_out, 17, 2);
-    multisprite_display_tiles(14 * 4, 13, gauge_in, 1, 1);
 }
 
 void rtype_init()
