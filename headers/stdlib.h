@@ -10,7 +10,7 @@
 
 #define NULL 0
 
-char _libc_tmp, _libc_tmp2, _libc_tmp3;
+char _libc_tmp, _libc_tmp2;
 short _libc_tmpshort;
 char *_libc_tmpptr, *_libc_tmpptr2;
 char _save_x, _save_y;

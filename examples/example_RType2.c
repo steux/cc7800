@@ -1,10 +1,17 @@
 #include "string.h"
-#define _MS_DL_SIZE 96
+#define _MS_DL_SIZE 80 
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
 #define MULTISPRITE_USE_VIDEO_MEMORY
 #include "sparse_tiling.h"
 #include "joystick.h"
+#ifdef POKEY_MUSIC
+bank7 {
+#define POKEY_AT_450
+#include "rmtplayer.h"
+#include "RMT_RType.asm"
+}
+#endif
 
 // Generated from sprites7800 RType_tiles.yaml
 #include "example_RType_tiles_mirror.c"
@@ -16,7 +23,9 @@
 #include "example_RType_level1_mirror.c"
 
 // Generated from sprites7800 RType_font.yaml
+// bank7 {
 #include "example_RType_font.c"
+//}
 
 // Put the dobkeratops code in Bank 1 & gfx in Bank 2
 #include "example_dobkeratops_banked.c"
@@ -301,7 +310,7 @@ void joystick_input()
 }
 
 // Background scrolling
-char scroll_background_counter1, scroll_background_counter2;
+ramchip char scroll_background_counter1, scroll_background_counter2;
 
 void scroll_background(char speed)
 {

@@ -77,9 +77,9 @@ void _sparse_tiling_init()
 const char _sparse_tiling_end_of_tileset[2] = { 96, 0xff};
 
 #ifdef MULTISPRITE_USE_VIDEO_MEMORY
-void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
+char _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
 {
-    char low, high, len, len2, tmp;
+    char low, high, len, len2, tmp, mirroring;
 
     len2 = (mode)?(w << 1):w; // Number of entries in chptr
     len = len2 << 1; // Number of actual bytes
@@ -99,7 +99,7 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
 
     char *vmemptr0, *vmemptr1, *vmemptr2, *vmemptr3, *vmemptr4, *vmemptr5, *vmemptr6, *vmemptr7, *vmemptr8, *vmemptr9, *vmemptr10, *vmemptr11, *vmemptr12, *vmemptr13, *vmemptr14, *vmemptr15;
     char *chptr0, *chptr1, *chptr2, *chptr3, *chptr4, *chptr5, *chptr6, *chptr7, *chptr8, *chptr9, *chptr10, *chptr11, *chptr12, *chptr13, *chptr14, *chptr15;
-    char vtmp1[16], vtmp2[16];
+    char vtmp[16];
    
     Y = low;
     X = high; 
@@ -141,121 +141,84 @@ void _sparse_tiling_ROM_to_RAM(char *sptr, char w, char mode)
     for (Y = 0; Y != len2; Y++) {
         tmp = Y;
         Y = sptr[Y];
-        X = Y & 1;
-        if (X) { 
+        mirroring = Y & 1;
+        if (mirroring) { 
             // Vertical mirroring)
             Y--;
         }
-
-        vtmp1[0] = chptr0[Y];
-        vtmp1[1] = chptr1[Y];
-        vtmp1[2] = chptr2[Y];
-        vtmp1[3] = chptr3[Y];
-        vtmp1[4] = chptr4[Y];
-        vtmp1[5] = chptr5[Y];
-        vtmp1[6] = chptr6[Y];
-        vtmp1[7] = chptr7[Y];
-        vtmp1[8] = chptr8[Y];
-        vtmp1[9] = chptr9[Y];
-        vtmp1[10] = chptr10[Y];
-        vtmp1[11] = chptr11[Y];
-        vtmp1[12] = chptr12[Y];
-        vtmp1[13] = chptr13[Y];
-        vtmp1[14] = chptr14[Y];
-        vtmp1[15] = chptr15[Y];
         Y++;
-        vtmp2[0] = chptr0[Y];
-        vtmp2[1] = chptr1[Y];
-        vtmp2[2] = chptr2[Y];
-        vtmp2[3] = chptr3[Y];
-        vtmp2[4] = chptr4[Y];
-        vtmp2[5] = chptr5[Y];
-        vtmp2[6] = chptr6[Y];
-        vtmp2[7] = chptr7[Y];
-        vtmp2[8] = chptr8[Y];
-        vtmp2[9] = chptr9[Y];
-        vtmp2[10] = chptr10[Y];
-        vtmp2[11] = chptr11[Y];
-        vtmp2[12] = chptr12[Y];
-        vtmp2[13] = chptr13[Y];
-        vtmp2[14] = chptr14[Y];
-        vtmp2[15] = chptr15[Y];
-        Y = tmp << 1;
-        
-        if (X) {
-            vmemptr0[Y] = vtmp1[15];
-            vmemptr1[Y] = vtmp1[14];
-            vmemptr2[Y] = vtmp1[13];
-            vmemptr3[Y] = vtmp1[12];
-            vmemptr4[Y] = vtmp1[11];
-            vmemptr5[Y] = vtmp1[10];
-            vmemptr6[Y] = vtmp1[9];
-            vmemptr7[Y] = vtmp1[8];
-            vmemptr8[Y] = vtmp1[7];
-            vmemptr9[Y] = vtmp1[6];
-            vmemptr10[Y] = vtmp1[5];
-            vmemptr11[Y] = vtmp1[4];
-            vmemptr12[Y] = vtmp1[3];
-            vmemptr13[Y] = vtmp1[2];
-            vmemptr14[Y] = vtmp1[1];
-            vmemptr15[Y] = vtmp1[0];
-            Y++;
-            vmemptr0[Y] = vtmp2[15];
-            vmemptr1[Y] = vtmp2[14];
-            vmemptr2[Y] = vtmp2[13];
-            vmemptr3[Y] = vtmp2[12];
-            vmemptr4[Y] = vtmp2[11];
-            vmemptr5[Y] = vtmp2[10];
-            vmemptr6[Y] = vtmp2[9];
-            vmemptr7[Y] = vtmp2[8];
-            vmemptr8[Y] = vtmp2[7];
-            vmemptr9[Y] = vtmp2[6];
-            vmemptr10[Y] = vtmp2[5];
-            vmemptr11[Y] = vtmp2[4];
-            vmemptr12[Y] = vtmp2[3];
-            vmemptr13[Y] = vtmp2[2];
-            vmemptr14[Y] = vtmp2[1];
-            vmemptr15[Y] = vtmp2[0];
-        } else {
-            vmemptr0[Y] = vtmp1[0];
-            vmemptr1[Y] = vtmp1[1];
-            vmemptr2[Y] = vtmp1[2];
-            vmemptr3[Y] = vtmp1[3];
-            vmemptr4[Y] = vtmp1[4];
-            vmemptr5[Y] = vtmp1[5];
-            vmemptr6[Y] = vtmp1[6];
-            vmemptr7[Y] = vtmp1[7];
-            vmemptr8[Y] = vtmp1[8];
-            vmemptr9[Y] = vtmp1[9];
-            vmemptr10[Y] = vtmp1[10];
-            vmemptr11[Y] = vtmp1[11];
-            vmemptr12[Y] = vtmp1[12];
-            vmemptr13[Y] = vtmp1[13];
-            vmemptr14[Y] = vtmp1[14];
-            vmemptr15[Y] = vtmp1[15];
-            Y++;
-            vmemptr0[Y] = vtmp2[0];
-            vmemptr1[Y] = vtmp2[1];
-            vmemptr2[Y] = vtmp2[2];
-            vmemptr3[Y] = vtmp2[3];
-            vmemptr4[Y] = vtmp2[4];
-            vmemptr5[Y] = vtmp2[5];
-            vmemptr6[Y] = vtmp2[6];
-            vmemptr7[Y] = vtmp2[7];
-            vmemptr8[Y] = vtmp2[8];
-            vmemptr9[Y] = vtmp2[9];
-            vmemptr10[Y] = vtmp2[10];
-            vmemptr11[Y] = vtmp2[11];
-            vmemptr12[Y] = vtmp2[12];
-            vmemptr13[Y] = vtmp2[13];
-            vmemptr14[Y] = vtmp2[14];
-            vmemptr15[Y] = vtmp2[15];
+        for (X = 1; X >= 0; X--) {
+            
+            vtmp[0] = chptr0[Y];
+            vtmp[1] = chptr1[Y];
+            vtmp[2] = chptr2[Y];
+            vtmp[3] = chptr3[Y];
+            vtmp[4] = chptr4[Y];
+            vtmp[5] = chptr5[Y];
+            vtmp[6] = chptr6[Y];
+            vtmp[7] = chptr7[Y];
+            vtmp[8] = chptr8[Y];
+            vtmp[9] = chptr9[Y];
+            vtmp[10] = chptr10[Y];
+            vtmp[11] = chptr11[Y];
+            vtmp[12] = chptr12[Y];
+            vtmp[13] = chptr13[Y];
+            vtmp[14] = chptr14[Y];
+            vtmp[15] = chptr15[Y];
+            Y = tmp << 1;
+            if (X) Y++;
+
+            if (mirroring) {
+                vmemptr0[Y] = vtmp[15];
+                vmemptr1[Y] = vtmp[14];
+                vmemptr2[Y] = vtmp[13];
+                vmemptr3[Y] = vtmp[12];
+                vmemptr4[Y] = vtmp[11];
+                vmemptr5[Y] = vtmp[10];
+                vmemptr6[Y] = vtmp[9];
+                vmemptr7[Y] = vtmp[8];
+                vmemptr8[Y] = vtmp[7];
+                vmemptr9[Y] = vtmp[6];
+                vmemptr10[Y] = vtmp[5];
+                vmemptr11[Y] = vtmp[4];
+                vmemptr12[Y] = vtmp[3];
+                vmemptr13[Y] = vtmp[2];
+                vmemptr14[Y] = vtmp[1];
+                vmemptr15[Y] = vtmp[0];
+                if (X) {
+                    Y = tmp;
+                    Y = sptr[Y];
+                    Y--;
+                }
+            } else {
+                vmemptr0[Y] = vtmp[0];
+                vmemptr1[Y] = vtmp[1];
+                vmemptr2[Y] = vtmp[2];
+                vmemptr3[Y] = vtmp[3];
+                vmemptr4[Y] = vtmp[4];
+                vmemptr5[Y] = vtmp[5];
+                vmemptr6[Y] = vtmp[6];
+                vmemptr7[Y] = vtmp[7];
+                vmemptr8[Y] = vtmp[8];
+                vmemptr9[Y] = vtmp[9];
+                vmemptr10[Y] = vtmp[10];
+                vmemptr11[Y] = vtmp[11];
+                vmemptr12[Y] = vtmp[12];
+                vmemptr13[Y] = vtmp[13];
+                vmemptr14[Y] = vtmp[14];
+                vmemptr15[Y] = vtmp[15];
+                if (X) {
+                    Y = tmp;
+                    Y = sptr[Y];
+                }
+            }
         }
         Y = tmp;
     } // ~600 cycles x 16 (max) = ~10000 cycles = 5.6ms (out of 16ms per frame).
+    return len2;
 }
 
-void _sparse_tiling_load_line(signed char y)
+char _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
     char *tmpptr, x, linedl, txpos, xoffset;
@@ -263,6 +226,7 @@ void _sparse_tiling_load_line(signed char y)
     char st_idata_idx, st_idata_size;
     char tileset_counter = 0;
     char mode, w;
+    char total_transfered = 0;
      
     if (_ms_buffer) {
         X = y + SPARSE_TILING_SCROLLING_ZONE;
@@ -290,7 +254,7 @@ void _sparse_tiling_load_line(signed char y)
                 _ms_dlend[Y = linedl] = _ms_dlend_save[X = y];
                 _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
                 _tiling_ptr[X] = _sparse_tiling_end_of_tileset; // To make sure this one is in bank0
-                return;
+                return 0;
             } else Y--;
         }
         r = w - txpos;
@@ -338,7 +302,7 @@ void _sparse_tiling_load_line(signed char y)
             tmpptr = data[0] | (ptr[++Y] << 8);
             // Store the pointer for this tileset_counter
             _save_y = Y;
-            _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
+            total_transfered += _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
             data[0] = _sparse_tiling_vmem_ptr_low;
             data[2] = _sparse_tiling_vmem_ptr_high;
             Y = st_idata_idx;
@@ -402,7 +366,7 @@ void _sparse_tiling_load_line(signed char y)
                 tmpptr = data[0] | (ptr[++Y] << 8);
                 // Store the pointer for this tileset_counter
                 _save_y = Y;
-                _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
+                total_transfered += _sparse_tiling_ROM_to_RAM(tmpptr, w, mode);
                 data[0] = _sparse_tiling_vmem_ptr_low;
                 data[2] = _sparse_tiling_vmem_ptr_high;
                 Y = st_idata_idx + tileset_counter;
@@ -437,9 +401,10 @@ void _sparse_tiling_load_line(signed char y)
     _ms_dlend[X = linedl] = x;
     _ms_dlend_save_overlay[X] = x;
     _st_idata_size[Y = y] = st_idata_size; // Store the updated immediate data size
+    return total_transfered;
 }
 #else
-void _sparse_tiling_load_line(signed char y)
+char _sparse_tiling_load_line(signed char y)
 {
     char *ptr, data[5];
     char x, linedl, txpos, xoffset;
@@ -467,7 +432,7 @@ void _sparse_tiling_load_line(signed char y)
                 _ms_dlend[Y = linedl] = _ms_dlend_save[X = y];
                 _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
                 _tiling_ptr[X] = _sparse_tiling_end_of_tileset; // To make sure this one is in bank0
-                return;
+                return 0;
             } else Y--;
         }
         r = ptr[Y] - txpos;
@@ -553,6 +518,7 @@ void _sparse_tiling_load_line(signed char y)
     } 
     _ms_dlend[X = linedl] = x;
     _ms_dlend_save_overlay[X] = x;
+    return 0;
 }
 #endif
 
@@ -636,16 +602,8 @@ void sparse_tiling_scroll(char offset)
 {
     signed char y;
     char yy, linedl;
-    char lines_moved = 0;    
-    /*
-    if (_tiling_xoffset[X] >= 8) {
-        _tiling_xoffset[X] -= 8;
-        _tiling_xpos[X]++;
-        multisprite_clear_overlay();
-        sparse_tiling_display();
-        multisprite_save_overlay();
-    }
-    */
+    char lines_moved = 0;
+    char total_transfered = 0;
     
     if (_ms_buffer) {
         yy = 2 * SPARSE_TILING_SCROLLING_ZONE - 1;
@@ -658,12 +616,12 @@ void sparse_tiling_scroll(char offset)
     for (y = SPARSE_TILING_SCROLLING_ZONE - 1; y >= 0; yy--, linedl--, y--) {
         X = yy;
         _tiling_xoffset[X] += offset;
-        if (_tiling_xoffset[X] >= 16 && lines_moved < offset) {
+        if (_tiling_xoffset[X] >= 16 && offset >= lines_moved && total_transfered < 10) {
             do {
                 _tiling_xoffset[X] -= 16;
                 _tiling_xpos[X] += 2;
             } while (_tiling_xoffset[X] >= 16);
-            _sparse_tiling_load_line(y);
+            total_transfered += _sparse_tiling_load_line(y);
             lines_moved++;
         } else {
             // Apply this offset to all the tilesets in overlay
