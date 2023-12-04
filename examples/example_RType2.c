@@ -1,5 +1,5 @@
 #include "string.h"
-#define _MS_DL_SIZE 80 
+#define _MS_DL_MALLOC(line) ((line < 8)?64:(line < 13)?96:32) 
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
 #define MULTISPRITE_USE_VIDEO_MEMORY
@@ -550,14 +550,10 @@ void background_fade2()
 #define DOBKERATOPS_GETS_IN (((64 * 8) + 160) / 32) 
 
 // DLI management
-ramchip char save_acc, save_x, save_y;
 ramchip char dli_counter;
 
 void interrupt dli()
 {
-    store(save_acc);
-    save_x = X;
-    save_y = Y;
     if (level_progress_high >= DOBKERATOPS_GETS_IN) {
         if (dli_counter == 0) {
             // Switch to dobkeratops palette    
@@ -624,9 +620,6 @@ void interrupt dli()
         *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
     }
     dli_counter++;
-    X = save_x;
-    Y = save_y;
-    load(save_acc);
 }
 
 void main()

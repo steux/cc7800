@@ -546,19 +546,35 @@ IRQ
                             self.set.insert(f.0);
                             self.remaining_functions -= 1;
                         } else {
-                            let s = gstate.functions_code.get(f.0).unwrap().size_bytes();
-                            if filled + s + 1 <= size {
+                            let s = gstate.functions_code.get(f.0).unwrap().size_bytes() + if f.1.interrupt {17} else {1};
+                            if filled + s <= size {
 
                                 gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
+                                if f.1.interrupt {
+                                    gstate.write("\tPHA\n")?;
+                                    gstate.write("\tTXA\n")?;
+                                    gstate.write("\tPHA\n")?;
+                                    gstate.write("\tTYA\n")?;
+                                    gstate.write("\tPHA\n")?;
+                                    gstate.write("\tLDA cctmp\n")?;
+                                    gstate.write("\tPHA\n")?;
+                                }
                                 gstate.write_function(f.0)?;
                                 if f.1.interrupt {
+                                    gstate.write("\tPLA\n")?;
+                                    gstate.write("\tSTA cctmp\n")?;
+                                    gstate.write("\tPLA\n")?;
+                                    gstate.write("\tTAY\n")?;
+                                    gstate.write("\tPLA\n")?;
+                                    gstate.write("\tTAX\n")?;
+                                    gstate.write("\tPLA\n")?;
                                     gstate.write("\tRTI\n")?;
                                 } else {
                                     gstate.write("\tRTS\n")?;
                                 }
                                 self.set.insert(f.0);
                                 self.remaining_functions -= 1;
-                                filled += s + 1;
+                                filled += s;
 
                                 if args.verbose {
                                     println!(" - {} function (filled {}/{})", f.0, filled, size);
@@ -1095,6 +1111,9 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     }
     if args.verbose {
         println!("Atari 7800 zeropage RAM usage: {}/192", zeropage_bytes);
+    }
+    if zeropage_bytes > 192 {
+        return Err(Error::Configuration { error: "Memory full. Zeropage Atari 7800 RAM is limited to 192 bytes".to_string() });
     }
 
     gstate.write("\n\tSEG.U RAM1\n\tORG $1800\n\tRORG $1800\n")?;

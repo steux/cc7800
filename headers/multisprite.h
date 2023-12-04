@@ -21,16 +21,23 @@
 #define INIT_BANK
 #endif
 
+#define MS_YMAX 224
+#define _MS_DLL_ARRAY_SIZE 16
+#define _MS_DMA_START_VALUE (402 / 2)
+
 #ifndef _MS_DL_SIZE
 #define _MS_DL_SIZE 64
 #endif
 #ifndef _MS_DL_MALLOC
 #define _MS_DL_MALLOC(y) _MS_DL_SIZE
+#define _MS_DL_LIMIT (_MS_DL_SIZE - 7)
+#else
+const char _ms_dl_limits[_MS_DLL_ARRAY_SIZE * 2] = {
+    _MS_DL_MALLOC(0) - 7, _MS_DL_MALLOC(1) - 7, _MS_DL_MALLOC(2) - 7, _MS_DL_MALLOC(3) - 7, _MS_DL_MALLOC(4) - 7, _MS_DL_MALLOC(5) - 7, _MS_DL_MALLOC(6) - 7, _MS_DL_MALLOC(7) - 7, _MS_DL_MALLOC(8) - 7, _MS_DL_MALLOC(9) - 7, _MS_DL_MALLOC(10) - 7, _MS_DL_MALLOC(11) - 7, _MS_DL_MALLOC(12) - 7, _MS_DL_MALLOC(13) - 7, _MS_DL_MALLOC(14) - 7, _MS_DL_MALLOC(14) - 7,
+    _MS_DL_MALLOC(0) - 7, _MS_DL_MALLOC(1) - 7, _MS_DL_MALLOC(2) - 7, _MS_DL_MALLOC(3) - 7, _MS_DL_MALLOC(4) - 7, _MS_DL_MALLOC(5) - 7, _MS_DL_MALLOC(6) - 7, _MS_DL_MALLOC(7) - 7, _MS_DL_MALLOC(8) - 7, _MS_DL_MALLOC(9) - 7, _MS_DL_MALLOC(10) - 7, _MS_DL_MALLOC(11) - 7, _MS_DL_MALLOC(12) - 7, _MS_DL_MALLOC(13) - 7, _MS_DL_MALLOC(14) - 7, _MS_DL_MALLOC(14) - 7
+};
+#define _MS_DL_LIMIT _ms_dl_limits[X] 
 #endif
-
-#define MS_YMAX 224
-#define _MS_DLL_ARRAY_SIZE 16
-#define _MS_DMA_START_VALUE (402 / 2)
 
 #ifndef _MS_TOP_SCROLLING_ZONE
 #define _MS_TOP_SCROLLING_ZONE 0
@@ -218,8 +225,8 @@ aligned(256) const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
 };
 #endif
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14, _ms_b0_dl0,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14, _ms_b1_dl0
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14, _ms_b0_dl14,
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14, _ms_b1_dl14
 };
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
@@ -267,7 +274,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 6) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -280,7 +287,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 6) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -302,7 +309,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 6) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -315,7 +322,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 6) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -337,7 +344,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -351,7 +358,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 7) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -374,7 +381,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmp5 = -width & 0x1f | (palette << 5); \
@@ -393,7 +400,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                         _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
-                            if (Y >= _MS_DL_SIZE - 12) { \
+                            if (Y >= _MS_DL_LIMIT - 5) { \
                                 _ms_dmaerror++; \
                             } else { \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
@@ -415,7 +422,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 7) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = _ms_tmpptr2; \
@@ -436,7 +443,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
-                            if (Y >= _MS_DL_SIZE - 7) { \
+                            if (Y >= _MS_DL_LIMIT) { \
                                 _ms_dmaerror++; \
                             } else { \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
@@ -460,7 +467,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -474,7 +481,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 7) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -495,7 +502,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -512,7 +519,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + (width << 1) + width + 1) >> 1) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -566,7 +573,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 6) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -579,7 +586,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 6) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -599,7 +606,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 6) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -612,7 +619,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 6) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -632,7 +639,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -646,7 +653,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 7) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -667,7 +674,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -684,7 +691,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                         _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
-                            if (Y >= _MS_DL_SIZE - 12) { \
+                            if (Y >= _MS_DL_LIMIT - 5) { \
                                 _ms_dmaerror++; \
                             } else { \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
@@ -706,7 +713,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 7) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = _ms_tmpptr2; \
@@ -726,7 +733,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                         _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
                             _ms_tmpptr = _ms_dls[X];  \
                             Y = _ms_dlend[X]; \
-                            if (Y >= _MS_DL_SIZE - 7) { \
+                            if (Y >= _MS_DL_LIMIT) { \
                                 _ms_dmaerror++; \
                             } else { \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
@@ -748,7 +755,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -762,7 +769,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
                         _ms_tmpptr = _ms_dls[X];  \
                         Y = _ms_dlend[X]; \
-                        if (Y >= _MS_DL_SIZE - 7) { \
+                        if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
                             _ms_tmpptr[Y++] = (gfx); \
@@ -782,7 +789,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
             _ms_tmpptr = _ms_dls[X]; \
             Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_SIZE - 7) { \
+            if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
                 _ms_tmpptr[Y++] = (gfx); \
@@ -834,7 +841,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
     _MS_DMA_CHECK((10 + 3 + size * 9 + 1) / 2) { \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
-        if (Y >= _MS_DL_SIZE - 7) { \
+        if (Y >= _MS_DL_LIMIT) { \
             _ms_dmaerror++; \
          } else { \
             _ms_tmpptr[Y++] = (tiles); \
