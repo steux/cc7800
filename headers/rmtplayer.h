@@ -79,5 +79,19 @@ ramchip char trackn_audctl[TRACKS];
 ramchip char v_audctl, v_audctl2, v_speed, v_aspeed, v_bspeed, v_instrspeed, v_ainstrspeed, v_maxtracklen, v_abeat;
 ramchip char track_endvariables;
 
+void pokey_init()
+{
+    // Init RMT music
+    asm("LDX #<RMTSTART", 2); // Give pointer to RMT music
+    asm("LDY #>RMTSTART", 2);
+    load(0); // Song line in A register 
+    asm("JSR rmt_init", 3);
+}
+
+void pokey_play()
+{
+    asm("JSR rmt_play", 3);
+}
+
 #include "rmtplayer.asm"
 #endif // __RMTPLAYER_H__

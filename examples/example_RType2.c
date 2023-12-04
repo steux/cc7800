@@ -1,17 +1,18 @@
 #include "string.h"
-#define _MS_DL_MALLOC(line) ((line < 8)?64:(line < 13)?96:32) 
+#define _MS_DL_MALLOC(line) ((line < 8)?64:(line < 13)?128:32) 
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
 #define MULTISPRITE_USE_VIDEO_MEMORY
 #include "sparse_tiling.h"
 #include "joystick.h"
-#ifdef POKEY_MUSIC
 bank7 {
+#include "sfx.h"
+#ifdef POKEY_MUSIC
 #define POKEY_AT_450
 #include "rmtplayer.h"
 #include "RMT_RType.asm"
-}
 #endif
+}
 
 // Generated from sprites7800 RType_tiles.yaml
 #include "example_RType_tiles_mirror.c"
@@ -23,9 +24,37 @@ bank7 {
 #include "example_RType_level1_mirror.c"
 
 // Generated from sprites7800 RType_font.yaml
-// bank7 {
+bank7 {
 #include "example_RType_font.c"
-//}
+
+const char sfx_pewpew[66] = {
+	0x10, 0, 0x00, 0x1c, 0x04, 0x0f, 0x1c, 0x04, 0x0f, 0x09, 0x04, 0x0b, 0x03, 0x0c, 0x0a, 0x04,
+	0x0c, 0x0e, 0x12, 0x04, 0x0c, 0x19, 0x04, 0x0f, 0x1c, 0x04, 0x0f, 0x07, 0x04, 0x05, 0x09, 0x04,
+	0x05, 0x0d, 0x04, 0x06, 0x0c, 0x04, 0x05, 0x18, 0x04, 0x06, 0x1c, 0x04, 0x05, 0x1e, 0x04, 0x03,
+	0x07, 0x04, 0x03, 0x09, 0x04, 0x03, 0x0c, 0x04, 0x02, 0x04, 0x0c, 0x02, 0x06, 0x0c, 0x01, 0x00,
+	0x00, 0x00
+};
+
+const char sfx_bigboom[261] = {
+	0x10, 1, 0x00, 0x1d, 0x07, 0x0f, 0x1e, 0x06, 0x0f, 0x00, 0x06, 0x0f, 0x14, 0x07, 0x0f, 0x13,
+	0x0f, 0x0f, 0x1b, 0x07, 0x0f, 0x0e, 0x07, 0x0f, 0x1b, 0x07, 0x0f, 0x0f, 0x07, 0x0f, 0x10, 0x07,
+	0x0f, 0x10, 0x06, 0x0f, 0x16, 0x07, 0x0f, 0x0d, 0x0f, 0x0f, 0x1e, 0x0c, 0x0f, 0x16, 0x01, 0x0f,
+	0x17, 0x01, 0x0f, 0x10, 0x07, 0x0f, 0x10, 0x0f, 0x0f, 0x15, 0x07, 0x0d, 0x1a, 0x07, 0x0f, 0x1a,
+	0x01, 0x0f, 0x1a, 0x07, 0x0f, 0x14, 0x0f, 0x0f, 0x16, 0x07, 0x0f, 0x16, 0x07, 0x0f, 0x15, 0x07,
+	0x0f, 0x17, 0x07, 0x0f, 0x13, 0x0f, 0x0f, 0x13, 0x0f, 0x0f, 0x19, 0x0f, 0x0f, 0x18, 0x07, 0x0c,
+	0x0b, 0x06, 0x0c, 0x1e, 0x01, 0x0d, 0x10, 0x01, 0x0d, 0x14, 0x07, 0x0f, 0x16, 0x06, 0x0c, 0x17,
+	0x07, 0x0c, 0x1a, 0x01, 0x0c, 0x12, 0x06, 0x0d, 0x17, 0x07, 0x0c, 0x0b, 0x0f, 0x0c, 0x19, 0x07,
+	0x09, 0x19, 0x07, 0x0b, 0x0b, 0x0f, 0x09, 0x0d, 0x0e, 0x0b, 0x0d, 0x0e, 0x0b, 0x19, 0x0f, 0x09,
+	0x0e, 0x0f, 0x06, 0x1b, 0x0c, 0x08, 0x18, 0x0f, 0x08, 0x13, 0x07, 0x05, 0x1a, 0x01, 0x05, 0x17,
+	0x0f, 0x08, 0x16, 0x06, 0x08, 0x0c, 0x06, 0x05, 0x1c, 0x0f, 0x06, 0x16, 0x06, 0x08, 0x0b, 0x06,
+	0x06, 0x12, 0x06, 0x04, 0x0f, 0x0f, 0x05, 0x11, 0x07, 0x06, 0x09, 0x06, 0x05, 0x10, 0x06, 0x05,
+	0x10, 0x06, 0x05, 0x10, 0x06, 0x05, 0x11, 0x0f, 0x04, 0x15, 0x0f, 0x04, 0x1e, 0x07, 0x05, 0x16,
+	0x01, 0x04, 0x16, 0x01, 0x04, 0x1a, 0x0f, 0x04, 0x19, 0x0f, 0x02, 0x1e, 0x0f, 0x02, 0x1b, 0x0f,
+	0x02, 0x1e, 0x0f, 0x02, 0x1c, 0x0f, 0x02, 0x0d, 0x0f, 0x01, 0x0f, 0x06, 0x02, 0x0e, 0x06, 0x01,
+	0x18, 0x0f, 0x01, 0x0b, 0x06, 0x02, 0x16, 0x0f, 0x01, 0x17, 0x0f, 0x01, 0x13, 0x06, 0x01, 0x0f,
+	0x0e, 0x01, 0x00, 0x00, 0x00
+};
+}
 
 // Put the dobkeratops code in Bank 1 & gfx in Bank 2
 #include "example_dobkeratops_banked.c"
@@ -56,6 +85,8 @@ ramchip char display_score_str[5];
 ramchip char display_high_score_str[5];
 ramchip char level_progress_low, level_progress_high;
 ramchip char counter_tail;
+
+ramchip char *sfx_to_play;
 
 void game_init()
 {
@@ -228,7 +259,7 @@ void step()
             y = R9_ypos - 1;
             multisprite_display_sprite_ex(x, y, gfx, 4, 0, 1);
         }
-        if ((R9_state & R9_CHARGING) && R9_charging_counter >= 5) {
+        if ((R9_state & R9_CHARGING) && R9_charging_counter >= 10) {
             gfx = R9_charging_sequence[X = (R9_charging_counter2 >> 2)];
             if (R9_state & R9_CIRCLE_FIRE) {
                 x = R9_xpos + 17 + 8;
@@ -247,6 +278,7 @@ void step()
 
 void fire()
 {
+    sfx_to_play = sfx_pewpew;
     if (R9_state & R9_CIRCLE_FIRE) {
         X = circle_last++;
         if (circle_last == CIRCLES_NB_MAX) circle_last = 0;
@@ -345,6 +377,47 @@ void scroll_background(char speed)
         _ms_tmpptr = _ms_dls[++X];
         _ms_tmpptr[Y = 4] = pos3;
         _ms_tmpptr[Y = 8] = pos4;
+        _ms_tmpptr = _ms_dls[++X];
+    }
+}
+
+void scroll_stars(char speed)
+{
+    char c;
+    char pos1, pos2;
+    scroll_background_counter1++;
+    if (scroll_background_counter1 == speed) {
+        scroll_background_counter1 = 0;
+        scroll_background_counter2--;
+    }
+    pos1 = scroll_background_counter2;
+    pos2 = scroll_background_counter2 << 1;
+    if (_ms_buffer) {
+        X = _MS_DLL_ARRAY_SIZE + 1;
+    } else X = 1;
+    
+    _ms_tmpptr = _ms_dls[X];
+    for (c = 0; c != 3; c++) {
+        // Modify bytes 4 and 8 of the DLL entries (x position of background sprites=
+        _ms_tmpptr[Y = 4] = pos1;
+        pos1 += 100;
+        _ms_tmpptr[Y = 8] = pos2;
+        pos2 += 100;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos1;
+        pos1 += 100;
+        _ms_tmpptr[Y = 8] = pos2;
+        pos2 += 100;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos1;
+        pos1 += 100;
+        _ms_tmpptr[Y = 8] = pos2;
+        pos2 += 100;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos1;
+        pos1 += 100;
+        _ms_tmpptr[Y = 8] = pos2;
+        pos2 += 100;
         _ms_tmpptr = _ms_dls[++X];
     }
 }
@@ -506,6 +579,7 @@ void rtype_init()
     // Background display
     char c, y = 0;
     for (c = 0; c != 3; c++) {
+/*
         y += 16;
         multisprite_display_sprite_ex(0, y, background_level1, 20, 3, 0);
         multisprite_display_sprite_fast(80, y, background_level1, 24, 3);
@@ -518,19 +592,24 @@ void rtype_init()
         y += 16;
         multisprite_display_sprite_ex(-8, y, background_level1_1, 20, 3, 0);
         multisprite_display_sprite_fast(72, y, background_level1_1, 24, 3);
+*/
+        y += 16;
+        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
+        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
+        y += 16;
+        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
+        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
+        y += 16;
+        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
+        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
+        y += 16;
+        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
+        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
     }
 
     scoreboard_display();
     // Save it
     multisprite_save();
-
-    multisprite_enable_dli(13);
-    
-    sparse_tiling_display();
-    multisprite_flip();
-    sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
-    sparse_tiling_display();
-    multisprite_flip();
 }
 
 void background_fade1()
@@ -551,93 +630,126 @@ void background_fade2()
 
 // DLI management
 ramchip char dli_counter;
+ramchip char rom_bank;
+ramchip char scoreboard_and_music;
 
 void interrupt dli()
 {
-    if (level_progress_high >= DOBKERATOPS_GETS_IN) {
-        if (dli_counter == 0) {
-            // Switch to dobkeratops palette    
-            if (_ms_pal_detected) {
-                *P4C1 = 0x4c; 
-                *P4C2 = 0x49; 
-                *P4C3 = 0x46; 
-                *P5C1 = 0x34; 
-                *P5C2 = 0x32; 
-                *P7C1 = 0xd9; 
-                *P7C2 = 0xd6; 
-                *P7C3 = 0x53; // Red (unused)
-            } else {
-                *P4C1 = 0x3c; 
-                *P4C2 = 0x39; 
-                *P4C3 = 0x36; 
-                *P5C1 = 0x24; 
-                *P5C2 = 0x22; 
-                *P7C1 = 0xc9; 
-                *P7C2 = 0xc6; 
-                *P7C3 = 0x43; // Red (unused)
+    if (dli_counter != -1) {
+        scoreboard_and_music = 1;
+        if (level_progress_high >= DOBKERATOPS_GETS_IN) {
+            if (dli_counter == 0) {
+                // Switch to dobkeratops palette    
+                if (_ms_pal_detected) {
+                    *P4C1 = 0x4c; 
+                    *P4C2 = 0x49; 
+                    *P4C3 = 0x46; 
+                    *P5C1 = 0x34; 
+                    *P5C2 = 0x32; 
+                    *P7C1 = 0xd9; 
+                    *P7C2 = 0xd6; 
+                    *P7C3 = 0x53; // Red (unused)
+                } else {
+                    *P4C1 = 0x3c; 
+                    *P4C2 = 0x39; 
+                    *P4C3 = 0x36; 
+                    *P5C1 = 0x24; 
+                    *P5C2 = 0x22; 
+                    *P7C1 = 0xc9; 
+                    *P7C2 = 0xc6; 
+                    *P7C3 = 0x43; // Red (unused)
+                }
+                *P5C3 = 0x0e; 
+                *P6C1 = 0x0a; 
+                *P6C2 = 0x04; 
+                *P6C3 = 0x02; 
+                scoreboard_and_music = 0;
+            } else if (dli_counter == 1) {
+                // Switch to level1 palette
+                if (_ms_pal_detected) {
+                    // Beige palette
+                    *P4C1 = 0x22; 
+                    *P4C2 = 0x24; 
+                    *P4C3 = 0x26; 
+                    // Blue palette
+                    *P5C1 = 0x94; // Dark blue 
+                    *P5C2 = 0x97; // Light blue
+                    *P5C3 = 0xbc; // Turquoise 
+                                  // Rose palette
+                    *P6C1 = 0x44; // Dark Rose
+                    *P6C2 = 0x48; // Rose 
+                    *P6C3 = 0x4c; // Light Rose 
+                } else {
+                    // Beige palette
+                    *P4C1 = 0x12; 
+                    *P4C2 = 0x14; 
+                    *P4C3 = 0x16; 
+                    // Blue palette
+                    *P5C1 = 0x84; // Dark blue 
+                    *P5C2 = 0x87; // Light blue
+                    *P5C3 = 0xac; // Turquoise 
+                                  // Rose palette
+                    *P6C1 = 0x34; // Dark Rose
+                    *P6C2 = 0x38; // Rose 
+                    *P6C3 = 0x3c; // Light Rose 
+                }
+                // Grey palette 
+                *P7C1 = 0x04; // Dark gray
+                *P7C2 = 0x08; // Medium gray
+                *P7C3 = 0x0c; // Dark gray
+                scoreboard_and_music = 0;
             }
-            *P5C3 = 0x0e; 
-            *P6C1 = 0x0a; 
-            *P6C2 = 0x04; 
-            *P6C3 = 0x02; 
-        } else if (dli_counter == 1) {
-            // Switch to level1 palette
-            if (_ms_pal_detected) {
-                // Beige palette
-                *P4C1 = 0x22; 
-                *P4C2 = 0x24; 
-                *P4C3 = 0x26; 
-                // Blue palette
-                *P5C1 = 0x94; // Dark blue 
-                *P5C2 = 0x97; // Light blue
-                *P5C3 = 0xbc; // Turquoise 
-                              // Rose palette
-                *P6C1 = 0x44; // Dark Rose
-                *P6C2 = 0x48; // Rose 
-                *P6C3 = 0x4c; // Light Rose 
-            } else {
-                // Beige palette
-                *P4C1 = 0x12; 
-                *P4C2 = 0x14; 
-                *P4C3 = 0x16; 
-                // Blue palette
-                *P5C1 = 0x84; // Dark blue 
-                *P5C2 = 0x87; // Light blue
-                *P5C3 = 0xac; // Turquoise 
-                              // Rose palette
-                *P6C1 = 0x34; // Dark Rose
-                *P6C2 = 0x38; // Rose 
-                *P6C3 = 0x3c; // Light Rose 
-            }
-            // Grey palette 
-            *P7C1 = 0x04; // Dark gray
-            *P7C2 = 0x08; // Medium gray
-            *P7C3 = 0x0c; // Dark gray
-        } else {
-            *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
         }
-    } else {
-        *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
+        if (scoreboard_and_music) {
+            *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
+                          // Play the music
+            if (sfx_to_play) {
+                sfx_schedule(sfx_to_play);
+                sfx_to_play = NULL;
+            }
+            sfx_play();
+#ifdef POKEY_MUSIC
+            // This will switch to bank7
+            pokey_play();
+#endif
+            // Go back to the right rombank
+            *ROM_SELECT = rom_bank;
+        }
+        dli_counter++;
     }
-    dli_counter++;
 }
 
 void main()
 {
-    dli_counter = 0;
+    dli_counter = -1;
     scroll_background_counter1 = 0;
     scroll_background_counter2 = 0;
     button_pressed = 0;
+    rom_bank = 0;
+    sfx_to_play = NULL;
+
+    sfx_init();
+#ifdef POKEY_MUSIC
+    pokey_init();
+#endif
 
     copy_dobkeratops_to_ram();
     joystick_init();
     display_init();
     rtype_init();
     game_init();
+    
+    sparse_tiling_display();
+    multisprite_flip();
+    sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
+    sparse_tiling_display();
+    multisprite_flip();
+    
+    multisprite_enable_dli(13);
 
     do {
         if (level_progress_high < DOBKERATOPS_GETS_IN) {
-            scroll_background(4);
+            scroll_stars(4);
             sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
             level_progress_low++;
             if (level_progress_low == 32) {
@@ -649,27 +761,15 @@ void main()
                 }
                 level_progress_low = 0;
             }
-        } /*else {
-            char c = sparse_tiling_collision(208 - 14 + 6, 0, 15);
-            if (c != -1) {
-                score = 1000 + c;
-                update_score = 1;
-            }
-        } */
-        else {
+        } else {
             if (level_progress_low == 0) {
                 if (level_progress_high == DOBKERATOPS_GETS_IN) {
+                    sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
                     multisprite_enable_dli(1);
                     multisprite_enable_dli(12);
-                    multisprite_clear();
-                    scoreboard_display();
-                    multisprite_save();
-                    sparse_tiling_scroll(1); // Scroll 1 pixels to the right to align this buffer to the next 
-                    sparse_tiling_display();
-                    multisprite_flip();
-                    sparse_tiling_display();
                 }
             }
+            scroll_stars(1);
             char x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
             draw_dobkeratops(x, 16, counter_tail);
             counter_tail++;

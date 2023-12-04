@@ -121,7 +121,7 @@ void interrupt dli()
     multisprite_set_charbase(blue_objects1);
 #endif
 #ifdef POKEY_MUSIC 
-    if (music_on) asm("JSR rmt_play", 3);
+    if (music_on) pokey_play();
 #endif
     sfx_play();
     if (multisprite_pal_frame_skip())

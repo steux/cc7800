@@ -50,7 +50,7 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 signed char _ms_tmp3;
-char _ms_tmp4, _ms_tmp5;
+ramchip char _ms_tmp4, _ms_tmp5;
 char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 
 #ifdef BIDIR_VERTICAL_SCROLLING
@@ -796,6 +796,22 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                 _ms_tmpptr[Y++] = ((gfx) >> 8); \
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+            }\
+        }
+
+#define multisprite_display_sprite_aligned_fast(x, y, gfx, width, palette) \
+	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_LIMIT) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
             }\

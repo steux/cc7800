@@ -13,7 +13,7 @@
 char _libc_tmp, _libc_tmp2;
 short _libc_tmpshort;
 char *_libc_tmpptr, *_libc_tmpptr2;
-char _save_x, _save_y;
+ramchip char _save_x, _save_y;
 
 #define itoa(val,str,radix) \
     _libc_tmpshort = val; \
