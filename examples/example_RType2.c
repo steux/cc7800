@@ -10,7 +10,7 @@ bank7 {
 #ifdef POKEY_MUSIC
 #define POKEY_AT_450
 #include "rmtplayer.h"
-#include "RMT_RType.asm"
+#include "RMT_RType.c"
 #endif
 }
 
@@ -632,6 +632,7 @@ void background_fade2()
 ramchip char dli_counter;
 ramchip char rom_bank;
 ramchip char scoreboard_and_music;
+ramchip signed char time1, time2;
 
 void interrupt dli()
 {
@@ -664,6 +665,7 @@ void interrupt dli()
                 *P6C2 = 0x04; 
                 *P6C3 = 0x02; 
                 scoreboard_and_music = 0;
+                dli_counter = 1;
             } else if (dli_counter == 1) {
                 // Switch to level1 palette
                 if (_ms_pal_detected) {
@@ -698,11 +700,18 @@ void interrupt dli()
                 *P7C2 = 0x08; // Medium gray
                 *P7C3 = 0x0c; // Dark gray
                 scoreboard_and_music = 0;
+                dli_counter = 2;
             }
         }
         if (scoreboard_and_music) {
+            // Set the RIOT timer to 32
+            do {
+                *TIM64T = 32 + 10;
+            } while (*INTIM != 31 + 10);
+            
             *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
-                          // Play the music
+
+            // Play the music
             if (sfx_to_play) {
                 sfx_schedule(sfx_to_play);
                 sfx_to_play = NULL;
@@ -712,10 +721,13 @@ void interrupt dli()
             // This will switch to bank7
             pokey_play();
 #endif
+            // Wait for the end of timer
+            while (*INTIM >= 10); // We may miss the 0 due to DMA. Take a 10 margin
+
             // Go back to the right rombank
             *ROM_SELECT = rom_bank;
+            dli_counter = -1;
         }
-        dli_counter++;
     }
 }
 
