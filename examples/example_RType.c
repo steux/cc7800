@@ -114,7 +114,7 @@ void step()
     }
 
     if (draw_R9) {
-        multisprite_display_small_sprite_ex(R9_xpos, R9_ypos, R9, 8, 4, 4, 1);
+        multisprite_display_small_sprite_ex(R9_xpos, R9_ypos, R9, 8, 0, 4, 1);
     }
 }
 
@@ -277,7 +277,29 @@ void rtype_init()
 {
     sparse_tiling_init(tilemap_level1_data_ptrs);
     multisprite_set_charbase(brown_tiles1);
+    
+    // Sprites palette
+    // Fire
+    *P0C1 = multisprite_color(0x37); // Orange
+    *P0C2 = multisprite_color(0x1c); // Yellow 
+    *P0C3 = 0x0f; // White
+    
+    // Blue & Red palette
+    *P1C1 = multisprite_color(0x84); // Dark blue 
+    *P1C2 = multisprite_color(0x34); // Red
+    *P1C3 = multisprite_color(0xac); // Turquoise 
+
+    // Grey palette
+    *P2C1 = 0x04; // Dark gray
+    *P2C2 = 0x08; // Medium gray
+    *P2C3 = 0x0c; // Dark gray
+
+    // Green (background) color 
+    *P3C1 = multisprite_color(0xd0); 
+    *P3C2 = multisprite_color(0xd2); 
+    *P3C3 = multisprite_color(0xd1); 
    
+    // Scrolling level 1 palette
     // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
     *P3C2 = multisprite_color(0xd2); 
@@ -303,13 +325,13 @@ void rtype_init()
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
 
-    multisprite_display_tiles(3 * 4, 14, oneup, 3, 5);
-    multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 7);
-    multisprite_display_tiles(16 * 4, 14, high, 4, 5);
-    multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 7);
-    multisprite_display_tiles(8 * 4, 13, beam, 4, 5);
-    multisprite_display_tiles(13 * 4, 13, gauge_out, 17, 7);
-    multisprite_display_tiles(14 * 4, 13, gauge_in, 1, 5);
+    multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_in, 1, 1, 0);
+    multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_out, 18, 2, 0);
+    multisprite_display_tiles(3 * 4, 14, oneup, 3, 2);
+    multisprite_display_tiles(7 * 4, 14, display_score_str, 5, 0);
+    multisprite_display_tiles(16 * 4, 14, high, 4, 2);
+    multisprite_display_tiles(21 * 4, 14, display_high_score_str, 5, 0);
+    multisprite_display_tiles(8 * 4, 13, beam, 4, 2);
    
     // Background display
     char c, y = 0;
