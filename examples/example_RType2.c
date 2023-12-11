@@ -23,6 +23,9 @@ bank7 {
 // Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
 #include "example_RType_level1_mirror.c"
 
+const signed short dx[48] = {300, 289, 259, 212, 149, 77, 0, -77, -150, -212, -259, -289, -300, -289, -259, -212, -149, -77, 0, 77, 149, 212, 259, 289, 450, 434, 389, 318, 224, 116, 0, -116, -225, -318, -389, -434, -450, -434, -389, -318, -224, -116, 0, 116, 224, 318, 389, 434};
+const signed short dy[48] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240, 124, 0, -124, -239, -339, -415, -463, -480, -463, -415, -339, -240, -124, 0, 186, 360, 509, 623, 695, 720, 695, 623, 509, 360, 186, 0, -186, -359, -509, -623, -695, -720, -695, -623, -509, -360, -186};
+
 bank7 {
 // Generated from sprites7800 RType_font.yaml
 #include "example_RType_font.c"
@@ -69,6 +72,24 @@ ramchip char missile_first, missile_last;
 ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_state[MISSILES_NB_MAX];
 ramchip char circle_first, circle_last;
 
+#define ENEMY_NB_MAX 10
+#define ENEMY_BIG 128
+#define ENEMY_HIT 128
+const char enemy_width[1] = { 24 };
+const char enemy_height[1] = { 48 };
+ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_state[ENEMY_NB_MAX], enemy_lives[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
+ramchip char enemy_first, enemy_last;
+
+#define BULLETS_NB_MAX 32 
+ramchip short bullet_xpos[BULLETS_NB_MAX], bullet_ypos[BULLETS_NB_MAX];
+ramchip char bullet_direction[BULLETS_NB_MAX];
+ramchip char bullet_first, bullet_last;
+
+#define BIG_EXPLOSIONS_NB_MAX 4
+ramchip char big_explosion_xpos[BIG_EXPLOSIONS_NB_MAX], big_explosion_ypos[BIG_EXPLOSIONS_NB_MAX];
+ramchip char big_explosion_counter[BIG_EXPLOSIONS_NB_MAX];
+ramchip char big_explosion_first, big_explosion_last;
+
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
 ramchip char R9_satellite_counter, R9_satellite_state;
@@ -79,6 +100,7 @@ const char *R9_charging_sequence[] = {beam1, beam2, beam3};
 #define R9_CIRCLE_FIRE  4
 #define R9_CHARGING     8
 
+ramchip char nb_lives;
 ramchip unsigned int score, high_score;
 ramchip char update_score;
 ramchip char display_score_str[5];
@@ -86,10 +108,15 @@ ramchip char display_high_score_str[5];
 ramchip char level_progress_low, level_progress_high;
 ramchip char counter_tail;
 
+ramchip char game_state;
+#define STATE_RUNNING  0
+#define STATE_GAMEOVER 1
+
 ramchip char *sfx_to_play;
 
 void game_init()
 {
+    nb_lives = 3;
     score = 0;
     high_score = 0;
     update_score = 1;
@@ -101,8 +128,14 @@ void game_init()
     missile_last = 0;
     circle_first = 0;
     circle_last = 0;
+    enemy_first = 0;
+    enemy_last = 0;
+    bullet_first = 0;
+    bullet_last = 0;
+    big_explosion_first = 0;
+    big_explosion_last = 0;
 
-    // Initialize spaceship state
+    // Initialize R9 state
     R9_xpos = 20;
     R9_ypos = 80;
     R9_state = R9_CIRCLE_FIRE; // 1
@@ -114,6 +147,57 @@ void game_init()
 
     // Initialize boss
     counter_tail = 0;
+
+    game_state = STATE_RUNNING;
+}
+
+void draw_gameover()
+{
+    char i, x, xx = (R9_state_counter << 1), *ptr;
+    x = xx - 36;
+    ptr = game;
+    for (i = 0; i != 2; i++) {
+        multisprite_display_sprite_ex(x, ((224 - 16 - 16) / 2), ptr, 9, 1, 0);
+        ptr = over;
+        x = 160 - xx;
+    }
+    R9_state_counter++;
+    if (R9_state_counter == 41) {
+        R9_state_counter = 40;
+        game_state = STATE_GAMEOVER;
+    }
+}
+
+void big_explosion(char x, char y)
+{
+    sfx_to_play = sfx_bigboom;
+    char xp = x - 12;
+    char yp = y - 24;
+    if (yp < 0) yp = 0; else if (yp >= 224 - 16 - 49) yp = 224 - 16 - 50;
+    X = big_explosion_last++;
+    if (big_explosion_last == BIG_EXPLOSIONS_NB_MAX) big_explosion_last = 0;
+    if (big_explosion_last != big_explosion_first) {
+        big_explosion_xpos[X] = xp;
+        big_explosion_ypos[X] = yp;
+        big_explosion_counter[X] = 20;
+    } else big_explosion_last = X;
+}
+
+void lose_one_life()
+{
+    // Explosion
+    nb_lives--;
+    big_explosion(R9_xpos + 8, R9_ypos + 6);
+    if (nb_lives) {
+        R9_state = 1;
+        R9_state_counter = 100;
+    } else {
+        nb_lives = 3;
+        R9_state = 3; // Gameover
+    }
+    Y = (-(nb_lives << 1)) & 0x1f;
+    _ms_b0_dl13[X = 8] = Y; // 13th zone
+    _ms_b1_dl13[X] = Y; // on the second buffer
 }
 
 void step()
@@ -229,8 +313,7 @@ void step()
         // Check collision with background
         char c = sparse_tiling_collision(R9_ypos + 6, R9_xpos, R9_xpos + 15);
         if (c != -1) {
-            R9_state = 1;
-            R9_state_counter = 50;
+            lose_one_life();
             score = c;
             update_score = 1;
         }
@@ -241,7 +324,7 @@ void step()
         if (R9_state_counter == 0) {
             R9_state = 0;
         }
-    } else if (R9_state == 2) {
+    } else if (R9_state == 3) {
         draw_R9 = 0;
     }
 
@@ -274,6 +357,77 @@ void step()
             }
         }
     }
+    
+    // Display big explosions
+    for (i = big_explosion_first; i != big_explosion_last; i++) {
+        char xbig_explosion, ybig_explosion;
+        if (i == BIG_EXPLOSIONS_NB_MAX) {
+            i = 0;
+            if (big_explosion_last == 0) break;
+        }
+        X = i;
+        if (big_explosion_counter[X]) {
+            char *gfx;
+            xbig_explosion = big_explosion_xpos[X];
+            ybig_explosion = big_explosion_ypos[X];
+            big_explosion_counter[X]--;
+            if (big_explosion_counter[X] >= 16) {
+                gfx = explosion1;
+            } else if (big_explosion_counter[X] >= 12) {
+                gfx = explosion2;
+            } else if (big_explosion_counter[X] >= 8) {
+                gfx = explosion3;
+            } else if (big_explosion_counter[X] >= 4) {
+                gfx = explosion4;
+            } else gfx = explosion5;
+            multisprite_display_big_sprite(xbig_explosion, ybig_explosion, gfx, 6, 0, 3, 0);
+        } else {
+            if (X == big_explosion_first) {
+                do {
+                    X++;
+                    if (X == BIG_EXPLOSIONS_NB_MAX) X = 0;
+                } while (X != big_explosion_last && big_explosion_counter[X] == 0);
+                big_explosion_first = X;
+            }
+        }
+    }
+    
+    if (R9_state != 3) { // If it's not gameover
+        // Draw bullets (last, so if there is a DMA issue, it doesn't prevent R9s to be displayed)
+        for (i = bullet_first; i != bullet_last; i++) {
+            char xbullet, ybullet;
+            if (i == BULLETS_NB_MAX) {
+                i = 0;
+                if (bullet_last == 0) break;
+            }
+            X = i;
+            Y = bullet_direction[X];
+            if (Y != 255) {
+                bullet_xpos[X] += dx[Y];
+                bullet_ypos[X] += dy[Y];
+                xbullet = bullet_xpos[X] >> 8;
+                ybullet = bullet_ypos[X] >> 8;
+                if (xbullet < 5 || xbullet >= 156 || ybullet < 5 || ybullet >= MS_YMAX - 20 - 16) {
+                    bullet_direction[X] = 255; // Removed
+                    if (X == bullet_first) {
+                        do {
+                            X++;
+                            if (X == BULLETS_NB_MAX) X = 0;
+                        } while (X != bullet_last && bullet_direction[X] == 255);
+                        bullet_first = X;
+                    }
+                } else {
+                    multisprite_display_small_sprite_ex(xbullet, ybullet, bullet1, 1, 3, 8, 0); 
+                    if (R9_state == 0) {
+                        multisprite_compute_collision(xbullet, ybullet, 4, 8, R9_xpos, R9_ypos, 16, 14, collision_bullet1_R9);
+                        if (multisprite_collision_detected) {
+                            lose_one_life();
+                        }
+                    } 
+                }
+            }
+        }
+    } else draw_gameover();
 }
 
 void fire()
@@ -535,9 +689,8 @@ void rtype_init()
     *P2C2 = 0x08; // Medium gray
     *P2C3 = 0x0c; // Dark gray
 
-    // Green (background) color 
     *P3C1 = multisprite_color(0xd0); 
-    *P3C2 = multisprite_color(0xd2); 
+    *P3C2 = multisprite_color(0x87); // Light blue
     *P3C3 = multisprite_color(0xd1); 
    
     // Background display

@@ -607,7 +607,7 @@ void step()
             if (X == big_explosion_first) {
                 do {
                     X++;
-                    if (X == EXPLOSIONS_NB_MAX) X = 0;
+                    if (X == BIG_EXPLOSIONS_NB_MAX) X = 0;
                 } while (X != big_explosion_last && big_explosion_counter[X] == 0);
                 big_explosion_first = X;
             }
