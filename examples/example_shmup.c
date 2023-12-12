@@ -314,7 +314,7 @@ void display_boss(char x, char y, char palette)
 
 bank1 void draw_enemies()
 {
-    int i, x, y, palette;
+    char i, x, y, palette;
     for (i = enemy_first; i != enemy_last; i++) {
         if (i == ENEMY_NB_MAX) {
             i = 0; if (enemy_last == 0) break;

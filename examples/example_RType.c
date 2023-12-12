@@ -317,6 +317,7 @@ void rtype_init()
     *P7C2 = 0x08; // Medium gray
     *P7C3 = 0x0c; // Dark gray
 
+    // Scoreboard display
     multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_in, 1, 1, 0);
     multisprite_display_sprite_aligned(13 * 4, 13 * 16, beam_meter_out, 18, 2, 0);
     multisprite_display_tiles(3 * 4, 14, oneup, 3, 2);

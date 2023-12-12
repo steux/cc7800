@@ -73,10 +73,6 @@ ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_
 ramchip char circle_first, circle_last;
 
 #define ENEMY_NB_MAX 10
-#define ENEMY_BIG 128
-#define ENEMY_HIT 128
-const char enemy_width[1] = { 24 };
-const char enemy_height[1] = { 48 };
 ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_state[ENEMY_NB_MAX], enemy_lives[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
 ramchip char enemy_first, enemy_last;
 
@@ -200,6 +196,80 @@ void lose_one_life()
     _ms_b1_dl13[X] = Y; // on the second buffer
 }
 
+const signed char sin[120] = {0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 27, 28, 29, 29, 29, 30, 30, 30, 30, 30, 30, 30, 29, 29, 29, 28, 27, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 16, 15, 14, 12, 11, 9, 8, 6, 5, 3, 2, 0, -2, -3, -5, -6, -8, -9, -11, -12, -14, -15, -16, -18, -19, -20, -21, -22, -23, -24, -25, -26, -27, -27, -28, -29, -29, -29, -30, -30, -30, -30, -30, -30, -30, -29, -29, -29, -28, -27, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -16, -15, -14, -12, -11, -9, -8, -6, -5, -3, -2};
+const char *patapata_sprites[4] = {patapata1, patapata2, patapata3, patapata2};
+
+void spawn_papapatas()
+{
+    char c, i = 0;
+    for (c = 0; c != 8; i += 3, c++) {
+        X = enemy_last++;
+        if (enemy_last == ENEMY_NB_MAX) enemy_last = 0;
+        if (enemy_last != enemy_first) {
+            enemy_xpos[X] = 160;
+            enemy_ypos[X] = 100;
+            enemy_type[X] = 0;
+            enemy_state[X] = 0;
+            enemy_lives[X] = i;
+            enemy_counter1[X] = 0;
+            enemy_counter2[X] = 0;
+        } else enemy_last = X;
+    }
+}
+
+void draw_enemies()
+{
+    char i, x, y, destroyed, display_it;
+    char *gfx;
+    for (i = enemy_first; i != enemy_last; i++) {
+        if (i == ENEMY_NB_MAX) {
+            i = 0; if (enemy_last == 0) break;
+        }
+        X = i;
+        if (enemy_type[X] != -1) {
+            destroyed = 0;
+            display_it = 0;
+            if (enemy_type[X] == 0) {
+                // This is a Pata-pata
+                enemy_counter1[X]++;
+                if (enemy_counter1[X] == 5) {
+                    if (enemy_lives[X]) {
+                        enemy_lives[X]--;
+                    } else {
+                        enemy_state[X]++;
+                        if (enemy_state[X] == 4) enemy_state[X] = 0;
+                    }
+                    enemy_counter1[X] = 0;
+                }
+                if (!enemy_lives[X]) {
+                    x = enemy_xpos[X];
+                    if (x == 255 - 16) destroyed = 1; // Out of screen
+                    /*if (enemy_counter1[X] & 1)*/ {
+                        enemy_xpos[X]--;
+                    }
+                    y = enemy_ypos[X] + (sin[Y = enemy_counter2[X]] >> 1);
+                    enemy_counter2[X]++;
+                    if (enemy_counter2[X] == 120) {
+                        enemy_counter2[X] = 0;
+                    }
+                    display_it = 1;
+                }
+            }
+            if (destroyed) {
+                enemy_state[X] = -1; // Removed
+                do {
+                    X++;
+                    if (X == ENEMY_NB_MAX) X = 0;
+                } while (X != enemy_last && enemy_state[X] == -1);
+                enemy_first = X;
+            } else if (display_it) {
+                gfx = patapata_sprites[Y = enemy_state[X]];
+                multisprite_display_sprite_ex(x, y, gfx, 2, 1, 0);
+            }
+        }
+    }
+}
+
 void step()
 {
     char x, y, i, c, state;
@@ -278,6 +348,9 @@ void step()
             }
         }
     }
+
+    // Draw enemies
+    draw_enemies();
 
     // Draw missiles
     for (i = missile_first; i != missile_last; i++) {
@@ -855,6 +928,9 @@ void main()
             if (level_progress_low == 32) {
                 level_progress_high++;
                 level_progress_low = 0;
+                if (level_progress_high == 3) {
+                    spawn_papapatas();
+                }
             }
         } else {
             if (level_progress_low == 0) {
