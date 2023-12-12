@@ -18,18 +18,10 @@
 #include "example_RType_font.c"
 
 // DLI management
-ramchip char save_acc, save_x, save_y;
-
 void interrupt dli()
 {
-    store(save_acc);
-    save_x = X;
-    save_y = Y;
     multisprite_set_charbase(alphabet);
     *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
-    X = save_x;
-    Y = save_y;
-    load(save_acc);
 }
 
 // Game state management

@@ -108,13 +108,8 @@ void display_score_update()
     } while (Y);
 }
 
-ramchip char save_acc, save_x, save_y;
-
 void interrupt dli()
 {
-    store(save_acc);
-    save_x = X;
-    save_y = Y;
 #ifdef MULTISPRITE_USE_VIDEO_MEMORY
     multisprite_set_charbase(digits);
 #else
@@ -126,9 +121,6 @@ void interrupt dli()
     sfx_play();
     if (multisprite_pal_frame_skip())
         sfx_play(); // Advance twice every 5 frames (to cope with 60Hz instead of 50Hz)
-    X = save_x;
-    Y = save_y;
-    load(save_acc);
 }
 
 INIT_BANK new_game()
