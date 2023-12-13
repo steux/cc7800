@@ -66,7 +66,7 @@ const char sfx_bigboom[261] = {
 #define MISSILES_SPEED 4 
 #define MISSILES_NB_MAX 5
 ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX], missile_type[MISSILES_NB_MAX];
-ramchip char missile_first, missile_last;
+ramchip char nb_missiles, missile_first, missile_last;
 
 #define CIRCLES_NB_MAX 5
 ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_state[MISSILES_NB_MAX];
@@ -120,6 +120,7 @@ void game_init()
     level_progress_low = 0;
 
     // Init game state variables
+    nb_missiles = 0;
     missile_first = 0;
     missile_last = 0;
     circle_first = 0;
@@ -272,7 +273,7 @@ void draw_enemies()
 
 void step()
 {
-    char x, y, i, c, state;
+    char x, y, i, c, d, state;
     char *gfx;
     char draw_R9;
     
@@ -353,10 +354,10 @@ void step()
     draw_enemies();
 
     // Draw missiles
-    for (i = missile_first; i != missile_last; i++) {
+    d = nb_missiles; // Copy
+    for (i = missile_first, c = 0; c != d; i++, c++) {
         if (i == MISSILES_NB_MAX) {
             i = 0;
-            if (missile_last == 0) break;
         }
         if (missile_xpos[X = i] != -1) {
             y = missile_ypos[X = i];
@@ -364,11 +365,14 @@ void step()
             if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
                 // Out of screen or collided with background
                 missile_xpos[X = i] = -1; // Removed
-                do {
-                    X++;
-                    if (X == MISSILES_NB_MAX) X = 0;
-                } while (X != missile_last && missile_xpos[X] == -1);
-                missile_first = X;
+                if (X == missile_first) {
+                    do {
+                        nb_missiles--;
+                        X++;
+                        if (X == MISSILES_NB_MAX) X = 0;
+                    } while (X != missile_last && missile_xpos[X] == -1);
+                    missile_first = X;
+                }
             } else {
                 missile_xpos[X = i] = x;
                 // Draw missile
@@ -515,9 +519,10 @@ void fire()
             circle_state[X] = 0;
         } else circle_last = X;
     } else {
-        X = missile_last++;
-        if (missile_last == MISSILES_NB_MAX) missile_last = 0;
-        if (missile_last != missile_first) {
+        if (nb_missiles != MISSILES_NB_MAX) {
+            nb_missiles++;
+            X = missile_last++;
+            if (missile_last == MISSILES_NB_MAX) missile_last = 0;
             missile_xpos[X] = R9_xpos + 8;
             if (R9_charging_counter >= 16) {
                 missile_ypos[X] = R9_ypos;
@@ -526,7 +531,7 @@ void fire()
                 missile_ypos[X] = R9_ypos + 6;
                 missile_type[X] = 0;
             }
-        } else missile_last = X;
+        }
     }
 }
 
