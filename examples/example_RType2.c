@@ -66,7 +66,7 @@ const char sfx_bigboom[261] = {
 #define MISSILES_SPEED 4 
 #define MISSILES_NB_MAX 5
 ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX], missile_type[MISSILES_NB_MAX];
-ramchip char nb_missiles, missile_first, missile_last;
+ramchip char nb_missiles, missile_first;
 
 #define CIRCLES_NB_MAX 5
 ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_state[MISSILES_NB_MAX];
@@ -122,7 +122,6 @@ void game_init()
     // Init game state variables
     nb_missiles = 0;
     missile_first = 0;
-    missile_last = 0;
     circle_first = 0;
     circle_last = 0;
     enemy_first = 0;
@@ -370,7 +369,7 @@ void step()
                         nb_missiles--;
                         X++;
                         if (X == MISSILES_NB_MAX) X = 0;
-                    } while (X != missile_last && missile_xpos[X] == -1);
+                    } while (nb_missiles && missile_xpos[X] == -1);
                     missile_first = X;
                 }
             } else {
@@ -509,6 +508,7 @@ void step()
 
 void fire()
 {
+    char last;
     sfx_to_play = sfx_pewpew;
     if (R9_state & R9_CIRCLE_FIRE) {
         X = circle_last++;
@@ -520,10 +520,9 @@ void fire()
         } else circle_last = X;
     } else {
         if (nb_missiles != MISSILES_NB_MAX) {
-            nb_missiles++;
-            X = missile_last++;
-            if (missile_last == MISSILES_NB_MAX) missile_last = 0;
-            missile_xpos[X] = R9_xpos + 8;
+            last = missile_first + nb_missiles++;
+            if (last >= MISSILES_NB_MAX) last -= MISSILES_NB_MAX; 
+            missile_xpos[X = last] = R9_xpos + 8;
             if (R9_charging_counter >= 16) {
                 missile_ypos[X] = R9_ypos;
                 missile_type[X] = 1;
