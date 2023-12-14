@@ -220,12 +220,52 @@ void spawn_papapatas()
     }
 }
 
+// Input: X = missile index
+void destroy_missile()
+{
+    missile_xpos[X] = -1; // Removed
+    if (X == missile_first) {
+        do {
+            nb_missiles--;
+            X++;
+            if (X == MISSILES_NB_MAX) X = 0;
+        } while (nb_missiles && missile_xpos[X] == -1);
+        missile_first = X;
+    }
+}
+
+char check_enemy_collision(char xe, char ye)
+{
+    char i, c, x, y, collision = 0; 
+    for (i = missile_first, c = nb_missiles; c != 0; i++, c--) {
+        if (i == MISSILES_NB_MAX) {
+            i = 0;
+        }
+        if (missile_xpos[X = i] != -1) {
+            y = missile_ypos[X = i];
+            x = missile_xpos[X];
+            if (missile_type[X]) { // Big missile
+                multisprite_compute_box_collision(xe, ye, 8, 12, x, y, 32, 16);
+            } else {
+                multisprite_compute_box_collision(xe, ye, 8, 12, x, y, 8, 4);
+            }
+            if (multisprite_collision_detected) {
+                collision = 1;
+                if (!missile_type[X]) {
+                    // It's a small missile. Destroy it
+                    destroy_missile();  
+                }
+            }
+        }
+    }
+    return collision;
+}
+
 void draw_enemies()
 {
-    char i, c, d, x, y, destroyed, display_it;
+    char i, c, x, y, destroyed, display_it;
     char *gfx;
-    d = nb_enemies; // Copy
-    for (i = enemy_first, c = 0; c != nb_enemies ; i++, c++) {
+    for (i = enemy_first, c = nb_enemies; c != 0 ; i++, c--) {
         if (i == ENEMY_NB_MAX) {
             i = 0;
         }
@@ -248,15 +288,20 @@ void draw_enemies()
                 if (!enemy_lives[X]) {
                     x = enemy_xpos[X];
                     if (x == 255 - 16) destroyed = 1; // Out of screen
-                    /*if (enemy_counter1[X] & 1)*/ {
-                        enemy_xpos[X]--;
-                    }
+                    enemy_xpos[X]--;
                     y = enemy_ypos[X] + (sin[Y = enemy_counter2[X]] >> 1);
                     enemy_counter2[X]++;
                     if (enemy_counter2[X] == 120) {
                         enemy_counter2[X] = 0;
                     }
-                    display_it = 1;
+                    // Check collisions with circles or missiles
+                    if (check_enemy_collision(x, y + 2)) {
+                        // TODO: Enemy explosion
+                        destroyed = 1;
+                    } else {
+                        display_it = 1;
+                    }
+                    X = i; // Restore X register destroyed by check_enemy_collision function
                 }
             }
             if (destroyed) {
@@ -279,13 +324,12 @@ void draw_enemies()
 
 void step()
 {
-    char x, y, i, j, c, d, state;
+    char x, y, i, j, c, state;
     char *gfx;
     char draw_R9;
     
     // Draw circles
-    d = nb_circles; // Copy
-    for (i = circle_first, j = 0; j != d; i++, j++) {
+    for (i = circle_first, j = nb_circles; j != 0; i++, j--) {
         if (i == CIRCLES_NB_MAX) {
             i = 0;
         }
@@ -363,25 +407,17 @@ void step()
     draw_enemies();
 
     // Draw missiles
-    d = nb_missiles; // Copy
-    for (i = missile_first, c = 0; c != d; i++, c++) {
+    for (i = missile_first, c = nb_missiles; c != 0; i++, c--) {
         if (i == MISSILES_NB_MAX) {
             i = 0;
         }
         if (missile_xpos[X = i] != -1) {
-            y = missile_ypos[X = i];
+            y = missile_ypos[X];
             x = missile_xpos[X] + MISSILES_SPEED;
             if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
                 // Out of screen or collided with background
-                missile_xpos[X = i] = -1; // Removed
-                if (X == missile_first) {
-                    do {
-                        nb_missiles--;
-                        X++;
-                        if (X == MISSILES_NB_MAX) X = 0;
-                    } while (nb_missiles && missile_xpos[X] == -1);
-                    missile_first = X;
-                }
+                X = i;
+                destroy_missile();
             } else {
                 missile_xpos[X = i] = x;
                 // Draw missile
@@ -445,8 +481,7 @@ void step()
     }
     
     // Display big explosions
-    d = nb_big_explosions; // Copy
-    for (i = big_explosion_first, c = 0; c != d; i++, c++) {
+    for (i = big_explosion_first, c = nb_big_explosions; c != 0; i++, c--) {
         char xbig_explosion, ybig_explosion;
         if (i == BIG_EXPLOSIONS_NB_MAX) {
             i = 0;
@@ -481,8 +516,7 @@ void step()
     
     if (R9_state != 3) { // If it's not gameover
         // Draw bullets (last, so if there is a DMA issue, it doesn't prevent R9s to be displayed)
-        d = nb_bullets;
-        for (i = bullet_first, c = 0; c != d; i++, c++) {
+        for (i = bullet_first, c = nb_bullets; c != 0; i++, c--) {
             char xbullet, ybullet;
             if (i == BULLETS_NB_MAX) {
                 i = 0;
