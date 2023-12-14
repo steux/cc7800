@@ -1,5 +1,6 @@
 #include "string.h"
-#define _MS_DL_MALLOC(line) ((line < 8)?64:(line < 13)?128:32) 
+#define _MS_DL_MALLOC(line) ((line < 13)?96:32) 
+//#define _MS_DL_MALLOC(line) ((line < 8)?64:(line < 13)?128:32) 
 #define HORIZONTAL_SCROLLING
 #define _MS_BOTTOM_SCROLLING_ZONE 1
 #define MULTISPRITE_USE_VIDEO_MEMORY
@@ -70,21 +71,21 @@ ramchip char nb_missiles, missile_first;
 
 #define CIRCLES_NB_MAX 5
 ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_state[MISSILES_NB_MAX];
-ramchip char circle_first, circle_last;
+ramchip char nb_circles, circle_first;
 
 #define ENEMY_NB_MAX 10
 ramchip char enemy_xpos[ENEMY_NB_MAX], enemy_ypos[ENEMY_NB_MAX], enemy_type[ENEMY_NB_MAX], enemy_state[ENEMY_NB_MAX], enemy_lives[ENEMY_NB_MAX], enemy_counter1[ENEMY_NB_MAX], enemy_counter2[ENEMY_NB_MAX];
-ramchip char enemy_first, enemy_last;
+ramchip char nb_enemies, enemy_first;
 
 #define BULLETS_NB_MAX 32 
 ramchip short bullet_xpos[BULLETS_NB_MAX], bullet_ypos[BULLETS_NB_MAX];
 ramchip char bullet_direction[BULLETS_NB_MAX];
-ramchip char bullet_first, bullet_last;
+ramchip char nb_bullets, bullet_first;
 
 #define BIG_EXPLOSIONS_NB_MAX 4
 ramchip char big_explosion_xpos[BIG_EXPLOSIONS_NB_MAX], big_explosion_ypos[BIG_EXPLOSIONS_NB_MAX];
 ramchip char big_explosion_counter[BIG_EXPLOSIONS_NB_MAX];
-ramchip char big_explosion_first, big_explosion_last;
+ramchip char nb_big_explosions, big_explosion_first;
 
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
@@ -122,14 +123,14 @@ void game_init()
     // Init game state variables
     nb_missiles = 0;
     missile_first = 0;
+    nb_circles = 0;
     circle_first = 0;
-    circle_last = 0;
+    nb_enemies = 0;
     enemy_first = 0;
-    enemy_last = 0;
+    nb_bullets = 0;
     bullet_first = 0;
-    bullet_last = 0;
+    nb_big_explosions = 0;
     big_explosion_first = 0;
-    big_explosion_last = 0;
 
     // Initialize R9 state
     R9_xpos = 20;
@@ -166,17 +167,19 @@ void draw_gameover()
 
 void big_explosion(char x, char y)
 {
+    char last;
     sfx_to_play = sfx_bigboom;
     char xp = x - 12;
     char yp = y - 24;
     if (yp < 0) yp = 0; else if (yp >= 224 - 16 - 49) yp = 224 - 16 - 50;
-    X = big_explosion_last++;
-    if (big_explosion_last == BIG_EXPLOSIONS_NB_MAX) big_explosion_last = 0;
-    if (big_explosion_last != big_explosion_first) {
+    if (nb_big_explosions != BIG_EXPLOSIONS_NB_MAX) {
+        last = big_explosion_first + nb_big_explosions++;
+        if (last >= BIG_EXPLOSIONS_NB_MAX) last -= BIG_EXPLOSIONS_NB_MAX; 
+        circle_xpos[X = last] = R9_xpos + 20;
         big_explosion_xpos[X] = xp;
         big_explosion_ypos[X] = yp;
         big_explosion_counter[X] = 20;
-    } else big_explosion_last = X;
+    }
 }
 
 void lose_one_life()
@@ -201,29 +204,30 @@ const char *patapata_sprites[4] = {patapata1, patapata2, patapata3, patapata2};
 
 void spawn_papapatas()
 {
-    char c, i = 0;
+    char c, last, i = 0;
     for (c = 0; c != 8; i += 3, c++) {
-        X = enemy_last++;
-        if (enemy_last == ENEMY_NB_MAX) enemy_last = 0;
-        if (enemy_last != enemy_first) {
-            enemy_xpos[X] = 160;
+        if (nb_enemies != ENEMY_NB_MAX) {
+            last = enemy_first + nb_enemies++;
+            if (last >= ENEMY_NB_MAX) last -= ENEMY_NB_MAX; 
+            enemy_xpos[X = last] = 160;
             enemy_ypos[X] = 100;
             enemy_type[X] = 0;
             enemy_state[X] = 0;
             enemy_lives[X] = i;
             enemy_counter1[X] = 0;
             enemy_counter2[X] = 0;
-        } else enemy_last = X;
+        }
     }
 }
 
 void draw_enemies()
 {
-    char i, x, y, destroyed, display_it;
+    char i, c, d, x, y, destroyed, display_it;
     char *gfx;
-    for (i = enemy_first; i != enemy_last; i++) {
+    d = nb_enemies; // Copy
+    for (i = enemy_first, c = 0; c != nb_enemies ; i++, c++) {
         if (i == ENEMY_NB_MAX) {
-            i = 0; if (enemy_last == 0) break;
+            i = 0;
         }
         X = i;
         if (enemy_type[X] != -1) {
@@ -256,12 +260,15 @@ void draw_enemies()
                 }
             }
             if (destroyed) {
-                enemy_state[X] = -1; // Removed
-                do {
-                    X++;
-                    if (X == ENEMY_NB_MAX) X = 0;
-                } while (X != enemy_last && enemy_state[X] == -1);
-                enemy_first = X;
+                enemy_type[X] = -1; // Removed
+                if (X == enemy_first) {
+                    do {
+                        nb_enemies--;
+                        X++;
+                        if (X == ENEMY_NB_MAX) X = 0;
+                    } while (nb_enemies && enemy_type[X] == -1);
+                    enemy_first = X;
+                }
             } else if (display_it) {
                 gfx = patapata_sprites[Y = enemy_state[X]];
                 multisprite_display_sprite_ex(x, y, gfx, 2, 1, 0);
@@ -272,15 +279,15 @@ void draw_enemies()
 
 void step()
 {
-    char x, y, i, c, d, state;
+    char x, y, i, j, c, d, state;
     char *gfx;
     char draw_R9;
     
     // Draw circles
-    for (i = circle_first; i != circle_last; i++) {
+    d = nb_circles; // Copy
+    for (i = circle_first, j = 0; j != d; i++, j++) {
         if (i == CIRCLES_NB_MAX) {
             i = 0;
-            if (circle_last == 0) break;
         }
         if (circle_xpos[X = i] != -1) {
             y = circle_ypos[X = i];
@@ -289,11 +296,14 @@ void step()
             if (x >= 160) { // || sparse_tiling_collision(y + 8, x, x + 27) || sparse_tiling_collision(y + 23, x, x + 27) != -1 ) {
                 // Out of screen or collided with background
                 circle_xpos[X = i] = -1; // Removed
-                do {
-                    X++;
-                    if (X == MISSILES_NB_MAX) X = 0;
-                } while (X != circle_last && circle_xpos[X] == -1);
-                circle_first = X;
+                if (X == circle_first) {
+                    do {
+                        nb_circles--;
+                        X++;
+                        if (X == CIRCLES_NB_MAX) X = 0;
+                    } while (nb_circles && circle_xpos[X] == -1);
+                    circle_first = X;
+                }
             } else {
                 char w, xp, yp;
                 // Draw circle
@@ -435,11 +445,11 @@ void step()
     }
     
     // Display big explosions
-    for (i = big_explosion_first; i != big_explosion_last; i++) {
+    d = nb_big_explosions; // Copy
+    for (i = big_explosion_first, c = 0; c != d; i++, c++) {
         char xbig_explosion, ybig_explosion;
         if (i == BIG_EXPLOSIONS_NB_MAX) {
             i = 0;
-            if (big_explosion_last == 0) break;
         }
         X = i;
         if (big_explosion_counter[X]) {
@@ -460,9 +470,10 @@ void step()
         } else {
             if (X == big_explosion_first) {
                 do {
+                    nb_big_explosions--;
                     X++;
                     if (X == BIG_EXPLOSIONS_NB_MAX) X = 0;
-                } while (X != big_explosion_last && big_explosion_counter[X] == 0);
+                } while (nb_big_explosions && big_explosion_counter[X] == 0);
                 big_explosion_first = X;
             }
         }
@@ -470,11 +481,11 @@ void step()
     
     if (R9_state != 3) { // If it's not gameover
         // Draw bullets (last, so if there is a DMA issue, it doesn't prevent R9s to be displayed)
-        for (i = bullet_first; i != bullet_last; i++) {
+        d = nb_bullets;
+        for (i = bullet_first, c = 0; c != d; i++, c++) {
             char xbullet, ybullet;
             if (i == BULLETS_NB_MAX) {
                 i = 0;
-                if (bullet_last == 0) break;
             }
             X = i;
             Y = bullet_direction[X];
@@ -487,9 +498,10 @@ void step()
                     bullet_direction[X] = 255; // Removed
                     if (X == bullet_first) {
                         do {
+                            nb_bullets--;
                             X++;
                             if (X == BULLETS_NB_MAX) X = 0;
-                        } while (X != bullet_last && bullet_direction[X] == 255);
+                        } while (nb_bullets && bullet_direction[X] == 255);
                         bullet_first = X;
                     }
                 } else {
@@ -511,13 +523,13 @@ void fire()
     char last;
     sfx_to_play = sfx_pewpew;
     if (R9_state & R9_CIRCLE_FIRE) {
-        X = circle_last++;
-        if (circle_last == CIRCLES_NB_MAX) circle_last = 0;
-        if (circle_last != circle_first) {
-            circle_xpos[X] = R9_xpos + 20;
+        if (nb_circles != CIRCLES_NB_MAX) {
+            last = circle_first + nb_circles++;
+            if (last >= CIRCLES_NB_MAX) last -= CIRCLES_NB_MAX; 
+            circle_xpos[X = last] = R9_xpos + 20;
             circle_ypos[X] = R9_ypos - 10;
             circle_state[X] = 0;
-        } else circle_last = X;
+        }
     } else {
         if (nb_missiles != MISSILES_NB_MAX) {
             last = missile_first + nb_missiles++;
@@ -595,22 +607,14 @@ void scroll_stars(char speed)
         // Modify bytes 4 and 8 of the DLL entries (x position of background sprites=
         _ms_tmpptr[Y = 4] = pos1;
         pos1 += 100;
-        _ms_tmpptr[Y = 8] = pos2;
-        pos2 += 100;
+        _ms_tmpptr = _ms_dls[++X];
+        _ms_tmpptr[Y = 4] = pos2;
+        pos2 += 200;
         _ms_tmpptr = _ms_dls[++X];
         _ms_tmpptr[Y = 4] = pos1;
         pos1 += 100;
-        _ms_tmpptr[Y = 8] = pos2;
-        pos2 += 100;
         _ms_tmpptr = _ms_dls[++X];
-        _ms_tmpptr[Y = 4] = pos1;
-        pos1 += 100;
-        _ms_tmpptr[Y = 8] = pos2;
-        pos2 += 100;
-        _ms_tmpptr = _ms_dls[++X];
-        _ms_tmpptr[Y = 4] = pos1;
-        pos1 += 100;
-        _ms_tmpptr[Y = 8] = pos2;
+        _ms_tmpptr[Y = 4] = pos2;
         pos2 += 100;
         _ms_tmpptr = _ms_dls[++X];
     }
@@ -771,20 +775,14 @@ void rtype_init()
     *P3C3 = multisprite_color(0xd1); 
    
     // Background display
-    char c, y = 0;
-    for (c = 0; c != 3; c++) {
-        y += 16;
-        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
-        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
-        y += 16;
-        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
-        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
-        y += 16;
-        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
-        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
-        y += 16;
-        multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
-        multisprite_display_sprite_aligned_fast(0, y, star2, 1, 0);
+    char c, d, y = 0;
+    for (c = 3; c != 0; c--) {
+        for (d = 2; d != 0; d--) {
+            y += 16;
+            multisprite_display_sprite_aligned(0, y, star1, 1, 0, 0);
+            y += 16;
+            multisprite_display_sprite_aligned(0, y, star2, 1, 0, 0);
+        }
     }
 
     scoreboard_display();
