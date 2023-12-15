@@ -87,6 +87,11 @@ ramchip char big_explosion_xpos[BIG_EXPLOSIONS_NB_MAX], big_explosion_ypos[BIG_E
 ramchip char big_explosion_counter[BIG_EXPLOSIONS_NB_MAX];
 ramchip char nb_big_explosions, big_explosion_first;
 
+#define EXPLOSIONS_NB_MAX 4
+ramchip char explosion_xpos[EXPLOSIONS_NB_MAX], explosion_ypos[EXPLOSIONS_NB_MAX];
+ramchip char explosion_counter[EXPLOSIONS_NB_MAX];
+ramchip char nb_explosions, explosion_first;
+
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
 ramchip char R9_satellite_counter, R9_satellite_state;
@@ -131,6 +136,8 @@ void game_init()
     bullet_first = 0;
     nb_big_explosions = 0;
     big_explosion_first = 0;
+    nb_explosions = 0;
+    explosion_first = 0;
 
     // Initialize R9 state
     R9_xpos = 20;
@@ -175,10 +182,23 @@ void big_explosion(char x, char y)
     if (nb_big_explosions != BIG_EXPLOSIONS_NB_MAX) {
         last = big_explosion_first + nb_big_explosions++;
         if (last >= BIG_EXPLOSIONS_NB_MAX) last -= BIG_EXPLOSIONS_NB_MAX; 
-        circle_xpos[X = last] = R9_xpos + 20;
-        big_explosion_xpos[X] = xp;
+        big_explosion_xpos[X = last] = xp;
         big_explosion_ypos[X] = yp;
         big_explosion_counter[X] = 20;
+    }
+}
+
+void explosion(char x, char y)
+{
+    char last;
+    sfx_to_play = sfx_bigboom;
+    if (y < 0) y = 0; else if (y >= 224 - 16 - 17) y = 224 - 16 - 18;
+    if (nb_explosions != EXPLOSIONS_NB_MAX) {
+        last = explosion_first + nb_explosions++;
+        if (last >= EXPLOSIONS_NB_MAX) last -= EXPLOSIONS_NB_MAX; 
+        explosion_xpos[X = last] = x;
+        explosion_ypos[X] = y;
+        explosion_counter[X] = 20;
     }
 }
 
@@ -296,8 +316,8 @@ void draw_enemies()
                     }
                     // Check collisions with circles or missiles
                     if (check_enemy_collision(x, y + 2)) {
-                        // TODO: Enemy explosion
                         destroyed = 1;
+                        explosion(x, y);
                     } else {
                         display_it = 1;
                     }
@@ -398,7 +418,7 @@ void step()
                 missile_xpos[X = i] = x;
                 // Draw missile
                 if (missile_type[X = i] == 1) {
-                    multisprite_display_sprite_ex(x, y, bigfire, 8, 1, 0);
+                    multisprite_display_sprite_ex(x, y, big_fire, 8, 1, 0);
                 } else {
                     multisprite_display_small_sprite_ex(x, y, missile, 2, 0, 12, 0);
                 }
@@ -419,14 +439,14 @@ void step()
             ybig_explosion = big_explosion_ypos[X];
             big_explosion_counter[X]--;
             if (big_explosion_counter[X] >= 16) {
-                gfx = explosion1;
+                gfx = big_explosion1;
             } else if (big_explosion_counter[X] >= 12) {
-                gfx = explosion2;
+                gfx = big_explosion2;
             } else if (big_explosion_counter[X] >= 8) {
-                gfx = explosion3;
+                gfx = big_explosion3;
             } else if (big_explosion_counter[X] >= 4) {
-                gfx = explosion4;
-            } else gfx = explosion5;
+                gfx = big_explosion4;
+            } else gfx = big_explosion5;
             multisprite_display_big_sprite(xbig_explosion, ybig_explosion, gfx, 6, 0, 3, 0);
         } else {
             if (X == big_explosion_first) {
@@ -436,6 +456,38 @@ void step()
                     if (X == BIG_EXPLOSIONS_NB_MAX) X = 0;
                 } while (nb_big_explosions && big_explosion_counter[X] == 0);
                 big_explosion_first = X;
+            }
+        }
+    }
+    
+    // Display explosions
+    for (i = explosion_first, c = nb_explosions; c != 0; i++, c--) {
+        char xexplosion, yexplosion;
+        if (i == EXPLOSIONS_NB_MAX) {
+            i = 0;
+        }
+        X = i;
+        if (explosion_counter[X]) {
+            char *gfx;
+            xexplosion = explosion_xpos[X];
+            yexplosion = explosion_ypos[X];
+            explosion_counter[X]--;
+            if (explosion_counter[X] >= 15) {
+                gfx = explosion1;
+            } else if (explosion_counter[X] >= 10) {
+                gfx = explosion2;
+            } else if (explosion_counter[X] >= 5) {
+                gfx = explosion3;
+            } else gfx = explosion4;
+            multisprite_display_sprite_ex(xexplosion, yexplosion, gfx, 2, 0, 0);
+        } else {
+            if (X == explosion_first) {
+                do {
+                    nb_explosions--;
+                    X++;
+                    if (X == EXPLOSIONS_NB_MAX) X = 0;
+                } while (nb_explosions && explosion_counter[X] == 0);
+                explosion_first = X;
             }
         }
     }
@@ -601,13 +653,17 @@ void joystick_input()
     }
     if (joystick[0] & JOYSTICK_BUTTON1) {
         if (button_pressed) {
-            if (R9_charging_counter != 32) {
-                R9_charging_counter++;
-                beam_meter_update();
+            if ((R9_state & 1) == 0) {
+                if (R9_charging_counter != 32) {
+                    R9_charging_counter++;
+                    beam_meter_update();
+                }
             }
         } else {
             button_pressed = 1;
-            R9_state |= R9_CHARGING;
+            if ((R9_state & 1) == 0) {
+                R9_state |= R9_CHARGING;
+            }
         }
     } else {
         button_pressed = 0;
