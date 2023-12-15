@@ -328,108 +328,7 @@ void step()
     char *gfx;
     char draw_R9;
     
-    // Draw circles
-    for (i = circle_first, j = nb_circles; j != 0; i++, j--) {
-        if (i == CIRCLES_NB_MAX) {
-            i = 0;
-        }
-        if (circle_xpos[X = i] != -1) {
-            y = circle_ypos[X = i];
-            x = circle_xpos[X];
-            state = circle_state[X];
-            if (x >= 160) { // || sparse_tiling_collision(y + 8, x, x + 27) || sparse_tiling_collision(y + 23, x, x + 27) != -1 ) {
-                // Out of screen or collided with background
-                circle_xpos[X = i] = -1; // Removed
-                if (X == circle_first) {
-                    do {
-                        nb_circles--;
-                        X++;
-                        if (X == CIRCLES_NB_MAX) X = 0;
-                    } while (nb_circles && circle_xpos[X] == -1);
-                    circle_first = X;
-                }
-            } else {
-                char w, xp, yp;
-                // Draw circle
-                if (state < 11) {
-                    for (c = 0; c != 2; c++) {
-                        if (c == 0) {
-                            gfx = big_circle_top;
-                            yp = y - 8;
-                        } else {
-                            gfx = big_circle_bottom;
-                            yp = y + 24;
-                        }
-                        if (state < 6) {
-                            w = state + 1;
-                        } else {
-                            w = state - 5;
-                            gfx += w;
-                            w = 11 - state;
-                        }
-                        multisprite_display_sprite_ex(x, yp, gfx, w, 1, 0);
-                    }   
-                }
-                if (state >= 5) {
-                    c = state - 5;
-                    if (c < 6) w = c + 1;
-                    else w = 7;
-                    if (state < 11) {
-                        gfx = circles_top;
-                        xp = x + 20 - (c << 2);
-                    } else {
-                        c = state - 10;
-                        gfx = circles_top + c; 
-                        xp = x;
-                    }
-                    multisprite_display_sprite_ex(xp, y, gfx, w, 1, 0);
-                    if (state < 11) {
-                        gfx = circles_bottom;
-                    } else {
-                        gfx = circles_bottom + c;
-                        if (state >= 17) state -= 7;
-                    }
-                    yp = y + 16;
-                    multisprite_display_sprite_ex(xp, yp, gfx, w, 1, 0);
-                }
-                if (state >= 5) {
-                    x += 4;
-                    circle_xpos[X = i] = x;
-                    if (state == 10) x += 20;
-                }
-                state++;
-                circle_state[X = i] = state;
-            }
-        }
-    }
-
-    // Draw enemies
-    draw_enemies();
-
-    // Draw missiles
-    for (i = missile_first, c = nb_missiles; c != 0; i++, c--) {
-        if (i == MISSILES_NB_MAX) {
-            i = 0;
-        }
-        if (missile_xpos[X = i] != -1) {
-            y = missile_ypos[X];
-            x = missile_xpos[X] + MISSILES_SPEED;
-            if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
-                // Out of screen or collided with background
-                X = i;
-                destroy_missile();
-            } else {
-                missile_xpos[X = i] = x;
-                // Draw missile
-                if (missile_type[X = i] == 1) {
-                    multisprite_display_sprite_ex(x, y, bigfire, 8, 1, 0);
-                } else {
-                    multisprite_display_small_sprite_ex(x, y, missile, 2, 0, 12, 0);
-                }
-            }
-        }
-    }
-    
+    // Draw R9
     if ((R9_state & 1) == 0) {
         draw_R9 = 1;
         // Check collision with background
@@ -476,6 +375,33 @@ void step()
             R9_charging_counter2++;
             if (R9_charging_counter2 == 12) {
                 R9_charging_counter2 = 0;
+            }
+        }
+    }
+    
+    // Draw enemies
+    draw_enemies();
+
+    // Draw missiles
+    for (i = missile_first, c = nb_missiles; c != 0; i++, c--) {
+        if (i == MISSILES_NB_MAX) {
+            i = 0;
+        }
+        if (missile_xpos[X = i] != -1) {
+            y = missile_ypos[X];
+            x = missile_xpos[X] + MISSILES_SPEED;
+            if (x >= 160 || sparse_tiling_collision(y + 1, x, x + 7) != -1 ) {
+                // Out of screen or collided with background
+                X = i;
+                destroy_missile();
+            } else {
+                missile_xpos[X = i] = x;
+                // Draw missile
+                if (missile_type[X = i] == 1) {
+                    multisprite_display_sprite_ex(x, y, bigfire, 8, 1, 0);
+                } else {
+                    multisprite_display_small_sprite_ex(x, y, missile, 2, 0, 12, 0);
+                }
             }
         }
     }
@@ -549,6 +475,82 @@ void step()
                 }
             }
         }
+    
+        // Draw circles
+        for (i = circle_first, j = nb_circles; j != 0; i++, j--) {
+            if (i == CIRCLES_NB_MAX) {
+                i = 0;
+            }
+            if (circle_xpos[X = i] != -1) {
+                y = circle_ypos[X = i];
+                x = circle_xpos[X];
+                state = circle_state[X];
+                if (x >= 160) { // || sparse_tiling_collision(y + 8, x, x + 27) || sparse_tiling_collision(y + 23, x, x + 27) != -1 ) {
+                                // Out of screen or collided with background
+                    circle_xpos[X = i] = -1; // Removed
+                    if (X == circle_first) {
+                        do {
+                            nb_circles--;
+                            X++;
+                            if (X == CIRCLES_NB_MAX) X = 0;
+                        } while (nb_circles && circle_xpos[X] == -1);
+                        circle_first = X;
+                    }
+                } else {
+                    char w, xp, yp;
+                    // Draw circle
+                    if (state < 11) {
+                        for (c = 0; c != 2; c++) {
+                            if (c == 0) {
+                                gfx = big_circle_top;
+                                yp = y - 8;
+                            } else {
+                                gfx = big_circle_bottom;
+                                yp = y + 24;
+                            }
+                            if (state < 6) {
+                                w = state + 1;
+                            } else {
+                                w = state - 5;
+                                gfx += w;
+                                w = 11 - state;
+                            }
+                            multisprite_display_sprite_ex(x, yp, gfx, w, 1, 0);
+                        }   
+                    }
+                    if (state >= 5) {
+                        c = state - 5;
+                        if (c < 6) w = c + 1;
+                        else w = 7;
+                        if (state < 11) {
+                            gfx = circles_top;
+                            xp = x + 20 - (c << 2);
+                        } else {
+                            c = state - 10;
+                            gfx = circles_top + c; 
+                            xp = x;
+                        }
+                        multisprite_display_sprite_ex(xp, y, gfx, w, 1, 0);
+                        if (state < 11) {
+                            gfx = circles_bottom;
+                        } else {
+                            gfx = circles_bottom + c;
+                            if (state >= 17) state -= 7;
+                        }
+                        yp = y + 16;
+                        multisprite_display_sprite_ex(xp, yp, gfx, w, 1, 0);
+                    }
+                    if (state >= 5) {
+                        x += 4;
+                        circle_xpos[X = i] = x;
+                        if (state == 10) x += 20;
+                    }
+                    state++;
+                    circle_state[X = i] = state;
+                }
+                }
+            }
+
     } else draw_gameover();
 }
 
