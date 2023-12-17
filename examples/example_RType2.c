@@ -94,9 +94,10 @@ ramchip char nb_explosions, explosion_first;
 
 ramchip char button_pressed;
 ramchip char R9_xpos, R9_ypos, R9_state, R9_state_counter; 
-ramchip char R9_satellite_counter, R9_satellite_state;
+ramchip char R9_shield_xpos, R9_shield_counter1, R9_shield_counter2, R9_shield_state;
+ramchip char R9_shield_bonus_accumulator;
 ramchip char R9_charging_counter, R9_charging_counter2;
-const char *R9_satellite_sequence[] = {satellite1, satellite2, satellite3, satellite4};
+const char *R9_shield_sequence[] = {satellite1, satellite2, satellite3, satellite4};
 const char *R9_charging_sequence[] = {beam1, beam2, beam3};
 
 #define R9_CIRCLE_FIRE  4
@@ -142,10 +143,10 @@ void game_init()
     // Initialize R9 state
     R9_xpos = 20;
     R9_ypos = 80;
-    R9_state = R9_CIRCLE_FIRE; // 1
+    R9_state = 1;
     R9_state_counter = 100;
-    R9_satellite_counter = 0;
-    R9_satellite_state = 0;
+    R9_shield_state = 0;
+    R9_shield_bonus_accumulator = 0;
     R9_charging_counter = 0;
     R9_charging_counter2 = 0;
 
@@ -307,7 +308,10 @@ void draw_enemies()
                 }
                 if (!enemy_lives[X]) {
                     x = enemy_xpos[X];
-                    if (x == 255 - 16) destroyed = 1; // Out of screen
+                    if (x == 255 - 16) {
+                        R9_shield_bonus_accumulator = 0;
+                        destroyed = 1; // Out of screen
+                    }
                     enemy_xpos[X]--;
                     y = enemy_ypos[X] + (sin[Y = enemy_counter2[X]] >> 1);
                     enemy_counter2[X]++;
@@ -318,6 +322,9 @@ void draw_enemies()
                     if (check_enemy_collision(x, y + 2)) {
                         destroyed = 1;
                         explosion(x, y);
+                        score += 10;
+                        update_score = 1;
+                        R9_shield_bonus_accumulator++;
                     } else {
                         display_it = 1;
                     }
@@ -347,7 +354,20 @@ void step()
     char x, y, i, j, c, state;
     char *gfx;
     char draw_R9;
-    
+   
+    if (R9_shield_bonus_accumulator >= 8) {
+        R9_shield_bonus_accumulator = 0;
+        score += 100;
+        update_score = 1;
+        // If the shield is not there
+        if (R9_shield_state == 0) {
+            R9_shield_state = 1;
+            R9_shield_xpos = 200;
+            R9_shield_counter1 = 0;
+            R9_shield_counter2 = 0;
+        }
+    }
+
     // Draw R9
     if ((R9_state & 1) == 0) {
         draw_R9 = 1;
@@ -355,8 +375,6 @@ void step()
         char c = sparse_tiling_collision(R9_ypos + 6, R9_xpos, R9_xpos + 15);
         if (c != -1) {
             lose_one_life();
-            score = c;
-            update_score = 1;
         }
     } else if (R9_state == 1) {
         // Blinking returning R9
@@ -370,17 +388,30 @@ void step()
     }
 
     if (draw_R9) {
+        char display_shield = 0;
         multisprite_display_small_sprite_ex(R9_xpos, R9_ypos, R9, 8, 0, 4, 1);
         if (R9_state & R9_CIRCLE_FIRE) {
-            R9_satellite_counter++;
-            if (R9_satellite_counter == 5) {
-                R9_satellite_counter = 0;
-                R9_satellite_state++;
-                if (R9_satellite_state == 4) R9_satellite_state = 0;
-            }
-            gfx = R9_satellite_sequence[X = R9_satellite_state];
             x = R9_xpos + 17;
             y = R9_ypos - 1;
+            display_shield = 1;
+        } else if (R9_shield_state == 1) {
+            x = 160 - R9_xpos;
+            if (R9_shield_xpos != x && (R9_shield_counter2 & 1)) {
+                if (R9_shield_xpos >= x) R9_shield_xpos--;
+                else R9_shield_xpos++;
+            }
+            x = R9_shield_xpos;
+            y = R9_ypos;
+            display_shield = 1;
+        }
+        if (display_shield) {
+            R9_shield_counter2++;
+            if (R9_shield_counter2 == 5) {
+                R9_shield_counter2 = 0;
+                R9_shield_counter1++;
+                if (R9_shield_counter1 == 4) R9_shield_counter1 = 0;
+            }
+            gfx = R9_shield_sequence[X = R9_shield_counter1];
             multisprite_display_sprite_ex(x, y, gfx, 4, 0, 1);
         }
         if ((R9_state & R9_CHARGING) && R9_charging_counter >= 10) {
@@ -537,8 +568,7 @@ void step()
                 y = circle_ypos[X = i];
                 x = circle_xpos[X];
                 state = circle_state[X];
-                if (x >= 160) { // || sparse_tiling_collision(y + 8, x, x + 27) || sparse_tiling_collision(y + 23, x, x + 27) != -1 ) {
-                                // Out of screen or collided with background
+                if (x >= 160) { // Out of screen or collided with background
                     circle_xpos[X = i] = -1; // Removed
                     if (X == circle_first) {
                         do {
@@ -600,9 +630,8 @@ void step()
                     state++;
                     circle_state[X = i] = state;
                 }
-                }
             }
-
+        }
     } else draw_gameover();
 }
 
