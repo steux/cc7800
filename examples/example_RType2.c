@@ -400,6 +400,10 @@ void step()
                 if (R9_shield_xpos >= x) R9_shield_xpos--;
                 else R9_shield_xpos++;
             }
+            if (R9_shield_xpos == R9_xpos + 12) {
+                // Attach shield
+                R9_state |= R9_CIRCLE_FIRE;
+            }
             x = R9_shield_xpos;
             y = R9_ypos;
             display_shield = 1;
