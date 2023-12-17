@@ -128,6 +128,22 @@ void destroy_missile()
     }
 }
 
+// Input: X = circle index
+void destroy_circle()
+{
+    circle_xpos[X] = -1; // Removed
+    if (X == circle_first) {
+        do {
+            nb_circles--;
+            X++;
+            if (X == CIRCLES_NB_MAX) X = 0;
+        } while (nb_circles && circle_xpos[X] == -1);
+        circle_first = X;
+    }
+}
+
+void lose_one_life();
+
 // Put the dobkeratops code in Bank 1 & gfx in Bank 2
 #include "example_dobkeratops_banked.c"
 
@@ -229,6 +245,7 @@ void lose_one_life()
         nb_lives = 3;
         R9_state = 3; // Gameover
     }
+    R9_shield_state = 0;
     Y = (-(nb_lives << 1)) & 0x1f;
     _ms_b0_dl13[X = 8] = Y; // 13th zone
     _ms_b1_dl13[X] = Y; // on the second buffer
@@ -279,6 +296,22 @@ char check_enemy_collision(char xe, char ye)
             }
         }
     }
+    
+    // Check collisions with circles
+    for (i = circle_first, c = nb_circles; c != 0; i++, c--) {
+        if (i == CIRCLES_NB_MAX) {
+            i = 0;
+        }
+        if (circle_xpos[X = i] != -1) {
+            y = circle_ypos[X = i];
+            x = circle_xpos[X];
+            multisprite_compute_box_collision(xe, ye, 8, 12, x, y, 16, 32);
+            if (multisprite_collision_detected) {
+                collision = 1;
+            }
+        }
+    }
+
     return collision;
 }
 

@@ -13,9 +13,10 @@ const char dobkeratops_y[] = {0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160};
 const char dobkeratops_nbbytes[] = {32, 32, 24, 32, 16, 19, 18, 19, 17, 19, 28};
 const char *dobkeratops_gfx[] = {dob1, dob2, dob3, dob4, dob5, dob6, dob7, dob8, dob9, dob10, dob11};
 
-inline void check_tail_collision(char xt, char yt, char w, char h)
+inline void check_tail_collision(char xt, char yt)
 {
     char i, c, x, y; 
+    // Check collision with missiles
     for (i = missile_first, c = nb_missiles; c != 0; i++, c--) {
         if (i == MISSILES_NB_MAX) {
             i = 0;
@@ -24,16 +25,36 @@ inline void check_tail_collision(char xt, char yt, char w, char h)
             y = missile_ypos[X = i];
             x = missile_xpos[X];
             if (missile_type[X]) { // Big missile
-                multisprite_compute_box_collision(xt, yt, w, h, x, y, 32, 16);
+                multisprite_compute_box_collision(xt, yt, 32, 16, x, y, 32, 16);
             } else {
-                multisprite_compute_box_collision(xt, yt, w, h, x, y, 8, 4);
+                multisprite_compute_box_collision(xt, yt, 32, 16, x, y, 8, 4);
             }
             if (multisprite_collision_detected) {
-                if (!missile_type[X]) {
-                    // It's a small missile. Destroy it
-                    destroy_missile();  
-                }
+                destroy_missile();  
             }
+        }
+    }
+
+    // Check collisions with circles
+    for (i = circle_first, c = nb_circles; c != 0; i++, c--) {
+        if (i == CIRCLES_NB_MAX) {
+            i = 0;
+        }
+        if (circle_xpos[X = i] != -1) {
+            y = circle_ypos[X = i];
+            x = circle_xpos[X];
+            multisprite_compute_box_collision(xt, yt, 32, 16, x, y, 16, 32);
+            if (multisprite_collision_detected) {
+                destroy_circle();  
+            }
+        }
+    }
+
+    // Check collision with R9
+    if ((R9_state & 1) == 0) {
+        multisprite_compute_box_collision(xt, yt, 32, 16, R9_xpos, R9_ypos, 16, 14);
+        if (multisprite_collision_detected) {
+            lose_one_life();
         }
     }
 }
@@ -43,8 +64,6 @@ void draw_dobkeratops(char xpos, char ypos, char anim)
     char x, y, c, *gfx;
     char *tailx = dobkeratops_tail_x[X = anim];
     char *taily = dobkeratops_tail_y[X];
-    char w = 6;
-    char h = 12;
     char margin = 16 - 12;
     // Draw tail
     gfx = tail1;
@@ -53,17 +72,17 @@ void draw_dobkeratops(char xpos, char ypos, char anim)
         y = taily[Y] + ypos;
         if (c == 6) {
             gfx = tail2;
-            w = 5;
-            h = 10;
             margin = 16 - 10;
         } else if (c == 12) gfx = tail3;
         multisprite_display_small_sprite_ex(x, y, gfx, 2, 4, margin, 0);
-        check_tail_collision(x, y, w, h);
+        if (!(c & 1)) {
+            check_tail_collision(x, y);
+        }
     }
     x = tailx[Y = c] + xpos - 46;
     y = taily[Y] + ypos;
     multisprite_display_sprite_ex(x, y, tail4, 4, 4, 1);
-    check_tail_collision(x, y, 8, 14);
+    check_tail_collision(x, y);
     // Draw ugly alien body
     for (c = 0; c != 11; c++) {
         x = dobkeratops_x[X = c] + xpos;
