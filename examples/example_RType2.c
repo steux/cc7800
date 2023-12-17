@@ -329,6 +329,13 @@ void draw_enemies()
                         display_it = 1;
                     }
                     X = i; // Restore X register destroyed by check_enemy_collision function
+                    // Check collision with R9
+                    if ((R9_state & 1) == 0) {
+                        multisprite_compute_box_collision(x, y + 2, 8, 12, R9_xpos, R9_ypos, 16, 14);
+                        if (multisprite_collision_detected) {
+                            lose_one_life();
+                        }
+                    }
                 }
             }
             if (destroyed) {
@@ -686,11 +693,9 @@ void joystick_input()
     }
     if (joystick[0] & JOYSTICK_BUTTON1) {
         if (button_pressed) {
-            if ((R9_state & 1) == 0) {
-                if (R9_charging_counter != 32) {
-                    R9_charging_counter++;
-                    beam_meter_update();
-                }
+            if (R9_charging_counter != 32) {
+                R9_charging_counter++;
+                beam_meter_update();
             }
         } else {
             button_pressed = 1;
@@ -701,7 +706,7 @@ void joystick_input()
     } else {
         button_pressed = 0;
         R9_state &= ~R9_CHARGING;
-        if (R9_charging_counter != 0 && R9_state != 2) {
+        if (R9_charging_counter != 0 && R9_state != 3) {
             fire();
             R9_charging_counter = 0;
             beam_meter_update();
@@ -1021,6 +1026,8 @@ void interrupt dli()
 
 void main()
 {
+    char x = 0;
+
     dli_counter = -1;
     scroll_background_counter1 = 0;
     scroll_background_counter2 = 0;
@@ -1060,18 +1067,18 @@ void main()
                 }
             }
         } else {
-            if (level_progress_low == 0) {
-                if (level_progress_high == DOBKERATOPS_GETS_IN) {
-                    sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
-                    multisprite_enable_dli(1);
-                    multisprite_enable_dli(12);
-                }
-            }
             scroll_stars(1);
-            char x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
+            x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
             draw_dobkeratops(x, 16, counter_tail);
             counter_tail++;
             if (counter_tail == 60) counter_tail = 0;
+            x = 0;
+            if (level_progress_low == 0) {
+                if (level_progress_high == DOBKERATOPS_GETS_IN) {
+                    sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
+                    x = 1; // To active dlis on line 1 and 12 for dobkeratops palette switching
+                }
+            }
             if (level_progress_high < 114) {
                 level_progress_low++;
                 if (level_progress_low == 4) {
@@ -1091,6 +1098,11 @@ void main()
             update_score = 0;
         }
         multisprite_flip();
+        if (x == 1) {
+            multisprite_enable_dli(1);
+            multisprite_enable_dli(12);
+            x = 0;
+        }
         dli_counter = 0;
         *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
     } while (1);
