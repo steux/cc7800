@@ -60,9 +60,6 @@ const char sfx_bigboom[261] = {
 };
 }
 
-// Put the dobkeratops code in Bank 1 & gfx in Bank 2
-#include "example_dobkeratops_banked.c"
-
 // Game state management
 #define MISSILES_SPEED 4 
 #define MISSILES_NB_MAX 5
@@ -116,6 +113,23 @@ ramchip char game_state;
 #define STATE_GAMEOVER 1
 
 ramchip char *sfx_to_play;
+
+// Input: X = missile index
+void destroy_missile()
+{
+    missile_xpos[X] = -1; // Removed
+    if (X == missile_first) {
+        do {
+            nb_missiles--;
+            X++;
+            if (X == MISSILES_NB_MAX) X = 0;
+        } while (nb_missiles && missile_xpos[X] == -1);
+        missile_first = X;
+    }
+}
+
+// Put the dobkeratops code in Bank 1 & gfx in Bank 2
+#include "example_dobkeratops_banked.c"
 
 void game_init()
 {
@@ -238,20 +252,6 @@ void spawn_papapatas()
             enemy_counter1[X] = 0;
             enemy_counter2[X] = 0;
         }
-    }
-}
-
-// Input: X = missile index
-void destroy_missile()
-{
-    missile_xpos[X] = -1; // Removed
-    if (X == missile_first) {
-        do {
-            nb_missiles--;
-            X++;
-            if (X == MISSILES_NB_MAX) X = 0;
-        } while (nb_missiles && missile_xpos[X] == -1);
-        missile_first = X;
     }
 }
 
