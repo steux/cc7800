@@ -107,7 +107,7 @@ ramchip short bullet_xpos[BULLETS_NB_MAX], bullet_ypos[BULLETS_NB_MAX];
 ramchip char bullet_direction[BULLETS_NB_MAX];
 ramchip char nb_bullets, bullet_first;
 
-#define BIG_EXPLOSIONS_NB_MAX 4
+#define BIG_EXPLOSIONS_NB_MAX 10 
 ramchip char big_explosion_xpos[BIG_EXPLOSIONS_NB_MAX], big_explosion_ypos[BIG_EXPLOSIONS_NB_MAX];
 ramchip char big_explosion_counter[BIG_EXPLOSIONS_NB_MAX];
 ramchip char nb_big_explosions, big_explosion_first;
@@ -135,10 +135,12 @@ ramchip char display_score_str[5];
 ramchip char display_high_score_str[5];
 ramchip char level_progress_low, level_progress_high;
 ramchip char counter_tail;
+ramchip char boss_lives, boss_hurt, boss_counter;
 
 ramchip char game_state;
-#define STATE_RUNNING  0
-#define STATE_GAMEOVER 1
+#define STATE_RUNNING        0
+#define STATE_GAMEOVER       1
+#define STATE_LEVEL_FINISHED 2
 
 ramchip char *sfx_to_play;
 
@@ -172,10 +174,26 @@ void destroy_circle()
 
 void lose_one_life();
 
+void big_explosion(char x, char y)
+{
+    char last;
+    sfx_to_play = sfx_bigboom;
+    char xp = x - 12;
+    char yp = y - 24;
+    if (yp < 0) yp = 0; else if (yp >= 224 - 16 - 49) yp = 224 - 16 - 50;
+    if (nb_big_explosions != BIG_EXPLOSIONS_NB_MAX) {
+        last = big_explosion_first + nb_big_explosions++;
+        if (last >= BIG_EXPLOSIONS_NB_MAX) last -= BIG_EXPLOSIONS_NB_MAX; 
+        big_explosion_xpos[X = last] = xp;
+        big_explosion_ypos[X] = yp;
+        big_explosion_counter[X] = 20;
+    }
+}
+
 // Put the dobkeratops code in Bank 1 & gfx in Bank 2
 #include "example_dobkeratops_banked.c"
 
-void game_init()
+INIT_BANK void game_init()
 {
     nb_lives = 3;
     score = 0;
@@ -210,6 +228,8 @@ void game_init()
 
     // Initialize boss
     counter_tail = 0;
+    boss_hurt = 0;
+    boss_lives = 10;
 
     game_state = STATE_RUNNING;
 }
@@ -228,22 +248,6 @@ void draw_gameover()
     if (R9_state_counter == 41) {
         R9_state_counter = 40;
         game_state = STATE_GAMEOVER;
-    }
-}
-
-void big_explosion(char x, char y)
-{
-    char last;
-    sfx_to_play = sfx_bigboom;
-    char xp = x - 12;
-    char yp = y - 24;
-    if (yp < 0) yp = 0; else if (yp >= 224 - 16 - 49) yp = 224 - 16 - 50;
-    if (nb_big_explosions != BIG_EXPLOSIONS_NB_MAX) {
-        last = big_explosion_first + nb_big_explosions++;
-        if (last >= BIG_EXPLOSIONS_NB_MAX) last -= BIG_EXPLOSIONS_NB_MAX; 
-        big_explosion_xpos[X = last] = xp;
-        big_explosion_ypos[X] = yp;
-        big_explosion_counter[X] = 20;
     }
 }
 
@@ -995,22 +999,42 @@ void interrupt dli()
             if (dli_counter == 0) {
                 // Switch to dobkeratops palette    
                 if (_ms_pal_detected) {
-                    *P4C1 = 0x4c; 
-                    *P4C2 = 0x49; 
-                    *P4C3 = 0x46; 
-                    *P5C1 = 0x34; 
-                    *P5C2 = 0x32; 
-                    *P7C1 = 0xd9; 
-                    *P7C2 = 0xd6; 
+                    if (boss_hurt) {
+                        *P4C1 = 0x4f; 
+                        *P4C2 = 0x4f; 
+                        *P4C3 = 0x4c; 
+                        *P5C1 = 0x3a; 
+                        *P5C2 = 0x38; 
+                        *P7C1 = 0xdf; 
+                        *P7C2 = 0xdc; 
+                    } else {
+                        *P4C1 = 0x4c; 
+                        *P4C2 = 0x49; 
+                        *P4C3 = 0x46; 
+                        *P5C1 = 0x34; 
+                        *P5C2 = 0x32; 
+                        *P7C1 = 0xd9; 
+                        *P7C2 = 0xd6; 
+                    }
                     *P7C3 = 0x53; // Red (unused)
                 } else {
-                    *P4C1 = 0x3c; 
-                    *P4C2 = 0x39; 
-                    *P4C3 = 0x36; 
-                    *P5C1 = 0x24; 
-                    *P5C2 = 0x22; 
-                    *P7C1 = 0xc9; 
-                    *P7C2 = 0xc6; 
+                    if (boss_hurt) {
+                        *P4C1 = 0x3f; 
+                        *P4C2 = 0x3f; 
+                        *P4C3 = 0x3c; 
+                        *P5C1 = 0x2a; 
+                        *P5C2 = 0x28; 
+                        *P7C1 = 0xcf; 
+                        *P7C2 = 0xcc; 
+                    } else {
+                        *P4C1 = 0x3c; 
+                        *P4C2 = 0x39; 
+                        *P4C3 = 0x36; 
+                        *P5C1 = 0x24; 
+                        *P5C2 = 0x22; 
+                        *P7C1 = 0xc9; 
+                        *P7C2 = 0xc6;
+                    }
                     *P7C3 = 0x43; // Red (unused)
                 }
                 *P5C3 = 0x0e; 
@@ -1130,12 +1154,12 @@ void main()
                     spawn_papapatas();
                 }
             }
-        } else {
+        } else if (game_state == STATE_LEVEL_FINISHED) {
             scroll_stars(1);
+        } else { 
+            scroll_stars(2);
             x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
             draw_dobkeratops(x, 16, counter_tail);
-            counter_tail++;
-            if (counter_tail == 60) counter_tail = 0;
             x = 0;
             if (level_progress_low == 0) {
                 if (level_progress_high == DOBKERATOPS_GETS_IN) {
@@ -1167,6 +1191,7 @@ void main()
             multisprite_enable_dli(12);
             x = 0;
         }
+        if (boss_hurt) boss_hurt--;
         dli_counter = 0;
         *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
     } while (1);
