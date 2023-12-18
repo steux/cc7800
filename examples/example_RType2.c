@@ -88,6 +88,11 @@ const char sfx_powerup[165] = {
 
 }
 
+bank1 {
+#include "example_atariage_logo.c"
+#include "example_merry_christmas_big_sprite.c"
+}
+
 // Game state management
 #define MISSILES_SPEED 4 
 #define MISSILES_NB_MAX 5
@@ -138,9 +143,10 @@ ramchip char counter_tail;
 ramchip char boss_lives, boss_hurt, boss_counter;
 
 ramchip char game_state;
-#define STATE_RUNNING        0
-#define STATE_GAMEOVER       1
-#define STATE_LEVEL_FINISHED 2
+#define STATE_RESET          0
+#define STATE_RUNNING        1
+#define STATE_GAMEOVER       2
+#define STATE_LEVEL_FINISHED 3
 
 ramchip char *sfx_to_play;
 
@@ -199,7 +205,7 @@ INIT_BANK void game_init()
     score = 0;
     high_score = 0;
     update_score = 1;
-    level_progress_high = 0;
+    level_progress_high = 0; 
     level_progress_low = 0;
 
     // Init game state variables
@@ -247,8 +253,7 @@ void draw_gameover()
     R9_state_counter++;
     if (R9_state_counter == 41) {
         R9_state_counter = 40;
-        game_state = STATE_GAMEOVER;
-    }
+    } else game_state = STATE_GAMEOVER;
 }
 
 void explosion(char x, char y)
@@ -773,10 +778,14 @@ void joystick_input()
     } else {
         button_pressed = 0;
         R9_state &= ~R9_CHARGING;
-        if (R9_charging_counter != 0 && R9_state != 3) {
-            fire();
-            R9_charging_counter = 0;
-            beam_meter_update();
+        if (R9_charging_counter != 0) {
+            if (R9_state != 3) {
+                fire();
+                R9_charging_counter = 0;
+                beam_meter_update();
+            } else if (R9_state_counter == 40) { // Reset the game when gameover is displayed
+                game_state = STATE_RESET;
+            }
         }
     }
 }
@@ -1075,7 +1084,7 @@ void interrupt dli()
                 // Grey palette 
                 *P7C1 = 0x04; // Dark gray
                 *P7C2 = 0x08; // Medium gray
-                *P7C3 = 0x0c; // Dark gray
+                *P7C3 = 0x0c; // Light gray
                 scoreboard_and_music = 0;
                 dli_counter = 2;
             }
@@ -1108,6 +1117,20 @@ void interrupt dli()
     }
 }
 
+void start_level1()
+{
+    game_init();
+    copy_dobkeratops_to_ram();
+    
+    // Level 1 init  
+    rtype_level1_palette(); // In bank1, so that everything thet follows is in bank1 also
+    sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
+
+    multisprite_enable_dli(13);
+    multisprite_disable_dli(1);
+    multisprite_disable_dli(12);
+}
+
 void main()
 {
     char x = 0;
@@ -1124,75 +1147,76 @@ void main()
     pokey_init();
 #endif
 
-    copy_dobkeratops_to_ram();
     joystick_init();
     my_multisprite_init(); // Custom multisprite init
     display_init();
-    game_init();
-   
-    // Level 1 init  
-    rtype_level1_palette(); // In bank1, so that everything thet follows is in bank1 also
-    sparse_tiling_init_vmem(tilemap_level1_data_ptrs, brown_tiles1);
-
-    sparse_tiling_display();
-    multisprite_flip();
-    sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
-    sparse_tiling_display();
-    multisprite_flip();
-    
-    multisprite_enable_dli(13);
 
     do {
-        if (level_progress_high < DOBKERATOPS_GETS_IN) {
-            scroll_stars(4);
-            sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
-            level_progress_low++;
-            if (level_progress_low == 32) {
-                level_progress_high++;
-                level_progress_low = 0;
-                if (level_progress_high == 3) {
-                    spawn_papapatas();
-                }
-            }
-        } else if (game_state == STATE_LEVEL_FINISHED) {
-            scroll_stars(1);
-        } else { 
-            scroll_stars(2);
-            x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
-            draw_dobkeratops(x, 16, counter_tail);
-            x = 0;
-            if (level_progress_low == 0) {
-                if (level_progress_high == DOBKERATOPS_GETS_IN) {
-                    sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
-                    x = 1; // To active dlis on line 1 and 12 for dobkeratops palette switching
-                }
-            }
-            if (level_progress_high < 114) {
+        start_level1();
+
+        sparse_tiling_display();
+        multisprite_flip();
+        sparse_tiling_scroll(1); // Offset of 1 compared to previous screen
+        sparse_tiling_display();
+        multisprite_flip();
+
+        do {
+            if (level_progress_high < DOBKERATOPS_GETS_IN) {
+                scroll_stars(4);
+                sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
                 level_progress_low++;
-                if (level_progress_low == 4) {
+                if (level_progress_low == 32) {
                     level_progress_high++;
                     level_progress_low = 0;
+                    if (level_progress_high == 3) {
+                        spawn_papapatas();
+                    }
+                }
+            } else if (game_state == STATE_LEVEL_FINISHED) {
+                scroll_stars(1);
+                x = 80 - 16 + sin[X = level_progress_low];
+                multisprite_display_big_sprite(x, 48, atariage_logo, 16, 0, 4, 1);
+                multisprite_display_big_sprite((80 - 32), 80, christmas, 16, 2, 6, 0);
+                level_progress_low++;
+                if (level_progress_low == 120) level_progress_low = 0; 
+            } else { 
+                scroll_stars(2);
+                x = 180 + DOBKERATOPS_GETS_IN - level_progress_high;
+                draw_dobkeratops(x, 16, counter_tail);
+                x = 0;
+                if (level_progress_low == 0) {
+                    if (level_progress_high == DOBKERATOPS_GETS_IN) {
+                        sparse_tiling_scroll(1); // Scroll 1 pixels to the right for this buffer (so 0.5 pixel from frame to frame due to double buffering)
+                        x = 1; // To active dlis on line 1 and 12 for dobkeratops palette switching
+                    }
+                }
+                if (level_progress_high < 114) {
+                    level_progress_low++;
+                    if (level_progress_low == 4) {
+                        level_progress_high++;
+                        level_progress_low = 0;
+                    }
                 }
             }
-        }
-        joystick_input();
-        step();
-        if (update_score) {
-            display_score_update(display_score_str);
-            if (score >= high_score) {
-                high_score = score;
-                display_score_update(display_high_score_str);
+            joystick_input();
+            step();
+            if (update_score) {
+                display_score_update(display_score_str);
+                if (score >= high_score) {
+                    high_score = score;
+                    display_score_update(display_high_score_str);
+                }
+                update_score = 0;
             }
-            update_score = 0;
-        }
-        multisprite_flip();
-        if (x == 1) {
-            multisprite_enable_dli(1);
-            multisprite_enable_dli(12);
-            x = 0;
-        }
-        if (boss_hurt) boss_hurt--;
-        dli_counter = 0;
-        *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
+            multisprite_flip();
+            if (x == 1) {
+                multisprite_enable_dli(1);
+                multisprite_enable_dli(12);
+                x = 0;
+            }
+            if (boss_hurt) boss_hurt--;
+            dli_counter = 0;
+            *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
+        } while (game_state != STATE_RESET);
     } while (1);
 }
