@@ -95,11 +95,11 @@ bank1 {
 
 // Game state management
 #define MISSILES_SPEED 4 
-#define MISSILES_NB_MAX 5
+#define MISSILES_NB_MAX 3
 ramchip char missile_xpos[MISSILES_NB_MAX], missile_ypos[MISSILES_NB_MAX], missile_type[MISSILES_NB_MAX];
 ramchip char nb_missiles, missile_first;
 
-#define CIRCLES_NB_MAX 5
+#define CIRCLES_NB_MAX 3
 ramchip char circle_xpos[MISSILES_NB_MAX], circle_ypos[MISSILES_NB_MAX], circle_state[MISSILES_NB_MAX];
 ramchip char nb_circles, circle_first;
 
@@ -112,7 +112,7 @@ ramchip short bullet_xpos[BULLETS_NB_MAX], bullet_ypos[BULLETS_NB_MAX];
 ramchip char bullet_direction[BULLETS_NB_MAX];
 ramchip char nb_bullets, bullet_first;
 
-#define BIG_EXPLOSIONS_NB_MAX 10 
+#define BIG_EXPLOSIONS_NB_MAX 5 
 ramchip char big_explosion_xpos[BIG_EXPLOSIONS_NB_MAX], big_explosion_ypos[BIG_EXPLOSIONS_NB_MAX];
 ramchip char big_explosion_counter[BIG_EXPLOSIONS_NB_MAX];
 ramchip char nb_big_explosions, big_explosion_first;
@@ -1092,9 +1092,9 @@ void interrupt dli()
         if (scoreboard_and_music) {
             // Set the RIOT timer to 32
             do {
-                *TIM64T = 32 + 10;
-            } while (*INTIM != 31 + 10);
-            
+                *TIM64T = 32 + 128;
+            } while (*INTIM != 31 + 128);
+
             *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
 
             // Play the music
@@ -1108,7 +1108,7 @@ void interrupt dli()
             pokey_play();
 #endif
             // Wait for the end of timer
-            while (*INTIM >= 10); // We may miss the 0 due to DMA. Take a 10 margin
+            while (*INTIM >= 128); // We may miss the 0 due to DMA. Take a 128 margin
 
             // Go back to the right rombank
             *ROM_SELECT = rom_bank;
