@@ -18,7 +18,11 @@ ramchip char joystick[2];
 #define JOYSTICK_BUTTON2 128
 #define JOYSTICK_HAS_TWO_BUTTONS 32
 
-void joystick_init()
+#ifndef INIT_BANK
+#define INIT_BANK
+#endif
+
+INIT_BANK void joystick_init()
 {
     *CTLSWA = 0; // Port A as input
     *CTLSWB = 0x14; // Prepare for 2 buttons joystick
