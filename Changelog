@@ -1,3 +1,6 @@
+v0.2.19 (12/22/2023) :
+    - Moved to cc6502 v1.0.14
+
 v0.2.18 (12/04/2023) :
     - Moved to cc6502 v1.0.13
     - Added support for correct state save on interrupt
