@@ -723,6 +723,287 @@ IRQ
         
         Ok(())
     }
+    
+    fn fill_memory_try(&mut self, org: u32, rorg: u32, size: u32, compiler_state: &'a CompilerState, gstate: &mut GeneratorState, args: &Args, allow_scattered: bool) -> Result<(), Error> {
+
+        // Is there any scattered memory remaining ?
+        if allow_scattered && self.remaining_scattered > 0 {
+            // Yes. So let's try to fit some.
+            // Are we in a zone where 16 lines of scattered data can be stored ?
+            if size >= 0x1000 {
+                let holeydma_enabled_zone = rorg > 0x8000 && rorg & 0x1fff == 0;
+                
+                // Yes. Let's see if there is any remaining 16 lines scattered data to be stored
+                let mut scattered_16 = false; 
+                for v in compiler_state.sorted_variables().iter() {
+                    if let VariableMemory::ROM(b) = v.1.memory {
+                        if b == self.bank {
+                            if let Some((l, _)) = v.1.scattered {
+                                if l == 16 {
+                                    if !self.set.contains(v.0) {
+                                        // OK. We have found a 16 lines scattered data zone that was not
+                                        // allocated to any zone.
+                                        // Is it a holey DMA one ?
+                                        if holeydma_enabled_zone || !v.1.holeydma {
+                                            // In holdeydma enabled zone, it's OK to put anything
+                                            scattered_16 = true;
+                                            break;
+                                        } // In non enabled zone, there should be at least one non holeydma scattered data
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if scattered_16 {
+                    // Great. Let's fill this 4Kb of memory with 16 lines scattered data
+                    let mut sv = Vec::<(String, u32)>::new();
+                    let mut fill = 0;
+        
+                    // Let's select all the variables that will fit into this scattered data
+                    if holeydma_enabled_zone {
+                        // First pass to select in priority the ones that require holey DMA
+                        for v in compiler_state.sorted_variables().iter() {
+                            if let VariableMemory::ROM(b) = v.1.memory {
+                                if b == self.bank {
+                                    if let Some((l, _)) = v.1.scattered {
+                                        if l == 16 {
+                                            if !self.set.contains(v.0) && v.1.holeydma {
+                                                // OK. We have found a 16 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let width = a.len() as u32 / 16;
+                                                    if fill + width <= 256 {
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for v in compiler_state.sorted_variables().iter() {
+                        if let VariableMemory::ROM(b) = v.1.memory {
+                            if b == self.bank {
+                                if let Some((l, _)) = v.1.scattered {
+                                    if l == 16 {
+                                        if !self.set.contains(v.0) && !v.1.holeydma {
+                                            // OK. We have found a 16 lines scattered data zone that was not
+                                            // allocated to any zone. Let's set if it can fit into this area
+                                            if let VariableDefinition::Array(a) = &v.1.def {
+                                                let width = a.len() as u32 / 16;
+                                                if fill + width <= 256 {
+                                                    fill += width;
+                                                    sv.push((v.0.clone(), width));
+                                                    self.set.insert(v.0);
+                                                    self.remaining_scattered -= 1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Go on with filling the memory
+                    return self.fill_memory_try(org + 0x1000, rorg + 0x1000, size - 0x1000, compiler_state, gstate, args, true); 
+                }
+            }
+            
+            // Are we in a zone where 8 lines of scattered data can be stored ?
+            if size >= 0x800 {
+                let holeydma_enabled_zone = rorg > 0x8000 && rorg & 0xfff == 0;
+                
+                // Yes. Let's see if there is any remaining 8 lines scattered data to be stored
+                let mut scattered_8 = false;
+                for v in compiler_state.sorted_variables().iter() {
+                    if let VariableMemory::ROM(b) = v.1.memory {
+                        if b == self.bank {
+                            if let Some((l, _)) = v.1.scattered {
+                                if l == 8 {
+                                    if !self.set.contains(v.0) {
+                                        // OK. We have found a 8 lines scattered data zone that was not
+                                        // allocated to any zone. Let's create a new 8 lines scattered data zone
+                                        if holeydma_enabled_zone || !v.1.holeydma {
+                                            scattered_8 = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if scattered_8 {
+                    // Great. Let's fill this 4Kb of memory with 8 lines scattered data
+        
+                    // Let's select all the variables that will fit into this scattered data
+                    let mut sv = Vec::<(String, u32)>::new();
+                    let mut fill = 0;
+                    
+                    // Let's select all the variables that will fit into this scattered data
+                    if holeydma_enabled_zone {
+                        // First pass to select in priority the ones that require holey DMA
+                        for v in compiler_state.sorted_variables().iter() {
+                            if let VariableMemory::ROM(b) = v.1.memory {
+                                if b == self.bank {
+                                    if let Some((l, _)) = v.1.scattered {
+                                        if l == 8 {
+                                            if !self.set.contains(v.0) && v.1.holeydma {
+                                                // OK. We have found a 8 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let width = a.len() as u32 / 8;
+                                                    if fill + width <= 256 {
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for v in compiler_state.sorted_variables().iter() {
+                        if let VariableMemory::ROM(b) = v.1.memory {
+                            if b == self.bank {
+                                if let Some((l, _)) = v.1.scattered {
+                                    if l == 8 {
+                                        if !self.set.contains(v.0) && !v.1.holeydma {
+                                            // OK. We have found a 8 lines scattered data zone that was not
+                                            // allocated to any zone. Let's set if it can fit into this area
+                                            if let VariableDefinition::Array(a) = &v.1.def {
+                                                let width = a.len() as u32 / 8;
+                                                if fill + width <= 256 {
+                                                    fill += width;
+                                                    sv.push((v.0.clone(), width));
+                                                    self.set.insert(v.0);
+                                                    self.remaining_scattered -= 1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Go on with filling the memory
+                    return self.fill_memory_try(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true); 
+                }
+            }
+            if self.remaining_scattered > 0 {
+                // Well, we have scattered data, so let's try to find a place for them
+                self.fill_memory_try(org, rorg, 0x800, compiler_state, gstate, args, false)?;
+                if size > 0x800 {
+                    return self.fill_memory_try(org + 0x800, rorg + 0x800, size - 0x800, compiler_state, gstate, args, true);
+                } else {
+                    return Ok(());
+                }
+            }
+        }
+       
+        let mut filled = 0;
+        
+        if self.remaining_functions > 0 || self.remaining_assembler > 0 {
+            // Generate included assembler
+            for (i, asm) in (&compiler_state.included_assembler).iter().enumerate() {
+                let basm = if let Some(b) = asm.3 {
+                    b as u32
+                } else { 0 };
+                debug!("assembler: {} {} {}", i, self.bank, basm);
+                let s = if let Some(sx) = asm.2 { sx as u32 } else { (asm.0.lines().count() * 3) as u32 };
+                if self.bank == basm && filled + s <= size {
+                    if !self.set_asm.contains(&i) {
+                        // Check if this one needs to be generated
+                        self.set_asm.insert(i);
+                        if let Some(s) = asm.2 {
+                            filled += s as u32;
+                        } else {
+                            let nl = asm.0.lines().count() as u32; 
+                            filled += nl * 3; // 3 bytes default per line estimate.
+                        }
+                        self.remaining_assembler -= 1;
+                    }
+                }
+            }
+
+            if self.bank == 0 && !self.startup_code {
+                self.startup_code = true;
+                filled += 0x62; // Size of startup code
+            }
+
+            // Generate functions code
+            for f in compiler_state.sorted_functions().iter() {
+                if f.1.code.is_some() && !f.1.inline && f.1.bank == self.bank {
+                    if !self.set.contains(f.0) {
+                        // Check if this one needs to be generated
+                        if gstate.functions_actually_in_use.get(f.0).is_none() {
+                            // Skip this one
+                            self.set.insert(f.0);
+                            self.remaining_functions -= 1;
+                        } else {
+                            let s = gstate.functions_code.get(f.0).unwrap().size_bytes() + if f.1.interrupt {17} else {1};
+                            if filled + s <= size {
+
+                                self.set.insert(f.0);
+                                self.remaining_functions -= 1;
+                                filled += s;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if self.remaining_variables > 0 {
+            // Generate ROM tables
+            for v in compiler_state.sorted_variables().iter() {
+                if let VariableMemory::ROM(rom_bank) = v.1.memory {
+                    if rom_bank == self.bank && v.1.scattered.is_none() {
+                        if !self.set.contains(v.0) {
+                            // OK, we have a ROM table to insert.
+                            // Let's see if it fits
+                            let s = if filled > 0 {
+                                (((filled - 1) / v.1.alignment as u32) + 1) * v.1.alignment as u32
+                            } else { 0 };
+                            let s2 = match &v.1.def {
+                                VariableDefinition::Array(arr) => {
+                                    if v.1.var_type == VariableType::ShortPtr {
+                                        arr.len() * 2
+                                    } else {
+                                        arr.len()
+                                    }
+                                },
+                                VariableDefinition::ArrayOfPointers(arr) => {
+                                    arr.len() * 2 
+                                },
+                                _ => unreachable!()
+                            } as u32;  
+                            if s + s2 <= size {
+                                // OK. It fits. Let's insert it
+                                self.set.insert(v.0);
+                                self.remaining_variables -= 1;
+                                filled = s + s2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        debug!("*** Remaining: {}, {}, {}", self.remaining_variables, self.remaining_functions, self.remaining_scattered);
+        Ok(())
+    }
 }
 
 fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState, bankswitching_scheme: &str, output: &str, memoryonchip: bool) -> Result<(), Error>
