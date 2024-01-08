@@ -1,3 +1,6 @@
+v0.2.20 (01/08/2024) :
+    - Added support for constant address in array of pointers
+     
 v0.2.19 (12/22/2023) :
     - Moved to cc6502 v1.0.14
 
