@@ -36,7 +36,6 @@ struct MemoryMap<'a> {
     remaining_assembler: u32,
     remaining_scattered: u32,
     remaining_variables: u32,
-    startup_code: bool,
 }
 
 impl<'a> MemoryMap<'a> {
@@ -76,7 +75,6 @@ impl<'a> MemoryMap<'a> {
             remaining_assembler,
             remaining_scattered,
             remaining_variables,
-            startup_code: false,
         }
     }
 
@@ -454,92 +452,6 @@ impl<'a> MemoryMap<'a> {
                 }
             }
 
-            if self.bank == 0 && !self.startup_code {
-
-                self.startup_code = true;
-                filled += 0x62; // Size of startup code
-                if definitive {
-                    if args.verbose {
-                        println!(" - Startup code (filled {}/{})", filled, size);
-                    }
-                    // Generate startup code
-                    gstate.write("
-START
-    sei                     ; Disable interrupts
-    cld                     ; Clear decimal mode
-
-;******** Atari recommended startup procedure
-
-    lda     #$07
-    sta     $01        ; Lock into 7800 mode
-    lda     #$7F
-    sta     $3C        ; Disable DMA
-    lda     #$00            
-    sta     $38 
-    sta     $01
-    ldx     #$FF       ; Reset stack pointer
-    txs
-
-;************** Clear zero page and hardware ******
-
-    ldx     #$40
-    lda     #$00
-crloop1    
-    sta     $00,x      ; Clear zero page
-    sta	    $100,x		 ; Clear page 1
-    inx
-    bne     crloop1
-
-;************* Clear RAM **************************
-
-    ldy     #$00            ; Clear Ram
-    lda     #$18            ; Start at $1800
-    sta     $81             
-    lda     #$00
-    sta     $80
-crloop3
-    lda     #$00
-    sta     ($80),y         ; Store data
-    iny                     ; Next byte
-    bne     crloop3         ; Branch if not done page
-    inc     $81             ; Next page
-    lda     $81
-    cmp     #$20            ; End at $1FFF
-    bne     crloop3         ; Branch if not
-
-    ldy     #$00            ; Clear Ram
-    lda     #$22            ; Start at $2200
-    sta     $81             
-    lda     #$00
-    sta     $80
-crloop4
-    lda     #$00
-    sta     ($80),y         ; Store data
-    iny                     ; Next byte
-    bne     crloop4         ; Branch if not done page
-    inc     $81             ; Next page
-    lda     $81
-    cmp     #$27            ; End at $27FF
-    bne     crloop4         ; Branch if not
-
-    ldx     #$00
-    lda     #$00
-crloop5                     ; Clear 2100-213F
-    sta     $2100,x
-    inx
-    cpx     #$40
-    bne     crloop5
-    jmp     main 
-
-NMI
-    RTI
-
-IRQ
-    RTI
-                ")?;
-                }
-            }
-
             // Generate functions code
             for f in compiler_state.sorted_functions().iter() {
                 if f.1.code.is_some() && !f.1.inline && f.1.bank == self.bank {
@@ -778,6 +690,12 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
             cartb = 0; 
             mapper = 0;
         },
+        "52K" => {
+            romsize = 52 * 1024;
+            headerpos = 0x10000 - 0x80 - romsize;
+            cartb = 0; 
+            mapper = 0;
+        },
         "SuperGame" => {
             romsize = 128 * 1024;
             headerpos = 0x8000 - 0x80;
@@ -791,7 +709,7 @@ fn write_a78_header(compiler_state: &CompilerState, gstate: &mut GeneratorState,
         mapper_options |= 1;
     }
     if compiler_state.variables.get("POKEY").is_some() {
-        if memoryonchip || bankswitching_scheme == "48K" {
+        if memoryonchip || bankswitching_scheme == "48K" || bankswitching_scheme == "52K" {
             cartb |= 64;
             audio = 2;
         } else {
@@ -949,6 +867,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     let mut bankswitching_scheme = "linear";
     let mut romsize = 0x8000;
     let mut nmi_interrupt = "NMI";
+    let postfix_size = 0x62 + 8;
 
     // Try to figure out what is the bankswitching method
     let mut maxbank = 0;
@@ -1070,11 +989,11 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     }
     
     if bankswitching_scheme == "linear" {
-        let romsizes = [(8192, "8K"), (16384, "16K"), (32768, "32K"), (32768 + 16384, "48K")];
+        let romsizes = [(8192, "8K"), (16384, "16K"), (32768, "32K"), (32768 + 16384, "48K"), (32768 + 16384 + 4096, "52K")];
         let mut ok = false;
         for rs in romsizes {
             let mut map = MemoryMap::new(compiler_state, 0);
-            if map.fill_memory(0x10000 - rs.0, 0x10000 - rs.0, rs.0, compiler_state, &mut gstate, args, true, true, false).is_ok() {
+            if map.fill_memory(0x10000 - rs.0, 0x10000 - rs.0, rs.0 - postfix_size, compiler_state, &mut gstate, args, true, true, false).is_ok() {
                 if map.remaining_scattered == 0 && map.remaining_functions == 0 && map.remaining_assembler == 0 && map.remaining_variables == 0 {
                     bankswitching_scheme = rs.1;
                     romsize = rs.0;
@@ -1086,8 +1005,11 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         if bankswitching_scheme == "48K" && memoryonchip {
             return Err(Error::Configuration { error: "Memory full. 48KB ROM size is not compatible with 16KB on cart memory".to_string() });
         }
+        if bankswitching_scheme == "52K" && memoryonchip {
+            return Err(Error::Configuration { error: "Memory full. 52KB ROM size is not compatible with 16KB on cart memory".to_string() });
+        }
         if !ok {
-            return Err(Error::Configuration { error: "Memory full. Linear ROM size is limited to 48KB".to_string() });
+            return Err(Error::Configuration { error: "Memory full. Linear ROM size is limited to 52KB (ideally 48KB for high scores save cart compatibility)".to_string() });
         }
     }
 
@@ -1286,8 +1208,8 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     for b in 0..=maxbank {
         
         let (bank, banksize, rorg) = if bankswitching_scheme == "SuperGame" { 
-            if b == 7 { (0, 0x4000, 0xc000) } else { (b + 1, 0x4000, 0x8000) }
-        } else { (0, romsize, 0x10000 - romsize) };
+            if b == 7 { (0, 0x4000 - postfix_size, 0xc000) } else { (b + 1, 0x4000, 0x8000) }
+        } else { (0, romsize - postfix_size, 0x10000 - romsize) };
 
         let org = if bankswitching_scheme == "SuperGame" {
             0x8000 + b * banksize
@@ -1309,15 +1231,90 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
             return Err(Error::Configuration { error: format!("Memory full. Not enough ROM memory in bank #{}", bank) });
         }
         if b == maxbank {
+            // Generate startup code
+            gstate.write("
+START
+    sei                     ; Disable interrupts
+    cld                     ; Clear decimal mode
+
+;******** Atari recommended startup procedure
+
+    lda     #$07
+    sta     $01        ; Lock into 7800 mode
+    lda     #$7F
+    sta     $3C        ; Disable DMA
+    lda     #$00            
+    sta     $38 
+    sta     $01
+    ldx     #$FF       ; Reset stack pointer
+    txs
+
+;************** Clear zero page and hardware ******
+
+    ldx     #$40
+    lda     #$00
+crloop1    
+    sta     $00,x      ; Clear zero page
+    sta	    $100,x		 ; Clear page 1
+    inx
+    bne     crloop1
+
+;************* Clear RAM **************************
+
+    ldy     #$00            ; Clear Ram
+    lda     #$18            ; Start at $1800
+    sta     $81             
+    lda     #$00
+    sta     $80
+crloop3
+    lda     #$00
+    sta     ($80),y         ; Store data
+    iny                     ; Next byte
+    bne     crloop3         ; Branch if not done page
+    inc     $81             ; Next page
+    lda     $81
+    cmp     #$20            ; End at $1FFF
+    bne     crloop3         ; Branch if not
+
+    ldy     #$00            ; Clear Ram
+    lda     #$22            ; Start at $2200
+    sta     $81             
+    lda     #$00
+    sta     $80
+crloop4
+    lda     #$00
+    sta     ($80),y         ; Store data
+    iny                     ; Next byte
+    bne     crloop4         ; Branch if not done page
+    inc     $81             ; Next page
+    lda     $81
+    cmp     #$27            ; End at $27FF
+    bne     crloop4         ; Branch if not
+
+    ldx     #$00
+    lda     #$00
+crloop5                     ; Clear 2100-213F
+    sta     $2100,x
+    inx
+    cpx     #$40
+    bne     crloop5
+    jmp     main 
+
+NMI
+    RTI
+
+IRQ
+    RTI
+                ")?;
             // Epilogue code
             gstate.write(&format!("
         ORG ${:04x}
         .byte $FF ; Region verification
-        .byte ${:02x} 
+        .byte $F7 
         .word #{nmi_interrupt}\t; NMI
         .word #START\t; RESET
         .word #IRQ\t; IRQ
-        \n", if maxbank == 0 { 0x10000 - 8 } else { b * banksize + 0xbff8 }, if maxbank == 0 { 0x87 } else { 0xc7 }))?;
+        \n", if maxbank == 0 { 0x10000 - 8 } else { b * banksize + 0xbff8 }))?;
 
         }
     }
