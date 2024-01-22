@@ -1208,16 +1208,17 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     for b in 0..=maxbank {
         
         let (bank, banksize, rorg) = if bankswitching_scheme == "SuperGame" { 
-            if b == 7 { (0, 0x4000 - postfix_size, 0xc000) } else { (b + 1, 0x4000, 0x8000) }
-        } else { (0, romsize - postfix_size, 0x10000 - romsize) };
+            if b == 7 { (0, 0x4000, 0xc000) } else { (b + 1, 0x4000, 0x8000) }
+        } else { (0, romsize, 0x10000 - romsize) };
 
         let org = if bankswitching_scheme == "SuperGame" {
             0x8000 + b * banksize
         } else {
             0x10000 - romsize
         };
+        let size = if b == maxbank { banksize - postfix_size } else { banksize };
         let mut map = MemoryMap::new(compiler_state, bank);
-        map.fill_memory(org, rorg, banksize, compiler_state, &mut gstate, args, true, true, true)?;
+        map.fill_memory(org, rorg, size, compiler_state, &mut gstate, args, true, true, true)?;
         /*
         assert!(map.remaining_scattered == 0);
         assert!(map.remaining_functions == 0);
@@ -1232,6 +1233,11 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
         }
         if b == maxbank {
             // Generate startup code
+            gstate.write(&format!("
+        ORG ${:04x}
+        RORG ${:04x}
+", if maxbank == 0 { 0x10000 - 256 - 0x62 } else { b * banksize + 0xc000 - 256 - 0x62 }, 
+   0x10000 - 256 - 0x62 ))?;
             gstate.write("
 START
     sei                     ; Disable interrupts
@@ -1310,7 +1316,7 @@ IRQ
             gstate.write(&format!("
         ORG ${:04x}
         .byte $FF ; Region verification
-        .byte $C7 
+        .byte $F7 
         .word #{nmi_interrupt}\t; NMI
         .word #START\t; RESET
         .word #IRQ\t; IRQ
