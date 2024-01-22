@@ -867,7 +867,7 @@ pub fn build_cartridge(compiler_state: &CompilerState, writer: &mut dyn Write, a
     let mut bankswitching_scheme = "linear";
     let mut romsize = 0x8000;
     let mut nmi_interrupt = "NMI";
-    let postfix_size = 0x62 + 8;
+    let postfix_size = 0x62 + 128;
 
     // Try to figure out what is the bankswitching method
     let mut maxbank = 0;
