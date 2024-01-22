@@ -2,6 +2,7 @@ v0.2.21 (01/17/2024) :
     - Added support for 8KB, 16KB, 32KB and 48KB ROMs  
     - Added support for 52KB ROMs
     - Moved startup code to the end of the first bank (just before interrupt vectors)
+    - Reserved ROM for cart encryption signature
      
 v0.2.20 (01/08/2024) :
     - Added support for constant address in array of pointers
