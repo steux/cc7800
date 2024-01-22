@@ -1310,7 +1310,7 @@ IRQ
             gstate.write(&format!("
         ORG ${:04x}
         .byte $FF ; Region verification
-        .byte $F7 
+        .byte $C7 
         .word #{nmi_interrupt}\t; NMI
         .word #START\t; RESET
         .word #IRQ\t; IRQ
