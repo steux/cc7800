@@ -29,7 +29,7 @@ const char *dls[DLL_ARRAY_SIZE] = {
 ramchip char dll[(DLL_ARRAY_SIZE + 4) * 3];
 char dlend[DLL_ARRAY_SIZE];
 
-screencode char helloworld[] = "HELLO WORLD!";
+screencode const char helloworld[] = "HELLO WORLD!";
 
 void main()
 {
