@@ -68,6 +68,15 @@ char tt_cur_ins_c1           ;
 // =====================================================================
 char *tt_ptr;
 
+#ifndef TIA_TRACKER_INDIRECT_REGISTERS
+unsigned char * const XAUDC0    = 0x15;     // Audio Control Channel   0                    write-only
+unsigned char * const XAUDC1    = 0x16;     // Audio Control Channel   1                    write-only
+unsigned char * const XAUDF0    = 0x17;     // Audio Frequency Channel 0                    write-only
+unsigned char * const XAUDF1    = 0x18;     // Audio Frequency Channel 1                    write-only
+unsigned char * const XAUDV0    = 0x19;     // Audio Volume Channel    0                    write-only
+unsigned char * const XAUDV1    = 0x1A;     // Audio Volume Channel    1                    write-only
+#endif
+
 === ASSEMBLER BEGIN ===
 ; codesize: 175
 ; file: tt_player
@@ -281,21 +290,21 @@ tt_FetchNote:
 
         ; --- Percussion: Get envelope index ---
         ldy tt_envelope_index_c0,x
-        ; Set AUDC and AUDV value from envelope
+        ; Set XAUDC and XAUDV value from envelope
         lda tt_PercCtrlVolTable-1,y     ; -1 because values are stored +1
         beq .endOfPercussion            ; 0 means end of percussion data
         inc tt_envelope_index_c0,x      ; if end not reached: advance index
 .endOfPercussion:
-        sta AUDV0,x
+        sta XAUDV0,x
         lsr
         lsr
         lsr
         lsr
-        sta AUDC0,x     
-        ; Set AUDF
+        sta XAUDC0,x     
+        ; Set XAUDF
         lda tt_PercFreqTable-1,y        ; -1 because values are stored +1
-        ; Bit 7 (overlay) might be set, but is unused in AUDF
-        sta AUDF0,x
+        ; Bit 7 (overlay) might be set, but is unused in XAUDF
+        sta XAUDF0,x
     IF TT_USE_OVERLAY = 1
         bpl .afterAudioUpdate
         ; Overlay percussion: Fetch next note out of order
@@ -338,9 +347,9 @@ tt_Bit6Set:     ; This opcode has bit #6 set, for use with bit instruction
         ; --- Melodic instrument ---
         ; Compute index into ADSR indexes and master Ctrl tables
         jsr tt_CalcInsIndex
-        ; Set AUDC with master value for this instrument, while we are at it
+        ; Set XAUDC with master value for this instrument, while we are at it
         lda tt_InsCtrlTable-1,y ; -1 because instruments start with #1
-        sta AUDC0,x
+        sta XAUDC0,x
         ; advance ADSR counter and compare to end of Sustain
         lda tt_envelope_index_c0,x
         cmp tt_InsReleaseIndexes-1,y    ; -1 because instruments start with #1
@@ -355,7 +364,7 @@ tt_Bit6Set:     ; This opcode has bit #6 set, for use with bit instruction
         iny                             ; advance index otherwise
 .endOfEnvelope:
         sty tt_envelope_index_c0,x
-        sta AUDV0,x
+        sta XAUDV0,x
         ; Now adjust frequency with ADSR value from envelope
         lsr
         lsr
@@ -365,7 +374,7 @@ tt_Bit6Set:     ; This opcode has bit #6 set, for use with bit instruction
         adc tt_cur_ins_c0,x
         sec
         sbc #8
-        sta AUDF0,x
+        sta XAUDF0,x
 
 .afterAudioUpdate:
         ; loop over channels

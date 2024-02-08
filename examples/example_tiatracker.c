@@ -1,4 +1,11 @@
 #include "prosystem.h"
+#define TIA_TRACKER_INDIRECT_REGISTERS
+unsigned char * const XAUDC0    = 0x15;     // Audio Control Channel   0                    write-only
+unsigned char * const XAUDC1    = 0x16;     // Audio Control Channel   1                    write-only
+unsigned char * const XAUDF0    = 0x17;     // Audio Frequency Channel 0                    write-only
+unsigned char * const XAUDF1    = 0x18;     // Audio Frequency Channel 1                    write-only
+unsigned char XAUDV0, XAUDV1;
+
 #include "miniblast_tiatracker.h"
 #include "miniblast_trackdata.h"
 #include "conio.h"
@@ -26,7 +33,7 @@ void main()
     do {
         // Display the volume for each channel
         k = 18 + (i << 2);
-        l = 17 - (AUDV0[Y = i] & 0x0f);
+        l = 17 - (((i == 0)?XAUDV0:XAUDV1) & 0x0f);
         for (j = 2; j < l; j++) {
             gotoxy(k, j);
             putch(' ');
@@ -44,5 +51,7 @@ void main()
         *BACKGRND = 0x0f;
         
         tia_tracker_play();
+        *AUDV0 = XAUDV0;
+        *AUDV1 = XAUDV1;
     } while(1);
 }
