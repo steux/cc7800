@@ -680,7 +680,7 @@ void _sparse_tiling_goto()
         _ms_tmp += _MS_DLL_ARRAY_SIZE; 
         bottom += _MS_DLL_ARRAY_SIZE;
     }
-    _tiling_right = _tiling_xpos + TILING_WIDTH - 2;
+    _tiling_right = _tiling_xpos + 21;
     for (X = _ms_tmp; X < bottom; _ms_tmp2++) {
         Y = _ms_tmp2;
         tmp = _ms_sparse_tiles_ptr_low[Y];

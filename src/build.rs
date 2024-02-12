@@ -617,10 +617,10 @@ impl<'a> MemoryMap<'a> {
                                                     } else {
                                                         gstate.write(&format!("<{}", i.0))?;
                                                     }
-                                                    if counter % 8 != 0 {
-                                                        gstate.write(", ")?;
-                                                    } 
                                                 }
+                                                if counter % 8 != 0 {
+                                                    gstate.write(", ")?;
+                                                } 
                                             } 
                                             for i in arr {
                                                 if counter % 8 == 0 {
@@ -635,10 +635,10 @@ impl<'a> MemoryMap<'a> {
                                                     } else {
                                                         gstate.write(&format!(">{}", i.0))?;
                                                     }
-                                                    if counter % 8 != 0 && counter < 2 * arr.len() {
-                                                        gstate.write(", ")?;
-                                                    } 
                                                 }
+                                                if counter % 8 != 0 && counter < 2 * arr.len() {
+                                                    gstate.write(", ")?;
+                                                } 
                                             } 
                                             gstate.write("\n")?;
                                         },
