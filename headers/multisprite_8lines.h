@@ -53,7 +53,7 @@ char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 ramchip char _ms_dl0[_MS_DL_MALLOC(0)], _ms_dl1[_MS_DL_MALLOC(1)], _ms_dl2[_MS_DL_MALLOC(2)], _ms_dl3[_MS_DL_MALLOC(3)], _ms_dl4[_MS_DL_MALLOC(4)], _ms_dl5[_MS_DL_MALLOC(5)], _ms_dl6[_MS_DL_MALLOC(6)], _ms_dl7[_MS_DL_MALLOC(7)], _ms_dl8[_MS_DL_MALLOC(8)], _ms_dl9[_MS_DL_MALLOC(9)], _ms_dl10[_MS_DL_MALLOC(10)], _ms_dl11[_MS_DL_MALLOC(11)], _ms_dl12[_MS_DL_MALLOC(12)], _ms_dl13[_MS_DL_MALLOC(13)], _ms_dl14[_MS_DL_MALLOC(14)], _ms_dl15[_MS_DL_MALLOC(15)], _ms_dl16[_MS_DL_MALLOC(16)], _ms_dl17[_MS_DL_MALLOC(17)], _ms_dl18[_MS_DL_MALLOC(18)], _ms_dl19[_MS_DL_MALLOC(19)], _ms_dl20[_MS_DL_MALLOC(20)], _ms_dl21[_MS_DL_MALLOC(21)], _ms_dl22[_MS_DL_MALLOC(22)], _ms_dl23[_MS_DL_MALLOC(23)], _ms_dl24[_MS_DL_MALLOC(24)];
 
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE] = {
-    _ms_dl0, _ms_dl1, _ms_dl2, _ms_dl3, _ms_dl4, _ms_dl5, _ms_dl6, _ms_dl7, _ms_dl8, _ms_dl9, _ms_dl10, _ms_dl11, _ms_dl12, _ms_dl13, _ms_dl14, _ms_dl14, _ms_dl15, _ms_dl16, _ms_dl17, _ms_dl18, _ms_dl19, _ms_dl20, _ms_dl21, _ms_dl22, _ms_dl23, _ms_dl24
+    _ms_dl0, _ms_dl1, _ms_dl2, _ms_dl3, _ms_dl4, _ms_dl5, _ms_dl6, _ms_dl7, _ms_dl8, _ms_dl9, _ms_dl10, _ms_dl11, _ms_dl12, _ms_dl13, _ms_dl14, _ms_dl15, _ms_dl16, _ms_dl17, _ms_dl18, _ms_dl19, _ms_dl20, _ms_dl21, _ms_dl22, _ms_dl23, _ms_dl24
 };
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
@@ -395,13 +395,13 @@ char multisprite_pal_frame_skip()
 inline void multisprite_start()
 {
     _ms_dmaerror = 0;
-    *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
-    *DPPL = _ms_b1_dll;
+    *DPPH = _ms_dll >> 8;
+    *DPPL = _ms_dll;
 #ifdef MODE_320AC
-    *CTRL = 0x53;
+    *CTRL = 0x43; // DMA on, 320A/C mode, One (1) byte characters mode
 #else
 #ifdef MODE_320BD
-    *CTRL = 0x52;
+    *CTRL = 0x42; // DMA on, 320B/D mode, One (1) byte characters mode
 #else
     *CTRL = 0x50; // DMA on, 160A/B mode, Two (2) byte characters mode
 #endif
@@ -441,7 +441,7 @@ INIT_BANK void multisprite_init()
         _ms_tmpptr[++Y] = _ms_blank_dl;
     }
     // 8 pixel high regions
-    for (X = 0; X != CONIO_NB_LINES; X++) {
+    for (X = 0; X != _MS_DLL_ARRAY_SIZE; X++) {
         _ms_tmpptr[++Y] = 0x27; // 8 lines, Holey DMA enabled
         _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
         _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
@@ -468,8 +468,6 @@ INIT_BANK void multisprite_init()
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     }
-    *DPPH = _ms_dll >> 8;
-    *DPPL = _ms_dll;
     
     multisprite_start();
 }
@@ -484,7 +482,7 @@ INIT_BANK void multisprite_clear()
 #ifdef DMA_CHECK
         _ms_dldma_save[X] = _MS_DMA_START_VALUE;
 #endif
-        ptr = ms_dls[X];
+        ptr = _ms_dls[X];
         ptr[Y] = 0;
     }
 }
@@ -514,7 +512,18 @@ void multisprite_clear_overlay()
         _ms_dlend_save_overlay[X] = _ms_dlend_save[X];
         _ms_dlend[X] = _ms_dlend_save[X];
         Y = _ms_dlend[X];
-        ptr = ms_dls[X];
+        ptr = _ms_dls[X];
+        ptr[Y] = 0;
+    }
+}
+
+void multisprite_restore_overlay()
+{
+    char *ptr;
+    for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
+        _ms_dlend[X] = _ms_dlend_save_overlay[X];
+        Y = _ms_dlend[X];
+        ptr = _ms_dls[X];
         ptr[Y] = 0;
     }
 }
@@ -529,7 +538,7 @@ void multisprite_restore()
         _ms_dldma[X] = _ms_dldma_save[X];
 #endif
         Y = _ms_dlend[X];
-        ptr = ms_dls[X];
+        ptr = _ms_dls[X];
         ptr[Y] = 0;
     }
 }
@@ -605,10 +614,6 @@ void _ms_sparse_tiling(char top, char left, char height)
     _ms_tmp2 = 0;
 
     bottom = top + height;
-    if (_ms_buffer) {
-        top += _MS_DLL_ARRAY_SIZE; 
-        bottom += _MS_DLL_ARRAY_SIZE;
-    }
 
     for (X = top; X < bottom; _ms_tmp2++) {
         Y = _ms_tmp2;
