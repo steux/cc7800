@@ -551,7 +551,7 @@ void multisprite_wait_for_vblank()
 // line: display list entry to apply DLI flag
 void multisprite_enable_dli(char line)
 {
-    line = (line << 2) - line + 3; // line = line * 3 + 3
+    line = (line << 2) - line + 6; // line = line * 3 + 6
     if (_ms_pal_detected) line += 3;
     _ms_dll[X = line] |= 0x80;
 }
@@ -559,7 +559,7 @@ void multisprite_enable_dli(char line)
 // line : display list entry to apply DLI flag
 void multisprite_disable_dli(char line)
 {
-    line = (line << 2) - line + 3; // line = line * 3 + 3
+    line = (line << 2) - line + 6; // line = line * 3 + 6
     if (_ms_pal_detected) line += 3;
     _ms_dll[X = line] &= 0x7f;
 }
