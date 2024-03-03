@@ -47,7 +47,7 @@ char _ms_dmaerror;
 #define _ms_tmp _libc_tmp
 #define _ms_tmp2 _libc_tmp2
 signed char _ms_tmp3;
-ramchip char _ms_tmp4, _ms_tmp5;
+ramchip char _ms_tmp4;
 char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 
 ramchip char _ms_dl0[_MS_DL_MALLOC(0)], _ms_dl1[_MS_DL_MALLOC(1)], _ms_dl2[_MS_DL_MALLOC(2)], _ms_dl3[_MS_DL_MALLOC(3)], _ms_dl4[_MS_DL_MALLOC(4)], _ms_dl5[_MS_DL_MALLOC(5)], _ms_dl6[_MS_DL_MALLOC(6)], _ms_dl7[_MS_DL_MALLOC(7)], _ms_dl8[_MS_DL_MALLOC(8)], _ms_dl9[_MS_DL_MALLOC(9)], _ms_dl10[_MS_DL_MALLOC(10)], _ms_dl11[_MS_DL_MALLOC(11)], _ms_dl12[_MS_DL_MALLOC(12)], _ms_dl13[_MS_DL_MALLOC(13)], _ms_dl14[_MS_DL_MALLOC(14)], _ms_dl15[_MS_DL_MALLOC(15)], _ms_dl16[_MS_DL_MALLOC(16)], _ms_dl17[_MS_DL_MALLOC(17)], _ms_dl18[_MS_DL_MALLOC(18)], _ms_dl19[_MS_DL_MALLOC(19)], _ms_dl20[_MS_DL_MALLOC(20)], _ms_dl21[_MS_DL_MALLOC(21)], _ms_dl22[_MS_DL_MALLOC(22)], _ms_dl23[_MS_DL_MALLOC(23)], _ms_dl24[_MS_DL_MALLOC(24)];
@@ -135,12 +135,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
-                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmp4 = Y++; \
                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
+                _ms_tmpptr[Y] = 0; \
+                _ms_tmpptr[Y = _ms_tmp4] = (gfx); \
                 if (_ms_tmp) { \
                     _ms_tmpptr2 = (gfx); \
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x08) | _ms_tmp; \
@@ -152,7 +154,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                             if (Y >= _MS_DL_LIMIT - 5) { \
                                 _ms_dmaerror++; \
                             } else { \
-                                _ms_tmpptr[Y++] = _ms_tmpptr2; \
+                                _ms_tmp4 = Y++; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
                                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
@@ -164,6 +166,8 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_dlend[X] = Y; \
+                                _ms_tmpptr[Y] = 0; \
+                                _ms_tmpptr[Y = _ms_tmp4] = _ms_tmpptr2; \
                             } \
                         } \
                     } \
@@ -174,12 +178,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                         if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
-                            _ms_tmpptr[Y++] = _ms_tmpptr2; \
+                            _ms_tmp4 = Y++; \
                             _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                             _ms_tmpptr[Y++] = _ms_tmp2; \
                             _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                             _ms_tmpptr[Y++] = (x); \
                             _ms_dlend[X] = Y; \
+                            _ms_tmpptr[Y] = 0; \
+                            _ms_tmpptr[Y = _ms_tmp4] = _ms_tmpptr2; \
                         } \
                     } \
                 } else { \
@@ -194,12 +200,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                             if (Y >= _MS_DL_LIMIT) { \
                                 _ms_dmaerror++; \
                             } else { \
-                                _ms_tmpptr[Y++] = _ms_tmpptr2; \
+                                _ms_tmp = Y++; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
                                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                                 _ms_tmpptr[Y++] = (x); \
                                 _ms_dlend[X] = Y; \
+                                _ms_tmpptr[Y] = 0; \
+                                _ms_tmpptr[Y = _ms_tmp] = _ms_tmpptr2; \
                             } \
                         } \
                     } \
@@ -216,12 +224,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
-                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmp2 = Y++; \
                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                 _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
+                _ms_tmpptr[Y] = 0; \
+                _ms_tmpptr[Y = _ms_tmp2] = (gfx); \
                 if (_ms_tmp) { \
                     X++; \
                     _MS_DMA_CHECK((8 + width * 3 + 1) / 2) { \
@@ -230,12 +240,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
                         if (Y >= _MS_DL_LIMIT) { \
                             _ms_dmaerror++; \
                         } else { \
-                            _ms_tmpptr[Y++] = (gfx); \
+                            _ms_tmp2 = Y++; \
                             _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                             _ms_tmpptr[Y++] = (((gfx) >> 8) - 0x08) | _ms_tmp; \
                             _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                             _ms_tmpptr[Y++] = (x); \
                             _ms_dlend[X] = Y; \
+                            _ms_tmpptr[Y] = 0; \
+                            _ms_tmpptr[Y = _ms_tmp2] = (gfx); \
                         } \
                     } \
                 }\
@@ -269,11 +281,13 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             if (Y >= _MS_DL_LIMIT) { \
                 _ms_dmaerror++; \
             } else { \
-                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmp = Y++; \
                 _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
                 _ms_tmpptr[Y++] = ((gfx) >> 8); \
                 _ms_tmpptr[Y++] = (x); \
                 _ms_dlend[X] = Y; \
+                _ms_tmpptr[Y] = 0; \
+                _ms_tmpptr[Y = _ms_tmp] = (gfx); \
             }\
         }
 
@@ -283,21 +297,25 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
         _ms_tmpptr = _ms_dls[X]; \
         Y = _ms_dlend[X]; \
-        _ms_tmpptr[Y++] = (gfx); \
+        _ms_tmp2 = Y++; \
         _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
         _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
         _ms_tmpptr[Y++] = (x); \
         _ms_dlend[X] = Y; \
+        _ms_tmpptr[Y] = 0; \
+        _ms_tmpptr[Y = _ms_tmp2] = (gfx); \
         if (_ms_tmp) { \
             X++; \
             _MS_DMA_SUB((8 + width * 3 + 1) / 2);  \
             _ms_tmpptr = _ms_dls[X];  \
             Y = _ms_dlend[X]; \
-            _ms_tmpptr[Y++] = (gfx); \
+            _ms_tmp2 = Y++; \
             _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
             _ms_tmpptr[Y++] = (((gfx) >> 8) - 0x08) | _ms_tmp;  \
             _ms_tmpptr[Y++] = (x); \
             _ms_dlend[X] = Y; \
+            _ms_tmpptr[Y] = 0; \
+            _ms_tmpptr[Y = _ms_tmp2] = (gfx); \
         }
 
 #define multisprite_reserve_dma(y, nb_sprites, width) \
@@ -317,12 +335,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
         if (Y >= _MS_DL_LIMIT) { \
             _ms_dmaerror++; \
          } else { \
-            _ms_tmpptr[Y++] = (tiles); \
+            _ms_tmp = Y++; \
             _ms_tmpptr[Y++] = 0x60; \
             _ms_tmpptr[Y++] = (tiles) >> 8; \
             _ms_tmpptr[Y++] = -size & 0x1f | (palette << 5); \
             _ms_tmpptr[Y++] = (x); \
             _ms_dlend[X] = Y; \
+            _ms_tmpptr[Y] = 0; \
+            _ms_tmpptr[Y = _ms_tmp] = (tiles); \
         } \
     }
 
@@ -331,12 +351,14 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
     _MS_DMA_SUB((10 + 3 + size * 9 + 1) / 2); \
     _ms_tmpptr = _ms_dls[X]; \
     Y = _ms_dlend[X]; \
-    _ms_tmpptr[Y++] = (tiles); \
+    _ms_tmp = Y++; \
     _ms_tmpptr[Y++] = 0x60; \
     _ms_tmpptr[Y++] = (tiles) >> 8; \
     _ms_tmpptr[Y++] = -size & 0x1f | (palette << 5); \
     _ms_tmpptr[Y++] = (x); \
-    _ms_dlend[X] = Y; 
+    _ms_dlend[X] = Y; \
+    _ms_tmpptr[Y] = 0; \
+    _ms_tmpptr[Y = _ms_tmp] = (tiles);
 
 #define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
 
@@ -510,6 +532,11 @@ void multisprite_restore()
         ptr = ms_dls[X];
         ptr[Y] = 0;
     }
+}
+
+void multisprite_wait_for_vblank()
+{
+    while (!(*MSTAT & 0x80)); // Wait for VBLANK
 }
 
 // line: display list entry to apply DLI flag
