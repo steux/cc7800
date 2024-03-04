@@ -157,7 +157,7 @@ void display_ball()
         sxball = -sxball;
     }
     // Bounces on upper wall
-    if ((syball >> 8) < 0 && (yball >> 8) < 8) {
+    if ((syball >> 8) < 0 && (yball >> 8) < 7) {
         syball = -syball;
     }
     // Bounces on suitcase
