@@ -15,13 +15,15 @@ ramchip char str[5];
 void interrupt dli()
 {
     *BACKGRND = 0x05;
+    Y = 200;
     do {
-        X = *INTIM;
-        if (!(*INPT0 & 0x80)) paddle[0] = X;
-        if (!(*INPT1 & 0x80)) paddle[1] = X;
-        if (!(*INPT2 & 0x80)) paddle[2] = X;
-        if (!(*INPT3 & 0x80)) paddle[3] = X;
-    } while (X >= 32);
+        strobe(WSYNC);
+        if (!(*INPT0 & 0x80)) paddle[0] = Y; // Worst case 11 cycles
+        if (!(*INPT1 & 0x80)) paddle[1] = Y;
+        if (!(*INPT2 & 0x80)) paddle[2] = Y;
+        if (!(*INPT3 & 0x80)) paddle[3] = Y;
+        Y--;
+    } while (Y); // Looping 5 cycles
     *VBLANK = 0x80; // Dump paddles to ground
     *BACKGRND = 0x00;
 }
@@ -41,10 +43,6 @@ void main()
 
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *BACKGRND = 0x0f;
-        
-        do {
-            *TIM64T = 255; // That should work since we are out of DMA
-        } while (*INTIM != 254);
         *VBLANK = 0x00; // Let paddle capacitors charging 
         
         // Display paddle position
