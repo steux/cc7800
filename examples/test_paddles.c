@@ -17,13 +17,14 @@ void interrupt dli()
     *BACKGRND = 0x05;
     Y = 200;
     do {
-        strobe(WSYNC);
+        strobe(WSYNC); // 3 cycles
         if (!(*INPT0 & 0x80)) paddle[0] = Y; // Worst case 11 cycles
         if (!(*INPT1 & 0x80)) paddle[1] = Y;
         if (!(*INPT2 & 0x80)) paddle[2] = Y;
         if (!(*INPT3 & 0x80)) paddle[3] = Y;
         Y--;
     } while (Y); // Looping 5 cycles
+    // This takes 52 cycles out of 113.5. 50% should be left by Maria
     *VBLANK = 0x80; // Dump paddles to ground
     *BACKGRND = 0x00;
 }
