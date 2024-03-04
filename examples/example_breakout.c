@@ -31,36 +31,88 @@ holeydma reversed scattered(8,1) char side_brick[8] = {
 	0xdf, 0xdf, 0xdf, 0x00, 0xfb, 0xfb, 0xfb, 0x00
 };
 
-ramchip char pos_paddle;
-ramchip char str[5];
+#define LEFT_BORDER ((160 - (13 * 8)) / 2)
+#define RIGHT_BORDER (160 - LEFT_BORDER) 
+#define PPADDLE_BUFSIZE 4
+ramchip char paddle_pos[PPADDLE_BUFSIZE], paddle_pos_idx, paddle_size;
+ramchip signed char paddle_speed;
+ramchip char paddle_pos_str[5], paddle_speed_str[5];
+ramchip unsigned int xball, yball;
+ramchip signed char sxball, syball; // Ball speed 
 
 void interrupt dli()
 {
-    *BACKGRND = 0x05;
+    //*BACKGRND = 0x05;
+    *VBLANK = 0x00; // Let paddle capacitors charging 
     Y = 200;
     do {
         strobe(WSYNC); // 3 cycles
         if ((*INPT0 & 0x80)) break; // 7 cycles
         Y--;
     } while (Y); // Looping 5 cycles
-    pos_paddle = Y;
+    X = paddle_pos_idx;
+    X++;
+    if (X == PPADDLE_BUFSIZE) {
+        X = 0;
+    }
+    paddle_pos_idx = X;
+    paddle_pos[X] = Y;
     // This takes 15 cycles out of 113.5. Maria should have enough 
     *VBLANK = 0x80; // Dump paddles to ground
-    *BACKGRND = 0x00;
+    //*BACKGRND = 0x00;
 }
 
-void game_init()
+void display_init()
 {
+    char y;
+
     *P0C2 = multisprite_color(0x34);
     *P1C2 = multisprite_color(0x40);
     *P2C2 = multisprite_color(0x1c);
     *P3C2 = 0x0f;
+    multisprite_init();
+    multisprite_set_charbase(font);
+    multisprite_enable_dli(0);
+
+    // Left and right walls
+    for (y = 0; y != 25; y++) {
+        char yy = y << 3;
+        multisprite_display_sprite_aligned(LEFT_BORDER - 4, yy, side_brick, 1, 0, 0);
+        multisprite_display_sprite_aligned_fast(RIGHT_BORDER, yy, side_brick, 1, 0);
+    }
+
+    multisprite_save();
 }
+
+void game_init()
+{
+    paddle_pos_idx = 0;
+    for (X = 4; X >= 0; X--) paddle_pos[X] = 0;
+    xball = 256 * 160;
+    yball = 100 * 160;
+    sxball = 50;
+    syball = 50;
+    paddle_size = 12;
+    paddle_speed = 0;
+}
+
+const char left_shift_6bits[4] = {0, 0x40, 0x80, 0xc0};
 
 void display_paddle()
 {
-    char x = pos_paddle;
-    char x2 = x >> 1;
+    char x = paddle_pos[X = paddle_pos_idx];
+    X++;
+    if (X == PPADDLE_BUFSIZE) X = 0;
+    paddle_speed = paddle_pos[X] - x;
+
+    // Compute the average of the last PPADDLE_BUFSIZE positions
+    unsigned int sum = paddle_pos[X = 0];
+    for (X++; X != PPADDLE_BUFSIZE; X++) {
+        sum += paddle_pos[X];
+    }
+    x = 200 - (left_shift_6bits[X = (sum >> 8)] | ((sum & 0xff) >> 2)); 
+    char x2 = LEFT_BORDER + (x >> 1);
+    if (x2 >= RIGHT_BORDER - paddle_size) x2 = RIGHT_BORDER - paddle_size;
     char *gfx;
     if (x & 1) {
         gfx = suitcase_even;
@@ -73,27 +125,27 @@ void display_paddle()
 void main()
 {
     game_init();
-    multisprite_init();
-    multisprite_set_charbase(font);
-    multisprite_enable_dli(0);
-    multisprite_save();
+    display_init();
 
     // Main loop
     do {
-
-        while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *BACKGRND = 0x0f;
-        *VBLANK = 0x00; // Let paddle capacitors charging 
         
         // Display paddle position
         multisprite_restore();
-        itoa(pos_paddle, str, 10);
-        char len = strlen(str);
-        multisprite_display_tiles(0, 1, str, len, 0);
+#ifdef DEBUG
+        itoa(paddle_pos[X = paddle_pos_idx], paddle_pos_str, 10);
+        char len = strlen(paddle_pos_str);
+        multisprite_display_tiles(0, 0, paddle_pos_str, len, 3);
+        itoa(paddle_speed, paddle_speed_str, 10);
+        char len = strlen(paddle_speed_str);
+        multisprite_display_tiles(0, 1, paddle_speed_str, len, 3);
+#endif
         display_paddle();
         *BACKGRND = 0x00;
 
-        // Wait for VBLANK to end
-        while (*MSTAT & 0x80);
+        // Wait for VBLANK to start
+        while (!(*MSTAT & 0x80));
+        //while (*MSTAT & 0x80); // And to end
     } while(1);
 }
