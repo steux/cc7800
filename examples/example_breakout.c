@@ -27,8 +27,11 @@ holeydma reversed scattered(8,2) char ball_odd[16] = {
 holeydma reversed scattered(8,2) char brick[16] = {
 	0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x00, 0x00
 };
-holeydma reversed scattered(8,1) char side_brick[8] = {
-	0xdf, 0xdf, 0xdf, 0x00, 0xfb, 0xfb, 0xfb, 0x00
+holeydma reversed scattered(8,7) char side_brick[56] = {
+	0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf,
+	0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfb, 0xfb, 0xfb, 0xfb,
+	0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb, 0xfb,
+	0xfb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 #define LEFT_BORDER ((160 - (13 * 8)) / 2)
@@ -38,7 +41,7 @@ ramchip char paddle_pos[PPADDLE_BUFSIZE], paddle_pos_idx, paddle_size;
 ramchip signed char paddle_speed;
 ramchip char paddle_pos_str[5], paddle_speed_str[5];
 ramchip unsigned int xball, yball;
-ramchip signed char sxball, syball; // Ball speed 
+ramchip int sxball, syball; // Ball speed 
 
 void interrupt dli()
 {
@@ -64,7 +67,7 @@ void interrupt dli()
 
 void display_init()
 {
-    char y;
+    char x, y;
 
     *P0C2 = multisprite_color(0x34);
     *P1C2 = multisprite_color(0x40);
@@ -74,8 +77,16 @@ void display_init()
     multisprite_set_charbase(font);
     multisprite_enable_dli(0);
 
+    // Upper wall
+    multisprite_display_sprite_aligned(LEFT_BORDER - 4, 0, side_brick, 7, 0, 0);
+    x = LEFT_BORDER - 4;
+    for (y = 0; y != 3; y++) {
+        x += 56 / 2;
+        multisprite_display_sprite_aligned_fast(x, 0, side_brick, 7, 0);
+    }
+
     // Left and right walls
-    for (y = 0; y != 25; y++) {
+    for (y = 1; y != 25; y++) {
         char yy = y << 3;
         multisprite_display_sprite_aligned(LEFT_BORDER - 4, yy, side_brick, 1, 0, 0);
         multisprite_display_sprite_aligned_fast(RIGHT_BORDER, yy, side_brick, 1, 0);
@@ -88,10 +99,10 @@ void game_init()
 {
     paddle_pos_idx = 0;
     for (X = 4; X >= 0; X--) paddle_pos[X] = 0;
-    xball = 256 * 160;
-    yball = 100 * 160;
-    sxball = 50;
-    syball = 50;
+    xball = 256 * ((13 * 16) / 2 + 16 - 3);
+    yball = 256 * 50;
+    sxball = 100;
+    syball = 200;
     paddle_size = 12;
     paddle_speed = 0;
 }
@@ -122,6 +133,44 @@ void display_paddle()
     multisprite_display_sprite_aligned(x2, 192, gfx, 6, 0, 1);
 }
 
+void display_ball()
+{
+    char x = xball >> 8;
+    char y = yball >> 8;
+    char x2 = LEFT_BORDER + (x >> 1) - 8;
+    char *gfx;
+    if (x & 1) {
+        gfx = ball_odd;
+    } else {
+        gfx = ball_even;
+    }
+    multisprite_display_sprite_ex(x2, y, gfx, 2, 0, 1);
+    xball += sxball;
+    yball += syball;
+    if ((yball >> 8) >= 199) {
+        // Reset ball
+        xball = 256 * ((13 * 16) / 2 + 16 - 3);
+        yball = 256 * 50;
+    }
+    // Bounces on left and right walls
+    if (((sxball >> 8) >= 0 && ((xball >> 8) >= (13 * 16) + 16 - 7)) || ((sxball >> 8) < 0 && ((xball >> 8) < 16 ))) {
+        sxball = -sxball;
+    }
+    // Bounces on upper wall
+    if ((syball >> 8) < 0 && (yball >> 8) < 8) {
+        syball = -syball;
+    }
+    // Bounces on suitcase
+    if ((syball >> 8) >= 0 && ((yball >> 8) >= 192 - 7) && ((yball >> 8) <= 192 - 3)) {
+        // Are we above the suitcase ?
+        char left_paddle = 213 - paddle_pos[X = paddle_pos_idx]; // Including the 16 pixels offset of the ball - 3 pixels off the ball (round)
+        if (((xball >> 8) >= left_paddle) && ((xball >> 8) < left_paddle + (paddle_size << 1))) {
+            syball = -syball;
+            sxball += paddle_speed;
+        }
+    }
+}
+
 void main()
 {
     game_init();
@@ -142,6 +191,7 @@ void main()
         multisprite_display_tiles(0, 1, paddle_speed_str, len, 3);
 #endif
         display_paddle();
+        display_ball();
         *BACKGRND = 0x00;
 
         // Wait for VBLANK to start

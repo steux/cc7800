@@ -50,10 +50,11 @@ signed char _ms_tmp3;
 ramchip char _ms_tmp4;
 char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 
-ramchip char _ms_dl0[_MS_DL_MALLOC(0)], _ms_dl1[_MS_DL_MALLOC(1)], _ms_dl2[_MS_DL_MALLOC(2)], _ms_dl3[_MS_DL_MALLOC(3)], _ms_dl4[_MS_DL_MALLOC(4)], _ms_dl5[_MS_DL_MALLOC(5)], _ms_dl6[_MS_DL_MALLOC(6)], _ms_dl7[_MS_DL_MALLOC(7)], _ms_dl8[_MS_DL_MALLOC(8)], _ms_dl9[_MS_DL_MALLOC(9)], _ms_dl10[_MS_DL_MALLOC(10)], _ms_dl11[_MS_DL_MALLOC(11)], _ms_dl12[_MS_DL_MALLOC(12)], _ms_dl13[_MS_DL_MALLOC(13)], _ms_dl14[_MS_DL_MALLOC(14)], _ms_dl15[_MS_DL_MALLOC(15)], _ms_dl16[_MS_DL_MALLOC(16)], _ms_dl17[_MS_DL_MALLOC(17)], _ms_dl18[_MS_DL_MALLOC(18)], _ms_dl19[_MS_DL_MALLOC(19)], _ms_dl20[_MS_DL_MALLOC(20)], _ms_dl21[_MS_DL_MALLOC(21)], _ms_dl22[_MS_DL_MALLOC(22)], _ms_dl23[_MS_DL_MALLOC(23)], _ms_dl24[_MS_DL_MALLOC(24)];
+ramchip char _ms_dl0[_MS_DL_MALLOC(0)], _ms_dl1[_MS_DL_MALLOC(1)], _ms_dl2[_MS_DL_MALLOC(2)], _ms_dl3[_MS_DL_MALLOC(3)], _ms_dl4[_MS_DL_MALLOC(4)], _ms_dl5[_MS_DL_MALLOC(5)], _ms_dl6[_MS_DL_MALLOC(6)], _ms_dl7[_MS_DL_MALLOC(7)], _ms_dl8[_MS_DL_MALLOC(8)], _ms_dl9[_MS_DL_MALLOC(9)], _ms_dl10[_MS_DL_MALLOC(10)], _ms_dl11[_MS_DL_MALLOC(11)], _ms_dl12[_MS_DL_MALLOC(12)], _ms_dl13[_MS_DL_MALLOC(13)], _ms_dl14[_MS_DL_MALLOC(14)], _ms_dl15[_MS_DL_MALLOC(15)], _ms_dl16[_MS_DL_MALLOC(16)], _ms_dl17[_MS_DL_MALLOC(17)], _ms_dl18[_MS_DL_MALLOC(18)], _ms_dl19[_MS_DL_MALLOC(19)], _ms_dl20[_MS_DL_MALLOC(20)], _ms_dl21[_MS_DL_MALLOC(21)], _ms_dl22[_MS_DL_MALLOC(22)], _ms_dl23[_MS_DL_MALLOC(23)], _ms_dl24[_MS_DL_MALLOC(24)], _ms_dl_rubbish[_MS_DL_MALLOC(25)];
 
-const char *_ms_dls[_MS_DLL_ARRAY_SIZE] = {
-    _ms_dl0, _ms_dl1, _ms_dl2, _ms_dl3, _ms_dl4, _ms_dl5, _ms_dl6, _ms_dl7, _ms_dl8, _ms_dl9, _ms_dl10, _ms_dl11, _ms_dl12, _ms_dl13, _ms_dl14, _ms_dl15, _ms_dl16, _ms_dl17, _ms_dl18, _ms_dl19, _ms_dl20, _ms_dl21, _ms_dl22, _ms_dl23, _ms_dl24
+const char *_ms_dls[32] = {
+    _ms_dl0, _ms_dl1, _ms_dl2, _ms_dl3, _ms_dl4, _ms_dl5, _ms_dl6, _ms_dl7, _ms_dl8, _ms_dl9, _ms_dl10, _ms_dl11, _ms_dl12, _ms_dl13, _ms_dl14, _ms_dl15, _ms_dl16, _ms_dl17, _ms_dl18, _ms_dl19, _ms_dl20, _ms_dl21, _ms_dl22, _ms_dl23, _ms_dl24,
+    _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish 
 };
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
