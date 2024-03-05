@@ -18,8 +18,8 @@
 #define INIT_BANK
 #endif
 
-#define MS_YMAX 200
-#define _MS_DLL_ARRAY_SIZE 25 
+#define MS_YMAX 224
+#define _MS_DLL_ARRAY_SIZE 28 
 #define _MS_DMA_START_VALUE (402 / 2)
 
 #ifndef _MS_DL_SIZE
@@ -31,13 +31,9 @@
 #else
 const char _ms_dl_limits[_MS_DLL_ARRAY_SIZE] = {
     _MS_DL_MALLOC(0) - 7, _MS_DL_MALLOC(1) - 7, _MS_DL_MALLOC(2) - 7, _MS_DL_MALLOC(3) - 7, _MS_DL_MALLOC(4) - 7, _MS_DL_MALLOC(5) - 7, _MS_DL_MALLOC(6) - 7, _MS_DL_MALLOC(7) - 7, _MS_DL_MALLOC(8) - 7, _MS_DL_MALLOC(9) - 7, _MS_DL_MALLOC(10) - 7, _MS_DL_MALLOC(11) - 7, _MS_DL_MALLOC(12) - 7, _MS_DL_MALLOC(13) - 7, _MS_DL_MALLOC(14) - 7, _MS_DL_MALLOC(14) - 7,
-    _MS_DL_MALLOC(15) - 7, _MS_DL_MALLOC(16) - 7, _MS_DL_MALLOC(17) - 7, _MS_DL_MALLOC(18) - 7, _MS_DL_MALLOC(19) - 7, _MS_DL_MALLOC(20) - 7, _MS_DL_MALLOC(21) - 7, _MS_DL_MALLOC(22) - 7, _MS_DL_MALLOC(23) - 7, _MS_DL_MALLOC(24) - 7
+    _MS_DL_MALLOC(15) - 7, _MS_DL_MALLOC(16) - 7, _MS_DL_MALLOC(17) - 7, _MS_DL_MALLOC(18) - 7, _MS_DL_MALLOC(19) - 7, _MS_DL_MALLOC(20) - 7, _MS_DL_MALLOC(21) - 7, _MS_DL_MALLOC(22) - 7, _MS_DL_MALLOC(23) - 7, _MS_DL_MALLOC(24) - 7, _MS_DL_MALLOC(25) - 7, _MS_DL_MALLOC(26) - 7, _MS_DL_MALLOC(27) - 7
 };
 #define _MS_DL_LIMIT _ms_dl_limits[X] 
-#endif
-
-#ifndef _MS_TOP_SCROLLING_ZONE
-#define _MS_TOP_SCROLLING_ZONE 0
 #endif
 
 // Zeropage variables
@@ -50,11 +46,11 @@ signed char _ms_tmp3;
 ramchip char _ms_tmp4;
 char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 
-ramchip char _ms_dl0[_MS_DL_MALLOC(0)], _ms_dl1[_MS_DL_MALLOC(1)], _ms_dl2[_MS_DL_MALLOC(2)], _ms_dl3[_MS_DL_MALLOC(3)], _ms_dl4[_MS_DL_MALLOC(4)], _ms_dl5[_MS_DL_MALLOC(5)], _ms_dl6[_MS_DL_MALLOC(6)], _ms_dl7[_MS_DL_MALLOC(7)], _ms_dl8[_MS_DL_MALLOC(8)], _ms_dl9[_MS_DL_MALLOC(9)], _ms_dl10[_MS_DL_MALLOC(10)], _ms_dl11[_MS_DL_MALLOC(11)], _ms_dl12[_MS_DL_MALLOC(12)], _ms_dl13[_MS_DL_MALLOC(13)], _ms_dl14[_MS_DL_MALLOC(14)], _ms_dl15[_MS_DL_MALLOC(15)], _ms_dl16[_MS_DL_MALLOC(16)], _ms_dl17[_MS_DL_MALLOC(17)], _ms_dl18[_MS_DL_MALLOC(18)], _ms_dl19[_MS_DL_MALLOC(19)], _ms_dl20[_MS_DL_MALLOC(20)], _ms_dl21[_MS_DL_MALLOC(21)], _ms_dl22[_MS_DL_MALLOC(22)], _ms_dl23[_MS_DL_MALLOC(23)], _ms_dl24[_MS_DL_MALLOC(24)], _ms_dl_rubbish[_MS_DL_MALLOC(25)];
+ramchip char _ms_dl0[_MS_DL_MALLOC(0)], _ms_dl1[_MS_DL_MALLOC(1)], _ms_dl2[_MS_DL_MALLOC(2)], _ms_dl3[_MS_DL_MALLOC(3)], _ms_dl4[_MS_DL_MALLOC(4)], _ms_dl5[_MS_DL_MALLOC(5)], _ms_dl6[_MS_DL_MALLOC(6)], _ms_dl7[_MS_DL_MALLOC(7)], _ms_dl8[_MS_DL_MALLOC(8)], _ms_dl9[_MS_DL_MALLOC(9)], _ms_dl10[_MS_DL_MALLOC(10)], _ms_dl11[_MS_DL_MALLOC(11)], _ms_dl12[_MS_DL_MALLOC(12)], _ms_dl13[_MS_DL_MALLOC(13)], _ms_dl14[_MS_DL_MALLOC(14)], _ms_dl15[_MS_DL_MALLOC(15)], _ms_dl16[_MS_DL_MALLOC(16)], _ms_dl17[_MS_DL_MALLOC(17)], _ms_dl18[_MS_DL_MALLOC(18)], _ms_dl19[_MS_DL_MALLOC(19)], _ms_dl20[_MS_DL_MALLOC(20)], _ms_dl21[_MS_DL_MALLOC(21)], _ms_dl22[_MS_DL_MALLOC(22)], _ms_dl23[_MS_DL_MALLOC(23)], _ms_dl24[_MS_DL_MALLOC(24)], _ms_dl25[_MS_DL_MALLOC(25)], _ms_dl26[_MS_DL_MALLOC(26)], _ms_dl27[_MS_DL_MALLOC(27)], _ms_dl_rubbish[_MS_DL_MALLOC(28)];
 
 const char *_ms_dls[32] = {
-    _ms_dl0, _ms_dl1, _ms_dl2, _ms_dl3, _ms_dl4, _ms_dl5, _ms_dl6, _ms_dl7, _ms_dl8, _ms_dl9, _ms_dl10, _ms_dl11, _ms_dl12, _ms_dl13, _ms_dl14, _ms_dl15, _ms_dl16, _ms_dl17, _ms_dl18, _ms_dl19, _ms_dl20, _ms_dl21, _ms_dl22, _ms_dl23, _ms_dl24,
-    _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish 
+    _ms_dl0, _ms_dl1, _ms_dl2, _ms_dl3, _ms_dl4, _ms_dl5, _ms_dl6, _ms_dl7, _ms_dl8, _ms_dl9, _ms_dl10, _ms_dl11, _ms_dl12, _ms_dl13, _ms_dl14, _ms_dl15, _ms_dl16, _ms_dl17, _ms_dl18, _ms_dl19, _ms_dl20, _ms_dl21, _ms_dl22, _ms_dl23, _ms_dl24, _ms_dl25, _ms_dl26, _ms_dl27,
+    _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish, _ms_dl_rubbish 
 };
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
@@ -420,29 +416,23 @@ INIT_BANK void multisprite_init()
 
     _ms_tmpptr = _ms_dll;
     // Build DLL
+    // 69 blank lines for PAL
+    // 19 blank lines for NTSC
     if (_ms_pal_detected) {
         // 16 blank lines
         _ms_tmpptr[Y = 0] = 0x0f;  // 16 lines
         _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
         _ms_tmpptr[++Y] = _ms_set_wm_dl;
         // 16 blank lines
-        _ms_tmpptr[++Y] = 0x0f;  // 16 lines
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
-        // 14 blank lines
-        _ms_tmpptr[++Y] = 0x0d;  // 14 lines
+        _ms_tmpptr[++Y] = 0x2f;  // 16 lines.. 8 high zone Holey DMA enabled just in case...
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     } else {
-        _ms_tmpptr[Y = 0] = 0x0f; // 16 lines
+        _ms_tmpptr[Y = 0] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
         _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
         _ms_tmpptr[++Y] = _ms_set_wm_dl;
-        // 5 blank lines
-        _ms_tmpptr[++Y] = 0x04;  // 5 lines
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
     }
-    // 8 pixel high regions
+    // 8 pixel high regions (28 regions = 224 pixels)
     for (X = 0; X != _MS_DLL_ARRAY_SIZE; X++) {
         _ms_tmpptr[++Y] = 0x27; // 8 lines, Holey DMA enabled
         _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
@@ -450,23 +440,19 @@ INIT_BANK void multisprite_init()
     }
     if (_ms_pal_detected) {
         // 16 blank lines
-        _ms_tmpptr[++Y] = 0x0f;  // 16 lines
+        _ms_tmpptr[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
         // 16 blank lines
         _ms_tmpptr[++Y] = 0x0f;  // 16 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
-        // 15 blank lines
-        _ms_tmpptr[++Y] = 0x0e;  // 15 lines
+        // 4 blank lines
+        _ms_tmpptr[++Y] = 0x04;  // 5 lines
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     } else {
-        _ms_tmpptr[++Y] = 0x0f; // 16 lines
-        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
-        _ms_tmpptr[++Y] = _ms_blank_dl;
-        // 6 blank lines
-        _ms_tmpptr[++Y] = 0x05;  // 6 lines
+        _ms_tmpptr[++Y] = 0x29; // 10 lines. 8 high zone Holey DMA enabled just in case...
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
     }
@@ -553,7 +539,7 @@ void multisprite_wait_for_vblank()
 // line: display list entry to apply DLI flag
 void multisprite_enable_dli(char line)
 {
-    line = (line << 2) - line + 6; // line = line * 3 + 6
+    line = (line << 2) - line + 3; // line = line * 3 + 3
     if (_ms_pal_detected) line += 3;
     _ms_dll[X = line] |= 0x80;
 }
@@ -561,7 +547,7 @@ void multisprite_enable_dli(char line)
 // line : display list entry to apply DLI flag
 void multisprite_disable_dli(char line)
 {
-    line = (line << 2) - line + 6; // line = line * 3 + 6
+    line = (line << 2) - line + 3; // line = line * 3 + 3
     if (_ms_pal_detected) line += 3;
     _ms_dll[X = line] &= 0x7f;
 }
