@@ -407,22 +407,25 @@ void compute_ball()
         yball = 256 * 16;
     }
     // Bounces on suitcase
-    if ((syball >> 8) >= 0 && ((yball >> 8) >= PADDLE_YPOS - BALL_SIZE) && ((yball >> 8) <= PADDLE_YPOS - (BALL_SIZE / 2))) {
+    if ((syball >> 8) >= 0 && ((yball >> 8) >= PADDLE_YPOS - BALL_SIZE)) {
         // Are we above the suitcase ?
         char left_side = paddle_filtered_pos + BALL_XOFFSET - (BALL_SIZE / 2) - 1; // Including the 16 pixels offset of the ball - 3 pixels off the ball (round)
         if (((xball >> 8) >= left_side) && ((xball >> 8) < left_side + paddle_size + 3)) {
-            //bounce_ball_horizontally();
-            signed char d = paddle_filtered_pos + (BALL_XOFFSET - (BALL_SIZE / 2)) + (paddle_size >> 1) - (xball >> 8);
-            signed char dx = (d << 2);
-            if (dx >= 0) {
-                if (dx < 10) dx = 10;
-                else if (dx >= 50) dx = 50;
-            } else {
-                if (dx >= -11) dx = -10;
-                else if (dx < -50) dx = -50;
+            if ((yball >> 8) < PADDLE_YPOS - (BALL_SIZE / 2)) {
+                signed char d = paddle_filtered_pos + (BALL_XOFFSET - (BALL_SIZE / 2)) + (paddle_size >> 1) - (xball >> 8);
+                signed char dx = (d << 2);
+                if (dx >= 0) {
+                    if (dx < 10) dx = 10;
+                    else if (dx >= 50) dx = 50;
+                } else {
+                    if (dx >= -11) dx = -10;
+                    else if (dx < -50) dx = -50;
+                }
+                char dxx = 192 - dx;
+                update_ball_direction(dxx);
+            } else if ((yball >> 8) < PADDLE_YPOS) {
+                bounce_ball_vertically();
             }
-            char dxx = 192 - dx;
-            update_ball_direction(dxx);
         }
     }
 }
