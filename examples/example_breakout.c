@@ -10,21 +10,23 @@
 unsigned char X, Y;
 
 // Generated from sprites7800 breakout.yaml
-holeydma reversed scattered(8,6) char suitcase_even[48] = {
-	0x30, 0xf0, 0xf0, 0xf0, 0xf0, 0xe0, 0x60, 0xf5, 0xf5, 0xf5, 0xf5, 0xb4, 0x57, 0xbd, 0xf5, 0xf5,
-	0xe5, 0xdd, 0x56, 0xb9, 0x59, 0xd6, 0x65, 0xd9, 0x53, 0xbd, 0x7a, 0xfa, 0x65, 0xdc, 0x30, 0xf0,
+holeydma reversed scattered(8,6) char suitcase_odd[48] = {
+	0x30, 0xf0, 0xf0, 0xf0, 0xf0, 0xe0, 0x75, 0xf5, 0xf5, 0xf5, 0xf5, 0xf5, 0x57, 0xbd, 0xf5, 0xf5,
+	0xe5, 0xdd, 0x56, 0xb9, 0x59, 0xd6, 0x65, 0xd9, 0x53, 0xbc, 0x7a, 0xfa, 0x60, 0xdc, 0x30, 0xf0,
 	0xf0, 0xf0, 0xf0, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-holeydma reversed scattered(8,6) char suitcase_odd[48] = {
-	0x70, 0xf0, 0xf0, 0xf0, 0xf0, 0xc0, 0xd1, 0xf5, 0xf5, 0xf5, 0xf5, 0x60, 0xb7, 0x75, 0xf5, 0xf5,
-	0xd7, 0xad, 0xb6, 0x65, 0xb9, 0xa6, 0xd6, 0xa9, 0xb3, 0x65, 0xfa, 0xea, 0xd7, 0xac, 0x70, 0xf0,
+holeydma reversed scattered(8,6) char suitcase_even[48] = {
+	0x70, 0xf0, 0xf0, 0xf0, 0xf0, 0xc0, 0xf5, 0xf5, 0xf5, 0xf5, 0xf5, 0xe5, 0xb7, 0x75, 0xf5, 0xf5,
+	0xd7, 0xad, 0xb6, 0x65, 0xb9, 0xa6, 0xd6, 0xa9, 0xb3, 0x60, 0xfa, 0xea, 0xd3, 0xac, 0x70, 0xf0,
 	0xf0, 0xf0, 0xf0, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 holeydma reversed scattered(8,2) char ball_even[16] = {
 	0x32, 0x88, 0x7a, 0xc8, 0xfa, 0xeb, 0xfa, 0xeb, 0xfa, 0xeb, 0x7e, 0xcc, 0x33, 0x8c, 0x00, 0x00
 };
-holeydma reversed scattered(8,2) char ball_odd[16] = {
-	0x12, 0xc8, 0x32, 0xea, 0x7a, 0xfb, 0x7a, 0xfb, 0x7a, 0xfb, 0x32, 0xeb, 0x13, 0xcc, 0x00, 0x00
+holeydma reversed scattered(8,6) char ball_odd[48] = {
+	0x12, 0xc8, 0x12, 0xc8, 0x12, 0xc8, 0x32, 0xea, 0x32, 0xea, 0x32, 0xea, 0x7a, 0xfb, 0x7a, 0xfb,
+	0x7a, 0xfb, 0x7a, 0xfb, 0x7a, 0xfb, 0x7a, 0xfb, 0x7a, 0xfb, 0x7a, 0xfb, 0x7a, 0xfb, 0x32, 0xeb,
+	0x32, 0xeb, 0x32, 0xeb, 0x13, 0xcc, 0x13, 0xcc, 0x13, 0xcc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 holeydma reversed scattered(8,2) char brick[16] = {
 	0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x00, 0x00
@@ -47,6 +49,7 @@ holeydma reversed scattered(8,7) char side_brick[56] = {
 #define GAME_STATE_RUNNING  1
 #define GAME_STATE_GAMEOVER 2
 
+char *playfield_offset;
 ramchip char nb_lives, game_state, button_pressed;
 ramchip char paddle_pos[PPADDLE_BUFSIZE], paddle_pos_idx, paddle_size, paddle_filtered_pos;
 ramchip signed char paddle_speed;
@@ -156,13 +159,9 @@ void display_playfield()
 
 void display_lives()
 {
-    char x, x2;
-    x2 = LEFT_BORDER;
-    for (x = 0; x != nb_lives; x++) {
-        // Display lives on line 27
-        multisprite_display_sprite_aligned(x2, 216, ball_odd, 2, 0, 1);
-        x2 += 4;
-    }
+    char w = nb_lives << 1;
+    // Display lives on line 27
+    multisprite_display_sprite_aligned(LEFT_BORDER, 216, ball_odd, w, 0, 1);
 }
 
 void game_over()
@@ -284,6 +283,7 @@ void game_init()
         playfield[X] = playfield_level1[X];
     }
 
+    playfield_offset = playfield_level1_offset; 
     game_state = GAME_STATE_READY;
     nb_lives = 2;
 }
@@ -311,9 +311,9 @@ void display_paddle()
     char x2 = LEFT_BORDER + (paddle_filtered_pos >> 1);
     char *gfx;
     if (paddle_filtered_pos & 1) {
-        gfx = suitcase_even;
-    } else {
         gfx = suitcase_odd;
+    } else {
+        gfx = suitcase_even;
     }
     multisprite_display_sprite_aligned(x2, PADDLE_YPOS, gfx, 6, 0, 1);
 }
@@ -383,7 +383,7 @@ void compute_wall_destruction()
         char x = (xball >> 8) - BALL_XOFFSET + 2;
         if ((syball >> 8) < 0) { // The ball is going up
                                  // Let's see if it hits a piece of wall
-            if (playfield_level1_offset[Y = line]) x += 8;
+            if (playfield_offset[Y = line]) x += 8;
             Y = (line << 4) | (x >> 4);
             if (playfield[Y]) {
                 // Yes, we have a hit
@@ -404,7 +404,7 @@ void compute_wall_destruction()
             }
         } else { // The ball is going down
             line++;
-            if (playfield_level1_offset[Y = line]) x += 8;
+            if (playfield_offset[Y = line]) x += 8;
             Y = (line << 4) | (x >> 4);
             if (playfield[Y]) {
                 // Yes, we have a hit
@@ -433,7 +433,7 @@ void compute_wall_destruction()
             if ((sxball >> 8) < 0) { // The ball is going left
                 x = (xball >> 8) - BALL_XOFFSET;
                 if (((yball >> 8) & 0x07) >= 4) line++;
-                if (playfield_level1_offset[Y = line]) x += 8;
+                if (playfield_offset[Y = line]) x += 8;
                 Y = (line << 4) | (x >> 4);
                 if (playfield[Y]) {
                     // Yes, we have a hit
@@ -442,9 +442,9 @@ void compute_wall_destruction()
                     hit = 1;
                 }
             } else {
-                x = (xball >> 8) - BALL_XOFFSET;
+                x = (xball >> 8) - BALL_XOFFSET + BALL_SIZE;
                 if (((yball >> 8) & 0x07) >= 4) line++;
-                if (playfield_level1_offset[Y = line]) x += 8;
+                if (playfield_offset[Y = line]) x += 8;
                 Y = (line << 4) | (x >> 4);
                 if (playfield[Y]) {
                     // Yes, we have a hit
