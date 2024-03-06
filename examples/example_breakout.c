@@ -42,6 +42,12 @@ holeydma reversed scattered(8,7) char side_brick[56] = {
 #define BALL_XOFFSET 16
 #define PADDLE_YPOS 208
 #define PPADDLE_BUFSIZE 4
+
+#define GAME_STATE_READY    0
+#define GAME_STATE_RUNNING  1
+#define GAME_STATE_GAMEOVER 2
+
+ramchip char nb_lives, game_state, button_pressed;
 ramchip char paddle_pos[PPADDLE_BUFSIZE], paddle_pos_idx, paddle_size, paddle_filtered_pos;
 ramchip signed char paddle_speed;
 ramchip unsigned int xball, yball;
@@ -64,18 +70,20 @@ const char playfield_level1[16 * 10] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1,
-    1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 1,
-    1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
    
 const char playfield_level1_offset[10] = {0, 0, 0, 1, 0, 1, 0, 1, 0, 1};
 
 const screencode char score_txt[] = "1UP";
 const screencode char highscore_txt[] = "HIGH SCORE";
+const screencode char get_ready_txt[] = "GET READY!";
+const screencode char game_over_txt[] = "GAME OVER";
 
 void interrupt dli()
 {
@@ -144,18 +152,49 @@ void display_playfield()
     for (y = 0; y != 10; y++) {
         display_wall_line(y);
     }
+}
 
-    multisprite_save_overlay();
+void display_lives()
+{
+    char x, x2;
+    x2 = LEFT_BORDER;
+    for (x = 0; x != nb_lives; x++) {
+        // Display lives on line 27
+        multisprite_display_sprite_aligned(x2, 216, ball_odd, 2, 0, 1);
+        x2 += 4;
+    }
+}
+
+void game_over()
+{
+    game_state = GAME_STATE_GAMEOVER;
+    multisprite_display_tiles(80 - (9 * 4) / 2, 14, game_over_txt, 9, 3);
+    multisprite_save_overlay_line(14);
+}
+
+void lose_one_life()
+{
+    if (nb_lives) {
+        nb_lives--;
+        multisprite_restore_line(27);
+        if (nb_lives) display_lives();
+        multisprite_save_overlay_line(27);
+    } else game_over();
 }
 
 void display_init()
 {
     char x, y;
 
-    *P0C2 = multisprite_color(0x40);
-    *P1C2 = multisprite_color(0x34);
-    *P2C2 = multisprite_color(0x1c);
-    *P3C2 = 0x0f;
+    *P0C2 = multisprite_color(0x40); // Red brick
+    *P1C2 = multisprite_color(0x34); // Red 
+    *P2C2 = multisprite_color(0x1c); // Yellow
+    *P3C2 = 0x0f;                    // White
+    *P4C2 = multisprite_color(0x83); // Blue
+    *P5C2 = multisprite_color(0xd3); // Green
+    *P6C2 = 0x05;                    // Dark grey
+    *P7C2 = 0x0a;                    // Light grey
+ 
     multisprite_init();
     multisprite_set_charbase(font);
     dli_done = 0;
@@ -187,6 +226,9 @@ void display_init()
     multisprite_save();
 
     display_playfield();
+    multisprite_display_tiles(80 - (10 * 4) / 2, 14, get_ready_txt, 10, 3);
+    display_lives();
+    multisprite_save_overlay();
     
     multisprite_enable_dli(0);
 }
@@ -221,15 +263,11 @@ void display_score_update(char *score_str)
 
 void game_init()
 {
-    paddle_pos_idx = 0;
-    for (X = 4; X >= 0; X--) paddle_pos[X] = 0;
     xball = 256 * ((13 * 16) / 2 + BALL_XOFFSET - (BALL_SIZE / 2));
     yball = 256 * 100;
     sxball = 200;
     syball = 400;
     paddle_size = 24;
-    paddle_speed = 0;
-    paddle_filtered_pos = 0;
     score = 0;
     for (X = 4; X >= 0; X--) display_score_str[X] = ' ';
     update_score = 1;
@@ -245,6 +283,9 @@ void game_init()
     for (X = 0; X != 16 * 10; X++) {
         playfield[X] = playfield_level1[X];
     }
+
+    game_state = GAME_STATE_READY;
+    nb_lives = 2;
 }
 
 void compute_paddle()
@@ -285,6 +326,12 @@ void compute_ball()
         // Reset ball
         xball = 256 * ((13 * 16) / 2 + BALL_XOFFSET - (BALL_SIZE / 2));
         yball = 256 * 100;
+        lose_one_life();
+        if (game_state != GAME_STATE_GAMEOVER) {
+            game_state = GAME_STATE_READY;
+            multisprite_display_tiles(80 - (10 * 4) / 2, 14, get_ready_txt, 10, 3);
+            multisprite_save_overlay_line(14);
+        }
     }
     // Bounces on left and right walls
     if (((sxball >> 8) >= 0 && ((xball >> 8) >= (13 * 16) + BALL_XOFFSET - BALL_SIZE)) || ((sxball >> 8) < 0 && ((xball >> 8) < BALL_XOFFSET ))) {
@@ -373,21 +420,48 @@ void display_updated_wall()
     }
 }
 
-void main()
+void game_reset()
 {
     high_score = 0;
     for (X = 4; X >= 0; X--) display_high_score_str[X] = ' ';
+    paddle_pos_idx = 0;
+    for (X = 4; X >= 0; X--) paddle_pos[X] = 0;
+    paddle_speed = 0;
+    paddle_filtered_pos = 0;
+    button_pressed = 1;
     
     game_init();
     display_init();
+}
+
+void main()
+{
+    game_reset();
 
     // Main loop
     do {
         while (!dli_done);
         *BACKGRND = 0x0f;
         compute_paddle();
-        compute_ball();
-        compute_wall_destruction();
+        
+        if (game_state == GAME_STATE_RUNNING) {
+            compute_ball();
+            compute_wall_destruction();
+        } else {
+            if (!(*SWCHA & 0x80)) {
+                if (!button_pressed) {
+                    button_pressed = 1;
+                    if (game_state == GAME_STATE_GAMEOVER) {
+                        game_init();
+                        display_init();
+                    } else {
+                        multisprite_restore_line(14); // Remove get ready message
+                        game_state = GAME_STATE_RUNNING;
+                    }
+                }
+            } else button_pressed = 0;
+        }
+
         if (dli_done < 170) {
             if (update_score) {
                 display_score_update(display_score_str);

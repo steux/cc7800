@@ -542,6 +542,9 @@ void multisprite_restore_line(char line)
     char *ptr;
     X = line;
     _ms_dlend[X] = _ms_dlend_save[X];
+#ifdef MULTISPRITE_OVERLAY
+    _ms_dlend_save_overlay[X] = _ms_dlend[X];
+#endif
 #ifdef DMA_CHECK
     _ms_dldma[X] = _ms_dldma_save[X];
 #endif
