@@ -46,8 +46,12 @@ ramchip char paddle_pos[PPADDLE_BUFSIZE], paddle_pos_idx, paddle_size, paddle_fi
 ramchip signed char paddle_speed;
 ramchip unsigned int xball, yball;
 ramchip int sxball, syball; // Ball speed 
+ramchip unsigned int score, high_score;
+ramchip char update_score;
+ramchip char display_score_str[5];
+ramchip char display_high_score_str[5];
 #ifdef DEBUG
-ramchip char paddle_pos_str[5], paddle_speed_str[5];
+ramchip char paddle_pos_str[4], paddle_speed_str[4];
 #endif
 
 ramchip char dli_done;
@@ -68,6 +72,9 @@ const char playfield_level1[16 * 10] = {
 };
    
 const char playfield_level1_offset[10] = {0, 0, 0, 1, 0, 1, 0, 1, 0, 1};
+
+const screencode char score_txt[] = "1UP";
+const screencode char highscore_txt[] = "HIGH SCORE";
 
 void interrupt dli()
 {
@@ -145,8 +152,16 @@ void display_init()
     multisprite_init();
     multisprite_set_charbase(font);
     dli_done = 0;
-    multisprite_enable_dli(0);
 
+    // Score display
+    multisprite_display_tiles(LEFT_BORDER - 4, 0, score_txt, 3, 2);
+    multisprite_display_tiles(LEFT_BORDER + 12, 0, display_score_str, 5, 3);
+    multisprite_display_tiles(LEFT_BORDER + 12 + 6 * 4 + 8, 0, highscore_txt, 10, 2);
+    multisprite_display_tiles(LEFT_BORDER + 12 + 16 * 4 + 12, 0, display_high_score_str, 5, 3);
+#ifdef DEBUG
+    multisprite_display_tiles(0, 0, paddle_pos_str, 4, 3);
+    multisprite_display_tiles(0, 1, paddle_speed_str, 4, 3);
+#endif 
     // Upper wall
     multisprite_display_sprite_aligned(LEFT_BORDER - 4, 8, side_brick, 7, 0, 0);
     x = LEFT_BORDER - 4;
@@ -165,6 +180,36 @@ void display_init()
     multisprite_save();
 
     display_playfield();
+    
+    multisprite_enable_dli(0);
+}
+
+#ifdef DEBUG
+void display_debug_update(int val, char *str)
+{
+    char display_ascii[5];
+    itoa(val, display_ascii, 10);
+    X = strlen(display_ascii); 
+    for (Y = 0; Y != 4 - X; Y++) {
+        str[Y] = ' ';
+    }
+    Y = 3;
+    do {
+        str[Y--] = display_ascii[--X];
+    } while (X);
+}
+
+#endif
+
+void display_score_update(char *score_str)
+{
+    char display_score_ascii[6];
+    itoa(score, display_score_ascii, 10);
+    X = strlen(display_score_ascii); 
+    Y = 4;
+    do {
+        score_str[Y--] = display_score_ascii[--X];
+    } while (X);
 }
 
 void game_init()
@@ -178,6 +223,9 @@ void game_init()
     paddle_size = 24;
     paddle_speed = 0;
     paddle_filtered_pos = 0;
+    score = 0;
+    for (X = 4; X >= 0; X--) display_score_str[X] = ' ';
+    update_score = 1;
 
     // Clear playfield
     for (Y = 255; Y != 0; Y--) {
@@ -269,6 +317,9 @@ void display_ball()
 
 void main()
 {
+    high_score = 0;
+    for (X = 4; X >= 0; X--) display_high_score_str[X] = ' ';
+    
     game_init();
     display_init();
 
@@ -279,13 +330,20 @@ void main()
         *BACKGRND = 0x0f;
         compute_paddle();
         compute_ball();
+        if (dli_done < 170) {
+            if (update_score) {
+                display_score_update(display_score_str);
+                if (score >= high_score) {
+                    high_score = score;
+                    display_score_update(display_high_score_str);
+                }
+                update_score = 0;
+            }
+        }
+
 #ifdef DEBUG
-        itoa(paddle_pos[X = paddle_pos_idx], paddle_pos_str, 10);
-        char len = strlen(paddle_pos_str);
-        multisprite_display_tiles(0, 0, paddle_pos_str, len, 3);
-        itoa(paddle_speed, paddle_speed_str, 10);
-        char len = strlen(paddle_speed_str);
-        multisprite_display_tiles(0, 1, paddle_speed_str, len, 3);
+        display_debug_update(paddle_pos[X = paddle_pos_idx], paddle_pos_str);
+        display_debug_update(paddle_speed, paddle_speed_str);
 #endif
 
         *BACKGRND = 0x00;
