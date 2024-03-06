@@ -369,39 +369,95 @@ void display_ball()
     multisprite_display_sprite_ex(x2, y, gfx, 2, 0, 1);
 }
 
+void brick_effect(char x, char y, char idx)
+{
+    score += 10;
+}
+
 void compute_wall_destruction()
 {
     // Find out on which line of the playfield the ball touches
     char line = ((yball >> 8) >> 3) - 2;
     char hit = 0;
-    if ((syball >> 8) < 0) { // The ball is going up
-        if (line < 16) {
-            // Let's see if it hits a piece of wall
-            char x = (xball >> 8) - BALL_XOFFSET + 2;
+    if (line < 16) {
+        char x = (xball >> 8) - BALL_XOFFSET + 2;
+        if ((syball >> 8) < 0) { // The ball is going up
+                                 // Let's see if it hits a piece of wall
             if (playfield_level1_offset[Y = line]) x += 8;
             Y = (line << 4) | (x >> 4);
             if (playfield[Y]) {
                 // Yes, we have a hit
-                score += 10;
+                brick_effect(x, line, Y);
                 playfield[Y] = 0;
                 hit = 1;
             }
             char x2 = x + 2; // Right side of the upper part of the ball
-                             // Does it hit another brick ?
+                             // Did it hit another brick ?
             if ((x & 0xf0) != (x2 & 0xf0)) {
                 Y++;
                 if (playfield[Y]) {
                     // Yes, we have a hit
-                    score += 10;
+                    brick_effect(x, line, Y);
                     playfield[Y] = 0;
                     hit = 1;
                 }
             }
-            if (hit) {
-                syball = -syball;
+        } else { // The ball is going down
+            line++;
+            if (playfield_level1_offset[Y = line]) x += 8;
+            Y = (line << 4) | (x >> 4);
+            if (playfield[Y]) {
+                // Yes, we have a hit
+                brick_effect(x, line, Y);
+                playfield[Y] = 0;
+                hit = 1;
+            }
+            char x2 = x + 2; // Right side of the upper part of the ball
+                             // Did it hit another brick ?
+            if ((x & 0xf0) != (x2 & 0xf0)) {
+                Y++;
+                if (playfield[Y]) {
+                    // Yes, we have a hit
+                    brick_effect(x, line, Y);
+                    playfield[Y] = 0;
+                    hit = 1;
+                }
+            }
+        }
+        if (hit) {
+            syball = -syball;
+            update_wall_line = line;
+            update_score = 1;
+        } else {
+            // Let's test on sides
+            if ((sxball >> 8) < 0) { // The ball is going left
+                x = (xball >> 8) - BALL_XOFFSET;
+                if (((yball >> 8) & 0x07) >= 4) line++;
+                if (playfield_level1_offset[Y = line]) x += 8;
+                Y = (line << 4) | (x >> 4);
+                if (playfield[Y]) {
+                    // Yes, we have a hit
+                    brick_effect(x, line, Y);
+                    playfield[Y] = 0;
+                    hit = 1;
+                }
+            } else {
+                x = (xball >> 8) - BALL_XOFFSET;
+                if (((yball >> 8) & 0x07) >= 4) line++;
+                if (playfield_level1_offset[Y = line]) x += 8;
+                Y = (line << 4) | (x >> 4);
+                if (playfield[Y]) {
+                    // Yes, we have a hit
+                    brick_effect(x, line, Y);
+                    playfield[Y] = 0;
+                    hit = 1;
+                }
+            }        
+            if (hit) { 
+                sxball = -sxball;
                 update_wall_line = line;
                 update_score = 1;
-            }
+            } 
         }
     }
 }
