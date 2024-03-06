@@ -493,6 +493,12 @@ void multisprite_save_overlay()
     }
 }
 
+void multisprite_save_overlay_line(char line)
+{
+    X = line;
+    _ms_dlend_save_overlay[X] = _ms_dlend[X];
+}
+
 void multisprite_clear_overlay()
 {
     char *ptr;
@@ -529,6 +535,19 @@ void multisprite_restore()
         ptr = _ms_dls[X];
         ptr[++Y] = 0;
     }
+}
+
+void multisprite_restore_line(char line)
+{
+    char *ptr;
+    X = line;
+    _ms_dlend[X] = _ms_dlend_save[X];
+#ifdef DMA_CHECK
+    _ms_dldma[X] = _ms_dldma_save[X];
+#endif
+    Y = _ms_dlend[X];
+    ptr = _ms_dls[X];
+    ptr[++Y] = 0;
 }
 
 void multisprite_wait_for_vblank()

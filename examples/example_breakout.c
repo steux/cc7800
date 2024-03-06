@@ -56,6 +56,7 @@ ramchip char paddle_pos_str[4], paddle_speed_str[4];
 
 ramchip char dli_done;
 
+ramchip char update_wall_line;
 ramchip char playfield[16 * 16];
 
 const char playfield_level1[16 * 10] = {
@@ -101,41 +102,47 @@ void interrupt dli()
     }
 }
 
-void display_playfield()
-{
-    char x, y, x2, y2, tmp, v;
+void display_wall_line(char y) {
+    char x, x2, y2, tmp, v;
     char *gfx;
-    for (y = 0; y != 10; y++) {
-        X = y << 4;
-        x2 = LEFT_BORDER;
-        y2 = (y + 2) << 3;
-        if (playfield_level1_offset[Y = y]) {
-            v = playfield[X];
-            if (v) {
-                char color = v - 1;
-                tmp = X;
-                multisprite_display_sprite_aligned_fast(x2, y2, brick + 1, 1, color);
-                X = tmp;
-            }
-            x2 += 4;
-            X++;
-        }
-        for (x = 0; x != 12; X++, x++) {
-            v = playfield[X];
-            if (v) {
-                char color = v - 1;
-                tmp = X;
-                multisprite_display_sprite_aligned_fast(x2, y2, brick, 2, color);
-                X = tmp;
-            }
-            x2 += 8;
-        }
+    
+    X = y << 4;
+    x2 = LEFT_BORDER;
+    y2 = (y + 2) << 3;
+    if (playfield_level1_offset[Y = y]) {
         v = playfield[X];
         if (v) {
             char color = v - 1;
-            tmp = (playfield_level1_offset[Y = y])?1:2;
-            multisprite_display_sprite_aligned_fast(x2, y2, brick, tmp, color);
+            tmp = X;
+            multisprite_display_sprite_aligned_fast(x2, y2, brick + 1, 1, color);
+            X = tmp;
         }
+        x2 += 4;
+        X++;
+    }
+    for (x = 0; x != 12; X++, x++) {
+        v = playfield[X];
+        if (v) {
+            char color = v - 1;
+            tmp = X;
+            multisprite_display_sprite_aligned_fast(x2, y2, brick, 2, color);
+            X = tmp;
+        }
+        x2 += 8;
+    }
+    v = playfield[X];
+    if (v) {
+        char color = v - 1;
+        tmp = (playfield_level1_offset[Y = y])?1:2;
+        multisprite_display_sprite_aligned_fast(x2, y2, brick, tmp, color);
+    }
+}
+
+void display_playfield()
+{
+    char y;
+    for (y = 0; y != 10; y++) {
+        display_wall_line(y);
     }
 
     multisprite_save_overlay();
@@ -217,7 +224,7 @@ void game_init()
     paddle_pos_idx = 0;
     for (X = 4; X >= 0; X--) paddle_pos[X] = 0;
     xball = 256 * ((13 * 16) / 2 + BALL_XOFFSET - (BALL_SIZE / 2));
-    yball = 256 * 50;
+    yball = 256 * 100;
     sxball = 200;
     syball = 400;
     paddle_size = 24;
@@ -226,6 +233,7 @@ void game_init()
     score = 0;
     for (X = 4; X >= 0; X--) display_score_str[X] = ' ';
     update_score = 1;
+    update_wall_line = -1;
 
     // Clear playfield
     for (Y = 255; Y != 0; Y--) {
@@ -238,8 +246,6 @@ void game_init()
         playfield[X] = playfield_level1[X];
     }
 }
-
-const char left_shift_6bits[4] = {0, 0x40, 0x80, 0xc0};
 
 void compute_paddle()
 {
@@ -277,19 +283,20 @@ void compute_ball()
     yball += syball;
     if ((yball >> 8) >= 223) {
         // Reset ball
-        xball = 256 * ((13 * 16) / 2 + 16 - 3);
-        yball = 256 * 50;
+        xball = 256 * ((13 * 16) / 2 + BALL_XOFFSET - (BALL_SIZE / 2));
+        yball = 256 * 100;
     }
     // Bounces on left and right walls
     if (((sxball >> 8) >= 0 && ((xball >> 8) >= (13 * 16) + BALL_XOFFSET - BALL_SIZE)) || ((sxball >> 8) < 0 && ((xball >> 8) < BALL_XOFFSET ))) {
         sxball = -sxball;
     }
     // Bounces on upper wall
-    if ((syball >> 8) < 0 && (yball >> 8) < 15) {
+    if ((syball >> 8) < 0 && (yball >> 8) < 16) {
         syball = -syball;
+        yball = 256 * 16;
     }
     // Bounces on suitcase
-    if ((syball >> 8) >= 0 && ((yball >> 8) >= PADDLE_YPOS - 7) && ((yball >> 8) <= PADDLE_YPOS - 3)) {
+    if ((syball >> 8) >= 0 && ((yball >> 8) >= PADDLE_YPOS - BALL_SIZE) && ((yball >> 8) <= PADDLE_YPOS - (BALL_SIZE / 2))) {
         // Are we above the suitcase ?
         char left_side = paddle_filtered_pos + BALL_XOFFSET - (BALL_SIZE / 2); // Including the 16 pixels offset of the ball - 3 pixels off the ball (round)
         if (((xball >> 8) >= left_side) && ((xball >> 8) < left_side + paddle_size)) {
@@ -315,6 +322,57 @@ void display_ball()
     multisprite_display_sprite_ex(x2, y, gfx, 2, 0, 1);
 }
 
+void compute_wall_destruction()
+{
+    // Find out on which line of the playfield the ball touches
+    char line = ((yball >> 8) >> 3) - 2;
+    char hit = 0;
+    if ((syball >> 8) < 0) { // The ball is going up
+        if (line < 16) {
+            // Let's see if it hits a piece of wall
+            char x = (xball >> 8) - BALL_XOFFSET + 2;
+            if (playfield_level1_offset[Y = line]) x += 8;
+            Y = (line << 4) | (x >> 4);
+            if (playfield[Y]) {
+                // Yes, we have a hit
+                score += 10;
+                playfield[Y] = 0;
+                hit = 1;
+            }
+            char x2 = x + 2; // Right side of the upper part of the ball
+                             // Does it hit another brick ?
+            if ((x & 0xf0) != (x2 & 0xf0)) {
+                Y++;
+                if (playfield[Y]) {
+                    // Yes, we have a hit
+                    score += 10;
+                    playfield[Y] = 0;
+                    hit = 1;
+                }
+            }
+            if (hit) {
+                syball = -syball;
+                update_wall_line = line;
+                update_score = 1;
+            }
+        }
+    }
+}
+
+void display_updated_wall()
+{ 
+    Y = update_wall_line;
+    if (Y != -1) {
+        Y++; Y++; // Skip the first two lines (score & lives display)
+        char line = Y;
+        multisprite_restore_line(Y);
+        display_wall_line(update_wall_line);
+        multisprite_save_overlay_line(line);
+
+        update_wall_line = -1;
+    }
+}
+
 void main()
 {
     high_score = 0;
@@ -326,10 +384,10 @@ void main()
     // Main loop
     do {
         while (!dli_done);
-        dli_done = 0;
         *BACKGRND = 0x0f;
         compute_paddle();
         compute_ball();
+        compute_wall_destruction();
         if (dli_done < 170) {
             if (update_score) {
                 display_score_update(display_score_str);
@@ -345,7 +403,7 @@ void main()
         display_debug_update(paddle_pos[X = paddle_pos_idx], paddle_pos_str);
         display_debug_update(paddle_speed, paddle_speed_str);
 #endif
-
+        dli_done = 0;
         *BACKGRND = 0x00;
         
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
@@ -354,6 +412,7 @@ void main()
         multisprite_restore_overlay();
         display_paddle();
         display_ball();
+        display_updated_wall();
         *BACKGRND = 0x00;
     } while(1);
 }
