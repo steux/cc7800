@@ -102,7 +102,7 @@ void interrupt dli()
         Y = 200;
         do {
             strobe(WSYNC); // 3 cycles
-            if ((*INPT0 & 0x80)) break; // 7 cycles
+            if (*INPT0 & 0x80) break; // 7 cycles
             Y--;
         } while (Y); // Looping 5 cycles
         // This takes 15 cycles out of 113.5. Maria should have enough cycles left... 
@@ -124,6 +124,7 @@ void interrupt dli()
 void update_ball_direction(char d)
 {
     signed char sx, sy;
+    int sx2, sy2;
     ball_direction = d;
     if (ball_direction < 128) {
         if (ball_direction < 64) {
@@ -144,18 +145,23 @@ void update_ball_direction(char d)
     }
     sxball = sx;
     syball = sy;
-    if (ball_speed) {
+    sxball <<= 1;
+    syball <<= 1;
+    X = ball_speed;
+    if (X) {
         sxball <<= 1;
         syball <<= 1;
-        X = ball_speed;
         X--;
         if (X) {
-            sxball <<= 1;
-            syball <<= 1;
+            sx2 = sx;
+            sy2 = sy;
+            sxball += sx2;
+            syball += sy2;
             X--;
-            if (X) {
-                sxball <<= 1;
-                syball <<= 1;
+            while (X) {
+                sxball += sx2;
+                syball += sy2;
+                X--;
             }
         }
     }
@@ -328,7 +334,7 @@ void game_init()
 {
     xball = 256 * ((13 * 16) / 2 + BALL_XOFFSET - (BALL_SIZE / 2));
     yball = 256 * 100;
-    ball_speed = 1;
+    ball_speed = 4;
     update_ball_direction(40);
     paddle_size = 24;
     score = 0;
@@ -365,7 +371,7 @@ void compute_paddle()
         sum += paddle_pos[X];
     }
     sum >>= 2;
-    x = 200 - (sum & 0xff); 
+    x = sum; //200 - (sum & 0xff); 
     if (x >= 13 * 16 - paddle_size) x = 13 * 16 - paddle_size;
     paddle_filtered_pos = x;
 } 
