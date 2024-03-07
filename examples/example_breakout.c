@@ -102,7 +102,7 @@ const char playfield_level1_offset[10] = {0, 0, 0, 1, 0, 1, 0, 1, 0, 1};
 const screencode char score_txt[] = "1UP";
 const screencode char highscore_txt[] = "HIGH SCORE";
 const screencode char get_ready_txt[] = "GET READY!";
-const screencode char game_over_txt[] = "GAME OVER";
+const screencode char game_over_txt[] = "YOU'RE FIRED!";
 
 void interrupt dli()
 {
@@ -249,7 +249,7 @@ void display_lives()
 void game_over()
 {
     game_state = GAME_STATE_GAMEOVER;
-    multisprite_display_tiles(80 - (9 * 4) / 2, 14, game_over_txt, 9, 3);
+    multisprite_display_tiles(80 - (13 * 4) / 2, 14, game_over_txt, 13, 3);
     multisprite_save_overlay_line(14);
 }
 
@@ -464,6 +464,7 @@ void display_ball()
 
 void brick_effect(char x, char y, char idx)
 {
+    playfield[Y = idx] = 0;
     score += 10;
 }
 
@@ -481,7 +482,6 @@ void compute_wall_destruction()
             if (playfield[Y]) {
                 // Yes, we have a hit
                 brick_effect(x, line, Y);
-                playfield[Y] = 0;
                 hit = 1;
             }
             char x2 = x + 2; // Right side of the upper part of the ball
@@ -491,7 +491,6 @@ void compute_wall_destruction()
                 if (playfield[Y]) {
                     // Yes, we have a hit
                     brick_effect(x, line, Y);
-                    playfield[Y] = 0;
                     hit = 1;
                 }
             }
@@ -502,7 +501,6 @@ void compute_wall_destruction()
             if (playfield[Y]) {
                 // Yes, we have a hit
                 brick_effect(x, line, Y);
-                playfield[Y] = 0;
                 hit = 1;
             }
             char x2 = x + 2; // Right side of the upper part of the ball
@@ -512,7 +510,6 @@ void compute_wall_destruction()
                 if (playfield[Y]) {
                     // Yes, we have a hit
                     brick_effect(x, line, Y);
-                    playfield[Y] = 0;
                     hit = 1;
                 }
             }
@@ -532,7 +529,6 @@ void compute_wall_destruction()
                 if (playfield[Y]) {
                     // Yes, we have a hit
                     brick_effect(x, line, Y);
-                    playfield[Y] = 0;
                     hit = 1;
                 }
             } else {
@@ -543,7 +539,6 @@ void compute_wall_destruction()
                 if (playfield[Y]) {
                     // Yes, we have a hit
                     brick_effect(x, line, Y);
-                    playfield[Y] = 0;
                     hit = 1;
                 }
             }        
