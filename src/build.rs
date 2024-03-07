@@ -1439,11 +1439,11 @@ pub fn build_cartridge(
         RORG ${:04x}
 ",
                 if maxbank == 0 {
-                    0x10000 - 256 - 0x62
+                    0x10000 - 128 - 0x62
                 } else {
-                    b * banksize + 0xc000 - 256 - 0x62
+                    b * banksize + 0xc000 - 128 - 0x62
                 },
-                0x10000 - 256 - 0x62
+                0x10000 - 128 - 0x62
             ))?;
             gstate.write(
                 "
