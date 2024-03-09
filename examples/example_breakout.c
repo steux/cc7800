@@ -59,6 +59,7 @@ holeydma reversed scattered(8,2) char dollar_brick[16] = {
 #define GAME_STATE_READY    0
 #define GAME_STATE_RUNNING  1
 #define GAME_STATE_GAMEOVER 2
+#define GAME_STATE_CONGRATS 3
 
 char *playfield_offset;
 ramchip char nb_lives, game_state, button_pressed;
@@ -69,6 +70,7 @@ ramchip unsigned int xball, yball;
 ramchip int sxball, syball; // Ball speed 
 ramchip unsigned int score, high_score;
 ramchip char update_score;
+ramchip char remaining_bricks;
 ramchip char display_score_str[5];
 ramchip char display_high_score_str[5];
 #ifdef DEBUG
@@ -102,6 +104,7 @@ const screencode char score_txt[] = "1UP";
 const screencode char highscore_txt[] = "HIGH SCORE";
 const screencode char get_ready_txt[] = "GET READY!";
 const screencode char game_over_txt[] = "YOU'RE FIRED!";
+const screencode char congratulations_txt[] = "CONGRATULATIONS!";
 
 void interrupt dli()
 {
@@ -206,7 +209,9 @@ void display_wall_line(char y) {
         if (v) {
             tmp = X;
             if (v & 0x80) {
-
+                offset = ((v & 0x0f) << 2) + 2;
+                gfx = prison_bars + offset; 
+                multisprite_display_sprite_aligned(x2, y2, gfx, 2, 4, 1);
             } else {
                 color = v - 1;
                 if (v == 7) gfx = dollar_brick + 1;
@@ -365,7 +370,7 @@ void game_init()
 {
     xball = 256 * ((13 * 16) / 2 + BALL_XOFFSET - (BALL_SIZE / 2));
     yball = 256 * 100;
-    ball_speed = 4;
+    ball_speed = 1;
     update_ball_direction(40);
     paddle_size = 24;
     score = 0;
@@ -386,6 +391,7 @@ void game_init()
     playfield_offset = playfield_level1_offset;
 
     game_state = GAME_STATE_READY;
+    remaining_bricks = 101;
     nb_lives = 2;
 }
 
@@ -483,8 +489,24 @@ void display_ball()
 
 void brick_effect(char x, char y, char idx)
 {
-    playfield[Y = idx] = 0;
-    score += 10;
+    X = playfield[Y = idx];
+    if (X == 0x80) {
+        ball_speed++;
+        score += 100;
+    } else if (X == 7) {
+        score += 1000;
+    } else {
+        score += 10;
+    }
+    if (X != 0x81) {
+        playfield[Y] = 0;
+        remaining_bricks--;
+        if (!remaining_bricks) {
+            game_state = GAME_STATE_CONGRATS;
+            multisprite_display_tiles(80 - (16 * 4) / 2, 14, congratulations_txt, 16, 3);
+            multisprite_save_overlay_line(14);
+        }
+    }
 }
 
 void compute_wall_destruction()
@@ -617,7 +639,7 @@ void main()
             if (!(*SWCHA & 0x80)) {
                 if (!button_pressed) {
                     button_pressed = 1;
-                    if (game_state == GAME_STATE_GAMEOVER) {
+                    if (game_state == GAME_STATE_GAMEOVER || game_state == GAME_STATE_CONGRATS) {
                         game_init();
                         display_init();
                     } else {
