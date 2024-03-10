@@ -522,7 +522,7 @@ void compute_ball()
         // Are we above the suitcase ?
         char left_side = paddle_filtered_pos + BALL_XOFFSET - (BALL_SIZE / 2) - 1; // Including the 16 pixels offset of the ball - 3 pixels off the ball (round)
         if (((xball >> 8) >= left_side) && ((xball >> 8) < left_side + paddle_size + 3)) {
-            if ((yball >> 8) < PADDLE_YPOS - (BALL_SIZE / 2)) {
+            if ((yball >> 8) < PADDLE_YPOS + 1 - (BALL_SIZE / 2)) {
                 signed char d = paddle_filtered_pos + (BALL_XOFFSET - (BALL_SIZE / 2)) + (paddle_size >> 1) - (xball >> 8);
                 signed char dx = (d << 2);
                 if (dx >= 0) {
@@ -535,7 +535,7 @@ void compute_ball()
                 char dxx = 192 - dx;
                 update_ball_direction(dxx);
                 sfx_schedule(sfx_bump);
-            } else if ((yball >> 8) < PADDLE_YPOS) {
+            } else if ((yball >> 8) < PADDLE_YPOS + 1) {
                 bounce_ball_vertically();
             }
         }
