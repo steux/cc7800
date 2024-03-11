@@ -9,6 +9,9 @@ unsigned char X, Y;
 // Generated with sprites7800 cars.yaml
 #include "example_gas_paddles_sprites.c"
 
+const char *stripped_car_models[24] = {stripped_car0, stripped_car1, stripped_car2, stripped_car3, stripped_car4, stripped_car5, stripped_car6, stripped_car7, stripped_car8, stripped_car9, stripped_car10, stripped_car11, stripped_car12, stripped_car13, stripped_car14, stripped_car15, stripped_car16, stripped_car17, stripped_car18, stripped_car19, stripped_car20, stripped_car21, stripped_car22, stripped_car23};
+const char *backlight_car_models[24] = {backlight_car0, backlight_car1, backlight_car2, backlight_car3, backlight_car4, backlight_car5, backlight_car6, backlight_car7, backlight_car8, backlight_car9, backlight_car10, backlight_car11, backlight_car12, backlight_car13, backlight_car14, backlight_car15, backlight_car16, backlight_car17, backlight_car18, backlight_car19, backlight_car20, backlight_car21, backlight_car22, backlight_car23};
+
 ramchip char paddle[4];
 ramchip char dli_counter;
 
@@ -166,6 +169,7 @@ void game_logic(char player)
         if (psteering < -DEADZONE) psteering += DEADZONE;
         else psteering = 0;
     }
+    psteering <<= 1;
 
     if (game_state == GAME_STATE_RUNNING && pstate[X] != STATE_OUT_OF_GAME) {
         Y = direction[X] >> 8;
@@ -282,9 +286,7 @@ void display_car1()
     char x = xpos[X] >> 8;
     char y = ypos[X] >> 8;
     Y = direction[X] >> 8;
-    char offset = --Y;
-    offset <<= 3;
-    char *gfx = stripped_car0 + offset;
+    char *gfx = stripped_car_models[--Y];
     multisprite_display_big_sprite(x, y, gfx, 4, 0, 2, 1); 
 }
 
@@ -294,9 +296,7 @@ void display_car2()
     char x = xpos[X] >> 8;
     char y = ypos[X] >> 8;
     Y = direction[X] >> 8;
-    char offset = --Y;
-    offset <<= 3;
-    char *gfx = backlight_car0 + offset;
+    char *gfx = backlight_car_models[--Y];
     multisprite_display_big_sprite(x, y, gfx, 4, 0, 2, 1); 
 }
 
@@ -306,9 +306,7 @@ void display_car3()
     char x = xpos[X] >> 8;
     char y = ypos[X] >> 8;
     Y = direction[X] >> 8;
-    char offset = --Y;
-    offset <<= 3;
-    char *gfx = stripped_car0 + offset;
+    char *gfx = stripped_car_models[--Y];
     multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
 }
 
@@ -318,9 +316,7 @@ void display_car4()
     char x = xpos[X] >> 8;
     char y = ypos[X] >> 8;
     Y = direction[X] >> 8;
-    char offset = --Y;
-    offset <<= 3;
-    char *gfx = backlight_car0 + offset;
+    char *gfx = backlight_car_models[--Y];
     multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
 }
 
