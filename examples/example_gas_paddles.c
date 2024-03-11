@@ -6,6 +6,9 @@
 
 unsigned char X, Y;
 
+// Generated with sprites7800 circuit.yaml
+#include "example_gas_paddles_tiles.c"
+
 // Generated with sprites7800 cars.yaml
 #include "example_gas_paddles_sprites.c"
 
