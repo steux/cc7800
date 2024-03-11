@@ -1,37 +1,44 @@
 #include "prosystem.h"
+#define MODE_320AC
 #include "multisprite_8lines.h"
+#include "armyfont.h"
+#include "sfx.h"
+
+unsigned char X, Y;
 
 // Generated with sprites7800 cars.yaml
 #include "example_gas_paddles_sprites.c"
 
-#define MS_ONE_COLOR_SPRITES
-#define MS_SELECT_FAST
-#define MS_MAX_NB_SPRITES 4
-char paddle[4];
-#define kernel_short_macro \
-   X = *INTIM; \
-   if (!(*INPT0 & 0x80)) paddle[0] = X; \
-   if (!(*INPT1 & 0x80)) paddle[1] = X; \
-   if (!(*INPT2 & 0x80)) paddle[2] = X; \
-   if (!(*INPT3 & 0x80)) paddle[3] = X;
-#define kernel_medium_macro kernel_short_macro
-#define kernel_long_macro \
-   X = *INTIM; \
-   if (!(*INPT0 & 0x80)) paddle[0] = X; \
-   if (!(*INPT1 & 0x80)) paddle[1] = X; \
-   strobe(WSYNC); \
-   if (!(*INPT2 & 0x80)) paddle[2] = X; \
-   if (!(*INPT3 & 0x80)) paddle[3] = X; \
-   if (Y >= 163) *ENABL = 2;
+ramchip char paddle[4];
+ramchip char dli_counter;
 
+void interrupt dli()
+{
+#ifdef DEBUG
+    *BACKGRND = 0x05;
+#endif
+    X = dli_counter;
+    if (!X) {
+        *VBLANK = 0x00; // Let paddle capacitors charging 
+    }
+    if (!(*INPT0 & 0x80)) paddle[0] = X;
+    if (!(*INPT1 & 0x80)) paddle[1] = X;
+    if (!(*INPT2 & 0x80)) paddle[2] = X;
+    if (!(*INPT3 & 0x80)) paddle[3] = X;
+    X++;
+    dli_counter = X;
+#ifdef DEBUG
+   *BACKGRND = 0x00;
+#endif
+}
 
 const int dx[24] = {40, 38, 34, 28, 19, 10, 0, -10, -20, -28, -34, -38, -40, -38, -34, -28, -19, -10, 0, 10, 19, 28, 34, 38};
 const int dy[24] = {0, 16, 32, 45, 55, 61, 64, 61, 55, 45, 32, 16, 0, -16, -31, -45, -55, -61, -64, -61, -55, -45, -32, -16};
 
-unsigned int xpos[4], ypos[4], direction[4];
-char speed[4], race_laps[4], race_step[4];
-char pstate[4], pstate_counter[4];
-char counter;
+ramchip unsigned int xpos[4], ypos[4], direction[4];
+ramchip char speed[4], race_laps[4], race_step[4];
+ramchip char pstate[4], pstate_counter[4];
+ramchip char counter;
 #define STATE_READY_SET_GO  0
 #define STATE_FIRST         1
 #define STATE_SECOND        2
@@ -40,13 +47,13 @@ char counter;
 #define STATE_OUT_OF_GAME   5  
 #define STATE_OK            6  
 #define STATE_LAST_LAP      7  
-char ranked[4];
-char game_state;
+ramchip char ranked[4];
+ramchip char game_state;
 #define GAME_STATE_STARTING     0
 #define GAME_STATE_READY_SET_GO 1
 #define GAME_STATE_RUNNING      2
 
-const char paddle_trigger_flag[4] = {0x80, 0x40, 0x08, 0x04};
+ramchip const char paddle_trigger_flag[4] = {0x80, 0x40, 0x08, 0x04};
 
 #define NB_WAYPOINTS 9
 const char waypoint_xy[NB_WAYPOINTS] = {90, 128, 40, 108, 90, 60, 40, 32, 160};
@@ -59,12 +66,32 @@ const char waypoint_dir[NB_WAYPOINTS] = {WPT_RIGHT, WPT_RIGHT, WPT_UP, WPT_LEFT,
 const char xinit[4] = {80, 80, 68, 68};
 const char yinit[4] = {0, 12, 0, 12};
 
+void game_reset()
+{
+    char c;
+
+    sfx_init();
+    *P0C2 = multisprite_color(0x83); // Blue
+    *P1C2 = multisprite_color(0x1c); // Yellow
+    *P2C2 = 0x05;                    // Dark grey
+    *P3C2 = 0x0a;                    // Light grey
+    *P4C2 = multisprite_color(0x34); // Red 
+    *P5C2 = multisprite_color(0xd3); // Green
+    *P6C2 = 0x00;                    // Black 
+    *P7C2 = 0x0f;                    // White
+    multisprite_init();
+    *BACKGRND = multisprite_color(0x12); // Brown
+    multisprite_set_charbase(font);
+    dli_counter = 0;
+    for (c = 0; c != 28; c++) multisprite_enable_dli(c);
+}
+
 void game_init() 
 {
     char i, y;
     for (X = 0; X < 4; X++) {
         xpos[X] = xinit[X] << 8;
-        y = yinit[X] + 32;
+        y = yinit[X];
         ypos[X] = y << 8;
         direction[X] = 256 + 128;
         speed[X] = 0;
@@ -126,12 +153,12 @@ inline void car_forward()
     ypos[X] += dy[Y];
 }
 
-#define DEADZONE 32 
+#define DEADZONE 1 
 void game_logic(char player)
 {
     signed char psteering;
     X = player;
-    psteering = paddle[X] - 128;
+    psteering = paddle[X] - 14;
     if (psteering >= 0) {
         if (psteering >= DEADZONE) psteering -= DEADZONE;
         else psteering = 0;
@@ -139,7 +166,6 @@ void game_logic(char player)
         if (psteering < -DEADZONE) psteering += DEADZONE;
         else psteering = 0;
     }
-    psteering >>= 1;
 
     if (game_state == GAME_STATE_RUNNING && pstate[X] != STATE_OUT_OF_GAME) {
         Y = direction[X] >> 8;
@@ -149,7 +175,7 @@ void game_logic(char player)
             if (speed[X] >= 5) speed[X] -= 4;
             else speed[X] = 0;
         } else {
-            if (paddle[X] > 240) {
+            if (paddle[X] >= 27) {
                 xpos[X] -= dx[Y];
                 ypos[X] -= dy[Y];
                 speed[X] = 0;
@@ -250,8 +276,58 @@ void game_logic(char player)
     }
 }
 
+void display_car1()
+{
+    X = 0;
+    char x = xpos[X] >> 8;
+    char y = ypos[X] >> 8;
+    Y = direction[X] >> 8;
+    char offset = --Y;
+    offset <<= 3;
+    char *gfx = stripped_car0 + offset;
+    multisprite_display_big_sprite(x, y, gfx, 4, 0, 2, 1); 
+}
+
+void display_car2()
+{
+    X = 1;
+    char x = xpos[X] >> 8;
+    char y = ypos[X] >> 8;
+    Y = direction[X] >> 8;
+    char offset = --Y;
+    offset <<= 3;
+    char *gfx = backlight_car0 + offset;
+    multisprite_display_big_sprite(x, y, gfx, 4, 0, 2, 1); 
+}
+
+void display_car3()
+{
+    X = 2;
+    char x = xpos[X] >> 8;
+    char y = ypos[X] >> 8;
+    Y = direction[X] >> 8;
+    char offset = --Y;
+    offset <<= 3;
+    char *gfx = stripped_car0 + offset;
+    multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
+}
+
+void display_car4()
+{
+    X = 3;
+    char x = xpos[X] >> 8;
+    char y = ypos[X] >> 8;
+    Y = direction[X] >> 8;
+    char offset = --Y;
+    offset <<= 3;
+    char *gfx = backlight_car0 + offset;
+    multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
+}
+
 void main()
 {
+    char i;
+    game_reset();
 start:
     game_init();
 
@@ -269,5 +345,25 @@ start:
         game_logic(2);
         game_logic(3);
         counter++;
+
+        while (!(*MSTAT & 0x80)); // Wait for VBLANK
+#ifdef DEBUG
+        *BACKGRND = 0x0f;
+#endif        
+        counter++;
+        *VBLANK = 0x80; // Dump paddles to ground
+        sfx_play();
+        if (multisprite_pal_frame_skip())
+            sfx_play(); // Advance twice every 5 frames (to cope with 60Hz instead of 50Hz)
+        // Display cars 
+        dli_counter = 0;
+        multisprite_restore();
+        display_car1();
+        display_car2();
+        display_car3();
+        display_car4();
+#ifdef DEBUG
+        *BACKGRND = 0x00;
+#endif        
     } while(1);
 }
