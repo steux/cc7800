@@ -648,7 +648,7 @@ void _ms_sparse_tiling(char top, char left, char height)
             _ms_tmpptr[Y++] = data[1];
             _ms_tmpptr[Y++] = data[2];
             _ms_tmpptr[Y++] = data[3];
-            _ms_tmpptr[Y++] = (data[4] << 3) + left;
+            _ms_tmpptr[Y++] = (data[4] << 2) + left;
             y = Y; // 21 cycles
             Y = _save_y;
             Y++;

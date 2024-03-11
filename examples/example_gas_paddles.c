@@ -1,13 +1,15 @@
 #include "prosystem.h"
 #define MODE_320AC
 #include "multisprite_8lines.h"
-#include "armyfont.h"
 #include "sfx.h"
 
 unsigned char X, Y;
 
 // Generated with sprites7800 circuit.yaml
 #include "example_gas_paddles_tiles.c"
+
+// Generated with tiles7800 --sparse circuit.yaml circuit.tmx
+#include "example_gas_paddles_tilemap.c"
 
 // Generated with sprites7800 cars.yaml
 #include "example_gas_paddles_sprites.c"
@@ -34,7 +36,7 @@ void interrupt dli()
     X++;
     dli_counter = X;
 #ifdef DEBUG
-   *BACKGRND = 0x00;
+    *BACKGRND = multisprite_color(0x12); // Brown
 #endif
 }
 
@@ -87,7 +89,11 @@ void game_reset()
     *P7C2 = 0x0f;                    // White
     multisprite_init();
     *BACKGRND = multisprite_color(0x12); // Brown
-    multisprite_set_charbase(font);
+    multisprite_set_charbase(borders);
+
+    multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
+    multisprite_save();
+
     dli_counter = 0;
     for (c = 0; c != 28; c++) multisprite_enable_dli(c);
 }
@@ -362,7 +368,7 @@ start:
         display_car3();
         display_car4();
 #ifdef DEBUG
-        *BACKGRND = 0x00;
+        *BACKGRND = multisprite_color(0x12); // Brown
 #endif        
     } while(1);
 }
