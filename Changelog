@@ -1,3 +1,6 @@
+v0.2.23 (03/12/2024) :
+    - Enhanced memory mapping
+
 v0.2.22 (02/12/2024) :
     - Bug corrected in constant adresses in array of pointers
     - Bug corrected wrt sign region size

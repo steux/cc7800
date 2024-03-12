@@ -256,17 +256,19 @@ impl<'a> MemoryMap<'a> {
                     }
 
                     // Go on with filling the memory
-                    return self.fill_memory(
-                        org + 0x1000,
-                        rorg + 0x1000,
-                        size - 0x1000,
-                        compiler_state,
-                        gstate,
-                        args,
-                        true,
-                        true,
-                        definitive,
-                    );
+                    if fill > 0 {
+                        return self.fill_memory(
+                            org + 0x1000,
+                            rorg + 0x1000,
+                            size - 0x1000,
+                            compiler_state,
+                            gstate,
+                            args,
+                            true,
+                            true,
+                            definitive,
+                        );
+                    }
                 }
             }
 
@@ -420,17 +422,19 @@ impl<'a> MemoryMap<'a> {
                     }
 
                     // Go on with filling the memory
-                    return self.fill_memory(
-                        org + 0x800,
-                        rorg + 0x800,
-                        size - 0x800,
-                        compiler_state,
-                        gstate,
-                        args,
-                        true,
-                        true,
-                        definitive,
-                    );
+                    if fill > 0 {
+                        return self.fill_memory(
+                            org + 0x800,
+                            rorg + 0x800,
+                            size - 0x800,
+                            compiler_state,
+                            gstate,
+                            args,
+                            true,
+                            true,
+                            definitive,
+                        );
+                    }
                 }
             }
             if self.remaining_scattered > 0 {
