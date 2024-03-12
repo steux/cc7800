@@ -14,7 +14,7 @@ unsigned char X, Y;
 const char *stripped_car_models[24] = {stripped_car0, stripped_car1, stripped_car2, stripped_car3, stripped_car4, stripped_car5, stripped_car6, stripped_car7, stripped_car8, stripped_car9, stripped_car10, stripped_car11, stripped_car12, stripped_car13, stripped_car14, stripped_car15, stripped_car16, stripped_car17, stripped_car18, stripped_car19, stripped_car20, stripped_car21, stripped_car22, stripped_car23};
 const char *backlight_car_models[24] = {backlight_car0, backlight_car1, backlight_car2, backlight_car3, backlight_car4, backlight_car5, backlight_car6, backlight_car7, backlight_car8, backlight_car9, backlight_car10, backlight_car11, backlight_car12, backlight_car13, backlight_car14, backlight_car15, backlight_car16, backlight_car17, backlight_car18, backlight_car19, backlight_car20, backlight_car21, backlight_car22, backlight_car23};
 
-ramchip char paddle[4];
+char paddle[4];
 ramchip char dli_counter;
 
 void interrupt dli()
@@ -26,10 +26,10 @@ void interrupt dli()
     if (!X) {
         *VBLANK = 0x00; // Let paddle capacitors charging 
     }
-    if (!(*INPT0 & 0x80)) paddle[0] = X;
-    if (!(*INPT1 & 0x80)) paddle[1] = X;
-    if (!(*INPT2 & 0x80)) paddle[2] = X;
-    if (!(*INPT3 & 0x80)) paddle[3] = X;
+    if (*INPT0 >= 0) paddle[0] = X; // 6 to 8 cycles
+    if (*INPT1 >= 0) paddle[1] = X;
+    if (*INPT2 >= 0) paddle[2] = X;
+    if (*INPT3 >= 0) paddle[3] = X;
     X++;
     dli_counter = X;
 #ifdef DEBUG
