@@ -5,10 +5,7 @@
 
 unsigned char X, Y;
 
-// Generated with sprites7800 circuit.yaml
-#include "example_gas_paddles_tiles.c"
-
-// Generated with tiles7800 --sparse circuit.yaml circuit.tmx
+// Generated with tiles7800 --sparse circuit.yaml --immediate circuit.tmx
 #include "example_gas_paddles_tilemap.c"
 
 // Generated with sprites7800 cars.yaml
@@ -89,7 +86,6 @@ void game_reset()
     *P7C2 = 0x0f;                    // White
     multisprite_init();
     *BACKGRND = multisprite_color(0x12); // Brown
-    multisprite_set_charbase(borders);
 
     multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
     multisprite_save();
