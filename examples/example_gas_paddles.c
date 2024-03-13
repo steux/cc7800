@@ -328,6 +328,19 @@ void display_car4()
     multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
 }
 
+void display_players_state()
+{
+    char p, x = 0, y = 224 - 16, *gfx;
+    for (p = 0; p != 4; p++) {
+        X = p;
+        if (pstate[X] == STATE_OUT_OF_GAME) gfx = dot_letter0_0;
+        else if (pstate[X] == STATE_OK) gfx = dot_letter1_0;
+        else gfx = dot_letter0_0 + (('0' + pstate[X]) << 2);
+        multisprite_display_big_sprite(x, y, gfx, 2, 7, 2, 0); 
+        x += 40;
+    }
+}
+
 void main()
 {
     char i;
@@ -363,5 +376,6 @@ start:
         display_car2();
         display_car3();
         display_car4();
+        display_players_state();
     } while(1);
 }

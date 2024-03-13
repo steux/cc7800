@@ -10,7 +10,7 @@ void main()
         array[size++] = getchar();
     }
     for (j = 0; j != 64; j++) {
-        printf("reversed scattered(8,2) char dot_letter%d_0[16]={", j);
+        printf("holeydma reversed scattered(8,2) char dot_letter%d_0[16]={", j);
         for (i = 0; i != 4; i++) {
             printf("0x%02x, 0x%02x, 0, 0", conv2dot[array[i] >> 4], conv2dot[array[i] & 0x0f]);
             if (i != 3) {
@@ -18,7 +18,7 @@ void main()
             }
         }
         printf("};\n");
-        printf("reversed scattered(8,2) char dot_letter%d_1[16]={", j);
+        printf("holeydma reversed scattered(8,2) char dot_letter%d_1[16]={", j);
         for (; i != 8; i++) {
             printf("0x%02x, 0x%02x, 0, 0", conv2dot[array[i] >> 4], conv2dot[array[i] & 0x0f]);
             if (i != 7) {
