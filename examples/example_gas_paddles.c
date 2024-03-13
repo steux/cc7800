@@ -337,8 +337,8 @@ void display_players_state()
     for (p = 0; p != 4; p++) {
         y = 224 - 16;
         X = p;
-        if (pstate[X] == STATE_OUT_OF_GAME) gfx = dot_letter0_0;
-        else if (pstate[X] == STATE_OK) gfx = dot_letter1_0;
+        if (pstate[X] == STATE_OUT_OF_GAME) gfx = dot_letter31_0;
+        else if (pstate[X] == STATE_OK) gfx = dot_letter30_0;
         else if (pstate[X] == STATE_READY_SET_GO) {
             y -= (pstate_counter[X] & 0x0f);
             tmp = ready_set_go_txt[Y = pstate_counter[X] >> 4] << 2;
