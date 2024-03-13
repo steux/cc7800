@@ -89,7 +89,8 @@ void game_reset()
     multisprite_init();
     *BACKGRND = multisprite_color(0x12); // Brown
 
-    multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
+    // Display circuit
+    //multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
     multisprite_save();
 
     dli_counter = 0;
@@ -151,7 +152,7 @@ void game_ready()
     for (X = 0; X != 4; X++) {
         if (pstate[X] == STATE_READY_SET_GO) {
             if ((counter & 1) == 0) {
-                if (pstate_counter[X] < 126 - 9) pstate_counter[X]++;
+                if (pstate_counter[X] < 13 * 16) pstate_counter[X]++;
                 else game_state = GAME_STATE_RUNNING;
             }
         }
@@ -328,15 +329,35 @@ void display_car4()
     multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
 }
 
+screencode const char ready_set_go_txt[] = " READY SET GO!";
+
 void display_players_state()
 {
-    char p, x = 0, y = 224 - 16, *gfx;
+    char p, x = 0, y, tmp, *gfx;
     for (p = 0; p != 4; p++) {
+        y = 224 - 16;
         X = p;
         if (pstate[X] == STATE_OUT_OF_GAME) gfx = dot_letter0_0;
         else if (pstate[X] == STATE_OK) gfx = dot_letter1_0;
-        else gfx = dot_letter0_0 + (('0' + pstate[X]) << 2);
-        multisprite_display_big_sprite(x, y, gfx, 2, 7, 2, 0); 
+        else if (pstate[X] == STATE_READY_SET_GO) {
+            y -= (pstate_counter[X] & 0x0f);
+            tmp = ready_set_go_txt[Y = pstate_counter[X] >> 4] << 2;
+            gfx = dot_letter0_0 + tmp;
+        } else {
+            tmp = (('0' + pstate[X]) << 2);
+            gfx = dot_letter0_0 + tmp;
+        }
+
+        multisprite_display_big_sprite(x, y, gfx, 2, 7, 2, 0);
+        if (pstate[X = p] == STATE_READY_SET_GO) {
+            y += 16;
+            Y = pstate_counter[X] >> 4;
+            tmp = ready_set_go_txt[++Y] << 2;
+            gfx = dot_letter0_0 + tmp;
+            multisprite_display_big_sprite(x, y, gfx, 2, 7, 2, 0);
+            multisprite_display_sprite_aligned(x, (224 - 32), tilemap_0_0, 2, 6, 0);
+            multisprite_display_sprite_aligned(x, (224 - 24), tilemap_0_0, 2, 6, 0);
+        } 
         x += 40;
     }
 }
@@ -361,7 +382,6 @@ start:
         }
         game_logic(2);
         game_logic(3);
-        counter++;
 
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         counter++;
