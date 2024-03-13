@@ -90,7 +90,7 @@ void game_reset()
     *BACKGRND = multisprite_color(0x12); // Brown
 
     // Display circuit
-    //multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
+    multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
     multisprite_save();
 
     dli_counter = 0;
