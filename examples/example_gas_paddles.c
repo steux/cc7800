@@ -1,9 +1,13 @@
 #include "prosystem.h"
+#define _MS_DL_SIZE 80
 #define MODE_320AC
 #include "multisprite_8lines.h"
 #include "sfx.h"
 
 unsigned char X, Y;
+
+// Generated with misc/genfont_dots.c < c64.bin
+#include "example_gas_paddles_dotfont.c"
 
 // Generated with tiles7800 --sparse circuit.yaml --immediate circuit.tmx
 #include "example_gas_paddles_tilemap.c"
@@ -19,12 +23,12 @@ ramchip char dli_counter;
 
 void interrupt dli()
 {
-#ifdef DEBUG
-    *BACKGRND = 0x05;
-#endif
     X = dli_counter;
-    if (!X) {
+    if (X == 23) *BACKGRND = 0;
+    else if (!X) {
         *VBLANK = 0x00; // Let paddle capacitors charging 
+    } else if (X == 1) {
+        *BACKGRND = multisprite_color(0x12); // Brown
     }
     if (*INPT0 >= 0) paddle[0] = X; // 6 to 8 cycles
     if (*INPT1 >= 0) paddle[1] = X;
@@ -32,9 +36,6 @@ void interrupt dli()
     if (*INPT3 >= 0) paddle[3] = X;
     X++;
     dli_counter = X;
-#ifdef DEBUG
-    *BACKGRND = multisprite_color(0x12); // Brown
-#endif
 }
 
 const int dx[24] = {40, 38, 34, 28, 19, 10, 0, -10, -20, -28, -34, -38, -40, -38, -34, -28, -19, -10, 0, 10, 19, 28, 34, 38};
@@ -68,8 +69,9 @@ const char waypoint_xy[NB_WAYPOINTS] = {90, 128, 40, 108, 90, 60, 40, 32, 160};
 #define WPT_RIGHT   3
 const char waypoint_dir[NB_WAYPOINTS] = {WPT_RIGHT, WPT_RIGHT, WPT_UP, WPT_LEFT, WPT_DOWN, WPT_LEFT, WPT_UP, WPT_LEFT, WPT_DOWN};
 
-const char xinit[4] = {80, 80, 68, 68};
-const char yinit[4] = {0, 12, 0, 12};
+const char xinit[4] = {112, 112, 32, 32};
+const char xinit2[4] = {80, 80, 68, 68};
+const char yinit[4] = {64, 80, 64, 80};
 
 void game_reset()
 {
@@ -123,8 +125,9 @@ void game_prepare()
             // Car X is entering game ?
             if (pstate[X] == STATE_OUT_OF_GAME) {
                 pstate[X] = STATE_OK;
-                y = yinit[X] + 180;
+                y = yinit[X] + 84;
                 ypos[X] = y << 8;
+                xpos[X] = xinit2[X] << 8;
             }
         }
     }
@@ -348,9 +351,6 @@ start:
         counter++;
 
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
-#ifdef DEBUG
-        *BACKGRND = 0x0f;
-#endif        
         counter++;
         *VBLANK = 0x80; // Dump paddles to ground
         sfx_play();
@@ -363,8 +363,5 @@ start:
         display_car2();
         display_car3();
         display_car4();
-#ifdef DEBUG
-        *BACKGRND = multisprite_color(0x12); // Brown
-#endif        
     } while(1);
 }
