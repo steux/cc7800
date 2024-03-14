@@ -1,5 +1,5 @@
 #include "prosystem.h"
-#define _MS_DL_SIZE 80
+#define _MS_DL_SIZE 96 
 #define MODE_320AC
 #include "multisprite_8lines.h"
 #include "sfx.h"
@@ -81,7 +81,7 @@ void display_steering_wheels()
     char x = 8; 
     for (p = 0; p != 4; p++) {
         char color = player_color[X = p];
-        multisprite_display_sprite_aligned(x + 4, 200, steering_wheel1, 6, color, 0);
+        multisprite_display_sprite_aligned(x, 200, steering_wheel1, 7, color, 0);
         multisprite_display_sprite_aligned(x, 208, steering_wheel2, 8, color, 0);
         multisprite_display_sprite_aligned(x, 216, steering_wheel3, 2, color, 0);
         multisprite_display_sprite_aligned(x + 24, 216, steering_wheel4, 2, color, 0);
@@ -169,7 +169,7 @@ void game_ready()
     for (X = 0; X != 4; X++) {
         if (pstate[X] == STATE_READY_SET_GO) {
             if ((counter & 1) == 0) {
-                if (pstate_counter[X] < 13 * 16) pstate_counter[X]++;
+                if (pstate_counter[X] < 13 * 16 / 2) pstate_counter[X]++;
                 else game_state = GAME_STATE_RUNNING;
             }
         }
@@ -242,8 +242,8 @@ void game_logic(char player)
         Y--;
         if ((xpos[X] >> 8) < 2) { xpos[X] = 2 * 256; speed[X] = 0; }
         else if ((xpos[X] >> 8) >= 152) { xpos[X] = 151 * 256; speed[X] = 0; }
-        if ((ypos[X] >> 8) < 22) { ypos[X] = 22 * 256; speed[X] = 0; }
-        else if ((ypos[X] >> 8) >= 200) { ypos[X] = 199 * 256; speed[X] = 0; }
+        if ((ypos[X] >> 8) < 10) { ypos[X] = 10 * 256; speed[X] = 0; }
+        else if ((ypos[X] >> 8) >= 192 - 16) { ypos[X] = (192 - 16) * 256; speed[X] = 0; }
 
         // TODO: Display sprite model Y and test collision with playfield
 
@@ -357,23 +357,23 @@ void display_players_state()
         if (pstate[X] == STATE_OUT_OF_GAME) gfx = dot_letter31_0;
         else if (pstate[X] == STATE_OK) gfx = dot_letter30_0;
         else if (pstate[X] == STATE_READY_SET_GO) {
-            y -= (pstate_counter[X] & 0x0f);
-            tmp = ready_set_go_txt[Y = pstate_counter[X] >> 4] << 2;
+            y -= (pstate_counter[X] & 0x07) << 1;
+            tmp = ready_set_go_txt[Y = pstate_counter[X] >> 3] << 2;
             gfx = dot_letter0_0 + tmp;
         } else {
             tmp = (('0' + pstate[X]) << 2);
             gfx = dot_letter0_0 + tmp;
         }
-
+        char color = player_color[X];
         multisprite_display_big_sprite(x, y, gfx, 2, 7, 2, 0);
+        multisprite_display_sprite_aligned(x, (224 - 24), tilemap_0_0, 2, color, 0);
         if (pstate[X = p] == STATE_READY_SET_GO) {
             y += 16;
-            Y = pstate_counter[X] >> 4;
+            Y = pstate_counter[X] >> 3;
             tmp = ready_set_go_txt[++Y] << 2;
             gfx = dot_letter0_0 + tmp;
             multisprite_display_big_sprite(x, y, gfx, 2, 7, 2, 0);
             multisprite_display_sprite_aligned(x, (224 - 32), tilemap_0_0, 2, 6, 0);
-            multisprite_display_sprite_aligned(x, (224 - 24), tilemap_0_0, 2, 6, 0);
         } 
         x += 40;
     }

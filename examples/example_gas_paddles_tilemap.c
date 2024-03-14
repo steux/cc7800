@@ -169,9 +169,11 @@ reversed scattered(8,20) char tilemap_17_1[160] = {
 	0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xe3, 0x00, 0x00, 0x00, 0xf3, 0xf3, 0xf3, 0xf3,
 	0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xf3, 0xc0, 0x00, 0x00, 0x00, 0x00};
 const char tilemap_17_data[] = {0, 0, tilemap_3_0, 0xc0, tilemap_3_0 >> 8, (4 << 5) | ((-2) & 0x1f), 8, 22, 7, tilemap_17_0, 0xc0, tilemap_17_0 >> 8, (4 << 5) | ((-32) & 0x1f), 53, 32, 23, tilemap_17_1, 0xc0, tilemap_17_1 >> 8, (4 << 5) | ((-20) & 0x1f), 35, 39, 39, tilemap_3_2, 0xc0, tilemap_3_2 >> 8, (4 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
-const char tilemap_18_data[] = {0, 0, tilemap_3_0, 0xc0, tilemap_3_0 >> 8, (4 << 5) | ((-2) & 0x1f), 8, 39, 39, tilemap_3_2, 0xc0, tilemap_3_2 >> 8, (4 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
-const char tilemap_21_data[] = {1, 0, tilemap_14_1, 0xc0, tilemap_14_1 >> 8, (4 << 5) | ((-4) & 0x1f), 11, 39, 38, tilemap_14_2, 0xc0, tilemap_14_2 >> 8, (4 << 5) | ((-4) & 0x1f), 11, 96, 0xff};
-const char tilemap_22_data[] = {0, 0, tilemap_1_0, 0x40, tilemap_1_0 >> 8, (5 << 5) | ((-1) & 0x1f), 6, 3, 1, tilemap_15_2, 0xc0, tilemap_15_2 >> 8, (4 << 5) | ((-6) & 0x1f), 14, 38, 36, tilemap_15_3, 0xc0, tilemap_15_3 >> 8, (4 << 5) | ((-6) & 0x1f), 14, 39, 39, tilemap_1_0, 0x40, tilemap_1_0 >> 8, (5 << 5) | ((-1) & 0x1f), 6, 96, 0xff};
+reversed scattered(8,1) char tilemap_18_0[8] = {
+	0xf0, 0xf0, 0xf0, 0xf0, 0x0f, 0x0f, 0x0f, 0x0f};
+const char tilemap_18_data[] = {0, 0, tilemap_3_0, 0xc0, tilemap_3_0 >> 8, (4 << 5) | ((-2) & 0x1f), 8, 23, 23, tilemap_18_0, 0x40, tilemap_18_0 >> 8, (7 << 5) | ((-1) & 0x1f), 6, 39, 39, tilemap_3_2, 0xc0, tilemap_3_2 >> 8, (4 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_21_data[] = {1, 0, tilemap_14_1, 0xc0, tilemap_14_1 >> 8, (4 << 5) | ((-4) & 0x1f), 11, 23, 23, tilemap_18_0, 0x40, tilemap_18_0 >> 8, (7 << 5) | ((-1) & 0x1f), 6, 39, 38, tilemap_14_2, 0xc0, tilemap_14_2 >> 8, (4 << 5) | ((-4) & 0x1f), 11, 96, 0xff};
+const char tilemap_22_data[] = {0, 0, tilemap_1_0, 0x40, tilemap_1_0 >> 8, (5 << 5) | ((-1) & 0x1f), 6, 3, 1, tilemap_15_2, 0xc0, tilemap_15_2 >> 8, (4 << 5) | ((-6) & 0x1f), 14, 23, 23, tilemap_18_0, 0x40, tilemap_18_0 >> 8, (7 << 5) | ((-1) & 0x1f), 6, 38, 36, tilemap_15_3, 0xc0, tilemap_15_3 >> 8, (4 << 5) | ((-6) & 0x1f), 14, 39, 39, tilemap_1_0, 0x40, tilemap_1_0 >> 8, (5 << 5) | ((-1) & 0x1f), 6, 96, 0xff};
 reversed scattered(8,32) char tilemap_23_0[256] = {
 	0xf4, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc,
 	0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc,
