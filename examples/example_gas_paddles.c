@@ -73,6 +73,22 @@ const char xinit[4] = {112, 112, 32, 32};
 const char xinit2[4] = {80, 80, 68, 68};
 const char yinit[4] = {64, 80, 64, 80};
 
+const char player_color[4] = {0, 1, 4, 5};
+
+void display_steering_wheels()
+{
+    char p;
+    char x = 8; 
+    for (p = 0; p != 4; p++) {
+        char color = player_color[X = p];
+        multisprite_display_sprite_aligned(x + 4, 200, steering_wheel1, 6, color, 0);
+        multisprite_display_sprite_aligned(x, 208, steering_wheel2, 8, color, 0);
+        multisprite_display_sprite_aligned(x, 216, steering_wheel3, 2, color, 0);
+        multisprite_display_sprite_aligned(x + 24, 216, steering_wheel4, 2, color, 0);
+        x += 40;
+    }
+}
+
 void game_reset()
 {
     char c;
@@ -91,6 +107,7 @@ void game_reset()
 
     // Display circuit
     multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
+    display_steering_wheels();
     multisprite_save();
 
     dli_counter = 0;
