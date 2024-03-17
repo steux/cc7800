@@ -19,10 +19,14 @@ const char *stripped_car_models[24] = {stripped_car0, stripped_car1, stripped_ca
 const char *backlight_car_models[24] = {backlight_car0, backlight_car1, backlight_car2, backlight_car3, backlight_car4, backlight_car5, backlight_car6, backlight_car7, backlight_car8, backlight_car9, backlight_car10, backlight_car11, backlight_car12, backlight_car13, backlight_car14, backlight_car15, backlight_car16, backlight_car17, backlight_car18, backlight_car19, backlight_car20, backlight_car21, backlight_car22, backlight_car23};
 
 char paddle[4];
+ramchip char paddle_copy[4];
 ramchip char dli_counter;
 
 void interrupt dli()
 {
+#ifdef DEBUG
+    *BACKGRND = 0;
+#endif
     X = dli_counter;
     if (X == 23) *BACKGRND = 0;
     else if (!X) {
@@ -36,6 +40,9 @@ void interrupt dli()
     if (*INPT3 >= 0) paddle[3] = X;
     X++;
     dli_counter = X;
+#ifdef DEBUG
+    *BACKGRND = 0x12;
+#endif
 }
 
 const int dx[24] = {40, 38, 34, 28, 19, 10, 0, -10, -20, -28, -34, -38, -40, -38, -34, -28, -19, -10, 0, 10, 19, 28, 34, 38};
@@ -128,7 +135,7 @@ void game_init()
         ranked[X] = -1;
         pstate[X] = STATE_OUT_OF_GAME; 
         pstate_counter[X] = 0;
-        paddle[X] = 100;
+        paddle[X] = 14;
     } 
     counter = 0;
     game_state = GAME_STATE_STARTING;
@@ -187,9 +194,9 @@ void game_logic(char player)
 {
     signed char psteering;
     X = player;
-    psteering = paddle[X] - 14;
+    psteering = paddle_copy[X] - 14;
     if (psteering >= 0) {
-        if (psteering >= DEADZONE) psteering -= DEADZONE;
+        if (psteering >= DEADZONE + 1) psteering -= DEADZONE;
         else psteering = 0;
     } else {
         if (psteering < -DEADZONE) psteering += DEADZONE;
@@ -205,7 +212,7 @@ void game_logic(char player)
             if (speed[X] >= 5) speed[X] -= 4;
             else speed[X] = 0;
         } else {
-            if (paddle[X] >= 27) {
+            if (paddle_copy[X] >= 27) {
                 xpos[X] -= dx[Y];
                 ypos[X] -= dy[Y];
                 speed[X] = 0;
@@ -352,6 +359,12 @@ void display_players_state()
 {
     char p, x = 0, y, tmp, *gfx;
     for (p = 0; p != 4; p++) {
+        // Display steering indicator
+        y = 224 - 24;
+        char xx = x + paddle_copy[X = p] + (8 + 14 - 14);
+        multisprite_display_sprite_ex(xx, y, steering_indicator, 1, 7, 0);
+
+        // Display current state 
         y = 224 - 16;
         X = p;
         if (pstate[X] == STATE_OUT_OF_GAME) gfx = dot_letter31_0;
@@ -406,6 +419,9 @@ start:
         sfx_play();
         if (multisprite_pal_frame_skip())
             sfx_play(); // Advance twice every 5 frames (to cope with 60Hz instead of 50Hz)
+        for (X = 3; X >= 0; X--) {
+            paddle_copy[X] = paddle[X];
+        }
         // Display cars 
         dli_counter = 0;
         multisprite_restore();
