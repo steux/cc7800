@@ -6,6 +6,8 @@
 
 unsigned char X, Y;
 
+const char PADDLES = 1; // Set paddles in a78 header
+
 // Generated with misc/genfont_dots.c < c64.bin
 #include "example_gas_paddles_dotfont.c"
 

@@ -808,6 +808,8 @@ fn write_a78_header(
             audio = 5;
         }
     }
+    let controller = if compiler_state.variables.get("PADDLES").is_some() { 3 } else { 1 };
+    
     gstate.write(&format!(
         "
     ORG ${:x}
@@ -855,8 +857,8 @@ fn write_a78_header(
     ;    bit 1 ; SUPERGAME
     ;    bit 0 ; POKEY @ $4000 - $7FFF
 
-    DC.B    1                  ; 55         controller 1 device type
-    DC.B    1                  ; 56         controller 2 device type
+    DC.B    {controller}                  ; 55         controller 1 device type
+    DC.B    {controller}                  ; 56         controller 2 device type
     ;    0 = none
     ;    1 = 7800 joystick
     ;    2 = lightgun
