@@ -84,5 +84,26 @@ void _libc_itoa()
     Y = _save_y;
 }
 
+// Uses _libc_tmpshort. Don't use it with itoa in the same code
+void srand(int seed) {
+    _libc_tmpshort = seed;
+}
+
+// https://codebase64.org/doku.php?id=base:16bit_xorshift_random_generator 
+char rand()
+{
+    load(_libc_tmpshort >> 8);
+    asm("LSR", 1);
+    load(_libc_tmpshort);
+    asm("ROR", 1);
+    asm("EOR _libc_tmpshort+1", 2);
+    store(_libc_tmpshort >> 8);
+    asm("ROR", 1);
+    asm("EOR _libc_tmpshort", 2);
+    store(_libc_tmpshort);
+    asm("EOR _libc_tmpshort+1", 2);
+    store(_libc_tmpshort >> 8);
+    return _libc_tmpshort;
+}
 #endif // __STDLIB_H__
 
