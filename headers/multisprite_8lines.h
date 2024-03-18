@@ -582,6 +582,7 @@ void multisprite_disable_dli(char line)
 const char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
 // ~100 cycles max pixel accurate collision detection (60us)
+// 160 pixels mode function
 #define multisprite_compute_collision(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\
     _ms_tmp3 = 0; \
     _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
@@ -589,6 +590,29 @@ const char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
         if ((x1) <= (x2) + ((w2) - 1)) { \
             if ((y1) <= (y2) + ((h2) - 1)) { \
                 _ms_tmp = (x1) + ((w1) - 1) - (x2); \
+                if (_ms_tmp >= 0) { \
+                    Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
+                    while (_ms_tmp >= 8) { \
+                        Y++; \
+                        _ms_tmp -= 8; \
+                    } \
+                    _ms_tmp3 = collision_map[Y] & _ms_bit_extract[X = _ms_tmp]; \
+                } \
+            } \
+        } \
+    } \
+}
+
+// 320 pixels resolution collision function
+// x1 and x2 are 160 pixels resolution (always)
+// w1 and w2 are 320 pixels resolution
+#define multisprite_compute_collision_320(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\
+    _ms_tmp3 = 0; \
+    _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
+    if (_ms_tmp2 >= 0) { \
+        if ((x1) <= (x2) + (((w2) >> 1) - 1)) { \
+            if ((y1) <= (y2) + ((h2) - 1)) { \
+                _ms_tmp = (x1) + (((w1) >> 1) - 1) - (x2); \
                 if (_ms_tmp >= 0) { \
                     Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
                     while (_ms_tmp >= 8) { \

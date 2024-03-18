@@ -60,6 +60,11 @@ char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 #endif
 
 #ifdef VERTICAL_SCROLLING
+#ifdef DMA_MASKING_ON_RAM
+#define DMA_MASKING_OFFSET 17
+#else
+#define DMA_MASKING_OFFSET 0
+#endif
 signed char _ms_vscroll_fine_offset;
 ramchip char _ms_vscroll_coarse_offset;
 char _ms_vscroll_coarse_offset_shifted;
@@ -84,6 +89,8 @@ ramchip char _ms_bottom_sbuffer[_MS_DL_MALLOC(-2)];
 #else
 ramchip char _ms_sbuffer[_MS_DL_MALLOC(-1)];
 #endif
+#else // VERTICAL_SCROLLING
+#define DMA_MASKING_OFFSET 0
 #endif
 
 #ifdef HORIZONTAL_SCROLLING
@@ -99,8 +106,8 @@ ramchip signed char _ms_delayed_hscroll;
 #endif
 #endif
 
-ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0)], _ms_b0_dl1[_MS_DL_MALLOC(1)], _ms_b0_dl2[_MS_DL_MALLOC(2)], _ms_b0_dl3[_MS_DL_MALLOC(3)], _ms_b0_dl4[_MS_DL_MALLOC(4)], _ms_b0_dl5[_MS_DL_MALLOC(5)], _ms_b0_dl6[_MS_DL_MALLOC(6)], _ms_b0_dl7[_MS_DL_MALLOC(7)], _ms_b0_dl8[_MS_DL_MALLOC(8)], _ms_b0_dl9[_MS_DL_MALLOC(9)], _ms_b0_dl10[_MS_DL_MALLOC(10)], _ms_b0_dl11[_MS_DL_MALLOC(11)], _ms_b0_dl12[_MS_DL_MALLOC(12)], _ms_b0_dl13[_MS_DL_MALLOC(13)], _ms_b0_dl14[_MS_DL_MALLOC(14)];
-ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0)], _ms_b1_dl1[_MS_DL_MALLOC(1)], _ms_b1_dl2[_MS_DL_MALLOC(2)], _ms_b1_dl3[_MS_DL_MALLOC(3)], _ms_b1_dl4[_MS_DL_MALLOC(4)], _ms_b1_dl5[_MS_DL_MALLOC(5)], _ms_b1_dl6[_MS_DL_MALLOC(6)], _ms_b1_dl7[_MS_DL_MALLOC(7)], _ms_b1_dl8[_MS_DL_MALLOC(8)], _ms_b1_dl9[_MS_DL_MALLOC(9)], _ms_b1_dl10[_MS_DL_MALLOC(10)], _ms_b1_dl11[_MS_DL_MALLOC(11)], _ms_b1_dl12[_MS_DL_MALLOC(12)], _ms_b1_dl13[_MS_DL_MALLOC(13)], _ms_b1_dl14[_MS_DL_MALLOC(14)];
+ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0) + DMA_MASKING_OFFSET], _ms_b0_dl1[_MS_DL_MALLOC(1) + DMA_MASKING_OFFSET], _ms_b0_dl2[_MS_DL_MALLOC(2) + DMA_MASKING_OFFSET], _ms_b0_dl3[_MS_DL_MALLOC(3) + DMA_MASKING_OFFSET], _ms_b0_dl4[_MS_DL_MALLOC(4) + DMA_MASKING_OFFSET], _ms_b0_dl5[_MS_DL_MALLOC(5) + DMA_MASKING_OFFSET], _ms_b0_dl6[_MS_DL_MALLOC(6) + DMA_MASKING_OFFSET], _ms_b0_dl7[_MS_DL_MALLOC(7) + DMA_MASKING_OFFSET], _ms_b0_dl8[_MS_DL_MALLOC(8) + DMA_MASKING_OFFSET], _ms_b0_dl9[_MS_DL_MALLOC(9) + DMA_MASKING_OFFSET], _ms_b0_dl10[_MS_DL_MALLOC(10) + DMA_MASKING_OFFSET], _ms_b0_dl11[_MS_DL_MALLOC(11) + DMA_MASKING_OFFSET], _ms_b0_dl12[_MS_DL_MALLOC(12) + DMA_MASKING_OFFSET], _ms_b0_dl13[_MS_DL_MALLOC(13) + DMA_MASKING_OFFSET], _ms_b0_dl14[_MS_DL_MALLOC(14) + DMA_MASKING_OFFSET];
+ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0) + DMA_MASKING_OFFSET], _ms_b1_dl1[_MS_DL_MALLOC(1) + DMA_MASKING_OFFSET], _ms_b1_dl2[_MS_DL_MALLOC(2) + DMA_MASKING_OFFSET], _ms_b1_dl3[_MS_DL_MALLOC(3) + DMA_MASKING_OFFSET], _ms_b1_dl4[_MS_DL_MALLOC(4) + DMA_MASKING_OFFSET], _ms_b1_dl5[_MS_DL_MALLOC(5) + DMA_MASKING_OFFSET], _ms_b1_dl6[_MS_DL_MALLOC(6) + DMA_MASKING_OFFSET], _ms_b1_dl7[_MS_DL_MALLOC(7) + DMA_MASKING_OFFSET], _ms_b1_dl8[_MS_DL_MALLOC(8) + DMA_MASKING_OFFSET], _ms_b1_dl9[_MS_DL_MALLOC(9) + DMA_MASKING_OFFSET], _ms_b1_dl10[_MS_DL_MALLOC(10) + DMA_MASKING_OFFSET], _ms_b1_dl11[_MS_DL_MALLOC(11) + DMA_MASKING_OFFSET], _ms_b1_dl12[_MS_DL_MALLOC(12) + DMA_MASKING_OFFSET], _ms_b1_dl13[_MS_DL_MALLOC(13) + DMA_MASKING_OFFSET], _ms_b1_dl14[_MS_DL_MALLOC(14) + DMA_MASKING_OFFSET];
 
 #ifdef VERTICAL_SCROLLING
 #if _MS_TOP_SCROLLING_ZONE == 0
@@ -225,8 +232,8 @@ aligned(256) const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
 };
 #endif
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14, _ms_b0_dl14,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9, _ms_b1_dl10, _ms_b1_dl11, _ms_b1_dl12, _ms_b1_dl13, _ms_b1_dl14, _ms_b1_dl14
+    _ms_b0_dl0 + DMA_MASKING_OFFSET, _ms_b0_dl1 + DMA_MASKING_OFFSET, _ms_b0_dl2 + DMA_MASKING_OFFSET, _ms_b0_dl3 + DMA_MASKING_OFFSET, _ms_b0_dl4 + DMA_MASKING_OFFSET, _ms_b0_dl5 + DMA_MASKING_OFFSET, _ms_b0_dl6 + DMA_MASKING_OFFSET, _ms_b0_dl7 + DMA_MASKING_OFFSET, _ms_b0_dl8 + DMA_MASKING_OFFSET, _ms_b0_dl9 + DMA_MASKING_OFFSET, _ms_b0_dl10 + DMA_MASKING_OFFSET, _ms_b0_dl11 + DMA_MASKING_OFFSET, _ms_b0_dl12 + DMA_MASKING_OFFSET, _ms_b0_dl13 + DMA_MASKING_OFFSET, _ms_b0_dl14 + DMA_MASKING_OFFSET, _ms_b0_dl14,
+    _ms_b1_dl0 + DMA_MASKING_OFFSET, _ms_b1_dl1 + DMA_MASKING_OFFSET, _ms_b1_dl2 + DMA_MASKING_OFFSET, _ms_b1_dl3 + DMA_MASKING_OFFSET, _ms_b1_dl4 + DMA_MASKING_OFFSET, _ms_b1_dl5 + DMA_MASKING_OFFSET, _ms_b1_dl6 + DMA_MASKING_OFFSET, _ms_b1_dl7 + DMA_MASKING_OFFSET, _ms_b1_dl8 + DMA_MASKING_OFFSET, _ms_b1_dl9 + DMA_MASKING_OFFSET, _ms_b1_dl10 + DMA_MASKING_OFFSET, _ms_b1_dl11 + DMA_MASKING_OFFSET, _ms_b1_dl12 + DMA_MASKING_OFFSET, _ms_b1_dl13 + DMA_MASKING_OFFSET, _ms_b1_dl14 + DMA_MASKING_OFFSET, _ms_b1_dl14
 };
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
@@ -2016,6 +2023,29 @@ const char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
     } \
 }
 
+// 320 pixels resolution collision function
+// x1 and x2 are 160 pixels resolution (always)
+// w1 and w2 are 320 pixels resolution
+#define multisprite_compute_collision_320(x1, y1, w1, h1, x2, y2, w2, h2, collision_map) {\
+    _ms_tmp3 = 0; \
+    _ms_tmp2 = (y1) + ((h1) - 1) - (y2); \
+    if (_ms_tmp2 >= 0) { \
+        if ((x1) <= (x2) + (((w2) >> 1) - 1)) { \
+            if ((y1) <= (y2) + ((h2) - 1)) { \
+                _ms_tmp = (x1) + (((w1) >> 1) - 1) - (x2); \
+                if (_ms_tmp >= 0) { \
+                    Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
+                    while (_ms_tmp >= 8) { \
+                        Y++; \
+                        _ms_tmp -= 8; \
+                    } \
+                    _ms_tmp3 = collision_map[Y] & _ms_bit_extract[X = _ms_tmp]; \
+                } \
+            } \
+        } \
+    } \
+}
+
 #define multisprite_compute_box_collision(x1, y1, w1, h1, x2, y2, w2, h2) {\
     _ms_tmp3 = 0; \
     if ((y1) + ((h1) - 1) >= (y2)) { \
@@ -2096,13 +2126,21 @@ char multisprite_sparse_tiling_collision(char top, char left, char right)
         char l = (left < start)?start:left;
         char r = (end < right)?end:right;
         char n = r - l;
-        assert(n >= 0);
+        if (n < 0) break;
         char tmp = ptr[Y++];
-        Y++;
+        char tmp2 = ptr[Y++];
+        if (!(tmp2 & 0x20)) { // Direct mode. We don't care about the content
+            return 0;
+        } 
         char *ptr_tiles = tmp | (ptr[Y] << 8);
         _save_y = Y;
         Y = l - start;
-        for (X = n; X >= 0; Y++, X--) {
+        if (tmp2 < 0) { // WM = 1: 2 entries per tile
+            X = n << 1;
+        } else {
+            X = n;
+        }
+        for (; X >= 0; Y++, X--) {
             if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
         }
         Y = _save_y;

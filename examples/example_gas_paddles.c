@@ -15,7 +15,7 @@ unsigned char X, Y;
 // Generated with sprites7800 cars.yaml
 #include "example_gas_paddles_sprites.c"
 
-const char *stripped_car_models[24] = {stripped_car0, stripped_car1, stripped_car2, stripped_car3, stripped_car4, stripped_car5, stripped_car6, stripped_car7, stripped_car8, stripped_car9, stripped_car10, stripped_car11, stripped_car12, stripped_car13, stripped_car14, stripped_car15, stripped_car16, stripped_car17, stripped_car18, stripped_car19, stripped_car20, stripped_car21, stripped_car22, stripped_car23};
+const char *car_models[24] = {car0, car1, car2, car3, car4, car5, car6, car7, car8, car9, car10, car11, car12, car13, car14, car15, car16, car17, car18, car19, car20, car21, car22, car23};
 const char *backlight_car_models[24] = {backlight_car0, backlight_car1, backlight_car2, backlight_car3, backlight_car4, backlight_car5, backlight_car6, backlight_car7, backlight_car8, backlight_car9, backlight_car10, backlight_car11, backlight_car12, backlight_car13, backlight_car14, backlight_car15, backlight_car16, backlight_car17, backlight_car18, backlight_car19, backlight_car20, backlight_car21, backlight_car22, backlight_car23};
 
 char paddle[4];
@@ -263,6 +263,23 @@ void game_logic(char player)
                 //*BACKGRND = 0x0f;
             }
         }
+       
+        // Test collisions with other cars
+        char c;
+        left = xpos[X] >> 8;
+        top = ypos[X] >> 8;
+        for (c = 0; c != 4; c++) {
+            if (X != c) {
+                Y = c;
+                char x2 = xpos[Y] >> 8;
+                char y2 = ypos[Y] >> 8;
+                multisprite_compute_box_collision(left, top, 4, 8, x2, y2, 4, 8);
+                if (multisprite_collision_detected) {
+                    speed[X] = 0;
+                    break;
+                }
+            }
+        }
         
         // Compute progress on the track
         char tmp = waypoint_dir[Y = race_laps[X] & 0x0f];
@@ -323,13 +340,22 @@ void game_logic(char player)
     }
 }
 
+void display_start_line()
+{
+    char y = 0, yy = 148;
+    for (y = 0; y < 5; y++) {
+        multisprite_display_sprite_aligned(90, yy, starting_line, 1, 7, 0);
+        yy += 8;
+    }
+}
+
 void display_car1()
 {
     X = 0;
     char x = xpos[X] >> 8;
     char y = ypos[X] >> 8;
     Y = direction[X] >> 8;
-    char *gfx = stripped_car_models[--Y];
+    char *gfx = car_models[--Y];
     multisprite_display_big_sprite(x, y, gfx, 4, 0, 2, 1); 
 }
 
@@ -349,7 +375,7 @@ void display_car3()
     char x = xpos[X] >> 8;
     char y = ypos[X] >> 8;
     Y = direction[X] >> 8;
-    char *gfx = stripped_car_models[--Y];
+    char *gfx = car_models[--Y];
     multisprite_display_big_sprite(x, y, gfx, 4, 4, 2, 1); 
 }
 
@@ -440,6 +466,7 @@ start:
         // Display cars 
         dli_counter = 0;
         multisprite_restore();
+        display_start_line();
         display_car1();
         display_car2();
         display_car3();
