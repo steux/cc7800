@@ -52,6 +52,8 @@ ramchip unsigned int xpos[4], ypos[4], direction[4];
 ramchip char speed[4], race_laps[4], race_step[4];
 ramchip char pstate[4], pstate_counter[4];
 ramchip char counter;
+
+// Start sound: 4,19 - 4,19 - 4,19 - 4,9
 #define STATE_READY_SET_GO  0
 #define STATE_FIRST         1
 #define STATE_SECOND        2
@@ -96,11 +98,21 @@ void display_steering_wheels()
     }
 }
 
+void display_start_line()
+{
+    char y = 0, yy = 148;
+    for (y = 0; y < 5; y++) {
+        multisprite_display_sprite_aligned(90, yy, starting_line, 1, 7, 0);
+        yy += 8;
+    }
+}
+
 void game_reset()
 {
     char c;
 
     sfx_init();
+    
     *P0C2 = multisprite_color(0x83); // Blue
     *P1C2 = multisprite_color(0x1c); // Yellow
     *P2C2 = 0x05;                    // Dark grey
@@ -114,6 +126,7 @@ void game_reset()
 
     // Display circuit
     multisprite_sparse_tiling(tilemap_data_ptrs, 0, 0, 24);
+    display_start_line();
     display_steering_wheels();
     multisprite_save();
 
@@ -124,6 +137,12 @@ void game_reset()
 void game_init() 
 {
     char i, y;
+    
+    *AUDC0 = 8;
+    *AUDC1 = 8;
+    *AUDV0 = 0;
+    *AUDV1 = 0;
+    
     for (X = 0; X < 4; X++) {
         xpos[X] = xinit[X] << 8;
         y = yinit[X];
@@ -340,15 +359,6 @@ void game_logic(char player)
     }
 }
 
-void display_start_line()
-{
-    char y = 0, yy = 148;
-    for (y = 0; y < 5; y++) {
-        multisprite_display_sprite_aligned(90, yy, starting_line, 1, 7, 0);
-        yy += 8;
-    }
-}
-
 void display_car1()
 {
     X = 0;
@@ -458,15 +468,32 @@ start:
         counter++;
         *VBLANK = 0x80; // Dump paddles to ground
         sfx_play();
-        if (multisprite_pal_frame_skip())
-            sfx_play(); // Advance twice every 5 frames (to cope with 60Hz instead of 50Hz)
+        if (counter & 1) {
+            if (!(_sfx_ptr[0] >> 8) && pstate[0] != STATE_OUT_OF_GAME) {
+                *AUDF0 = 31 - (speed[0] >> 3);
+                *AUDV0 = 15;
+            }
+            if (!(_sfx_ptr[1] >> 8) && pstate[1] != STATE_OUT_OF_GAME) {
+                *AUDF1 = 31 - (speed[1] >> 3);
+                *AUDV1 = 15;
+            }
+        } else {
+            if (!(_sfx_ptr[0] >> 8) && pstate[2] != STATE_OUT_OF_GAME) {
+                *AUDF0 = 31 - (speed[2] >> 3);
+                *AUDV0 = 15;
+            }
+            if (!(_sfx_ptr[1] >> 8) && pstate[3] != STATE_OUT_OF_GAME) {
+                *AUDF1 = 31 - (speed[3] >> 3);
+                *AUDV1 = 15;
+            }
+        }
+
         for (X = 3; X >= 0; X--) {
             paddle_copy[X] = paddle[X];
         }
         // Display cars 
         dli_counter = 0;
         multisprite_restore();
-        display_start_line();
         display_car1();
         display_car2();
         display_car3();
