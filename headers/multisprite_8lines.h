@@ -678,13 +678,21 @@ char multisprite_sparse_tiling_collision(char top, char left, char right)
         char l = (left < start)?start:left;
         char r = (end < right)?end:right;
         char n = r - l;
-        assert(n >= 0);
+        if (n < 0) break;
         char tmp = ptr[Y++];
-        Y++;
+        char tmp2 = ptr[Y++];
+        if (!(tmp2 & 0x20)) { // Direct mode. We don't care about the content
+            return 0;
+        } 
         char *ptr_tiles = tmp | (ptr[Y] << 8);
         _save_y = Y;
         Y = l - start;
-        for (X = n; X >= 0; Y++, X--) {
+        if (tmp2 < 0) { // WM = 1: 2 entries per tile
+            X = n << 1;
+        } else {
+            X = n;
+        }
+        for (; X >= 0; Y++, X--) {
             if (ptr_tiles[Y] < intersect) intersect = ptr_tiles[Y];    
         }
         Y = _save_y;

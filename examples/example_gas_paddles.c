@@ -241,19 +241,29 @@ void game_logic(char player)
         Y = (direction[X] >> 8);
         if (Y == 0) {
             direction[X] += 24 * 256;
-            Y = 24;
         } else if (Y == 25) {
             direction[X] -= 24 * 256;
-            Y = 1;
         }
-        Y--;
         if ((xpos[X] >> 8) < 2) { xpos[X] = 2 * 256; speed[X] = 0; }
         else if ((xpos[X] >> 8) >= 152) { xpos[X] = 151 * 256; speed[X] = 0; }
         if ((ypos[X] >> 8) < 10) { ypos[X] = 10 * 256; speed[X] = 0; }
         else if ((ypos[X] >> 8) >= 192 - 16) { ypos[X] = (192 - 16) * 256; speed[X] = 0; }
 
-        // TODO: Display sprite model Y and test collision with playfield
-
+        // Test collision with playfield
+        char top = ((ypos[X] >> 8) + 4) >> 3;
+        char left = ((xpos[X] >> 8) + 2) >> 2; // Don't forget xpos is in 160 pixels resolution (even if the game is in 320)
+        char right = left + 1;
+        if (!multisprite_sparse_tiling_collision(top, left, right)) {
+            speed[X] = 0;
+            //*BACKGRND = 0x0f;
+        } else {
+            top++;
+            if (!multisprite_sparse_tiling_collision(top, left, right)) {
+                speed[X] = 0;
+                //*BACKGRND = 0x0f;
+            }
+        }
+        
         // Compute progress on the track
         char tmp = waypoint_dir[Y = race_laps[X] & 0x0f];
         if (tmp == WPT_RIGHT) {
