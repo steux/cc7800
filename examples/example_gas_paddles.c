@@ -150,7 +150,7 @@ void game_prepare()
             // Car X is entering game ?
             if (pstate[X] == STATE_OUT_OF_GAME) {
                 pstate[X] = STATE_OK;
-                y = (X == 0)?10:20; //yinit[X] + 84;
+                y = yinit[X] + 84;
                 ypos[X] = y << 8;
                 xpos[X] = xinit2[X] << 8;
             }
@@ -194,7 +194,7 @@ void game_logic(char player)
 {
     signed char psteering;
     X = player;
-    psteering = paddle_copy[X] - 14;
+    psteering = 14 - paddle_copy[X];
     if (psteering >= 0) {
         if (psteering >= DEADZONE + 1) psteering -= DEADZONE;
         else psteering = 0;
@@ -202,7 +202,7 @@ void game_logic(char player)
         if (psteering < -DEADZONE) psteering += DEADZONE;
         else psteering = 0;
     }
-    psteering <<= 1;
+    psteering <<= 2;
 
     if (game_state == GAME_STATE_RUNNING && pstate[X] != STATE_OUT_OF_GAME) {
         Y = direction[X] >> 8;
@@ -212,7 +212,7 @@ void game_logic(char player)
             if (speed[X] >= 5) speed[X] -= 4;
             else speed[X] = 0;
         } else {
-            if (paddle_copy[X] >= 27) {
+            if (paddle_copy[X] >= 27) { // Rear direction
                 xpos[X] -= dx[Y];
                 ypos[X] -= dy[Y];
                 speed[X] = 0;
@@ -355,13 +355,18 @@ void display_car4()
 
 screencode const char ready_set_go_txt[] = " READY SET GO!";
 
+const char steering_indicator_position[28] = {
+    222, 216, 213, 210, 208, 206, 204, 203, 202, 201, 201, 200, 200, 200,
+    200, 200, 200, 201, 201, 202, 202, 203, 204, 206, 208, 210, 213, 216
+};
+
 void display_players_state()
 {
     char p, x = 0, y, tmp, *gfx;
     for (p = 0; p != 4; p++) {
         // Display steering indicator
-        y = 224 - 24;
-        char xx = x + paddle_copy[X = p] + (8 + 14 - 14);
+        y = steering_indicator_position[27 - paddle_copy[X = p]];
+        char xx = x + (27 + 8 + 14 - 14) - paddle_copy[X];
         multisprite_display_sprite_ex(xx, y, steering_indicator, 1, 7, 0);
 
         // Display current state 
@@ -403,6 +408,8 @@ start:
         // Do some logic here
         game_logic(0);
         game_logic(1);
+        game_logic(2);
+        game_logic(3);
         if (game_state == GAME_STATE_RUNNING) {
             if (!((*SWCHB) & 1)) goto start;
         } else if (game_state == GAME_STATE_STARTING) {
@@ -410,8 +417,6 @@ start:
         } else {
             game_ready();
         }
-        game_logic(2);
-        game_logic(3);
 
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         counter++;
