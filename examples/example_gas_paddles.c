@@ -150,7 +150,7 @@ void game_prepare()
             // Car X is entering game ?
             if (pstate[X] == STATE_OUT_OF_GAME) {
                 pstate[X] = STATE_OK;
-                y = yinit[X] + 84;
+                y = (X == 0)?10:20; //yinit[X] + 84;
                 ypos[X] = y << 8;
                 xpos[X] = xinit2[X] << 8;
             }
@@ -389,7 +389,7 @@ void display_players_state()
             multisprite_display_sprite_aligned(x, (224 - 32), tilemap_0_0, 2, 6, 0);
         } 
         x += 40;
-    }
+   }
 }
 
 void main()

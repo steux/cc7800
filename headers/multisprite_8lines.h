@@ -57,7 +57,7 @@ const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
 const char _ms_blank_dl[2] = {0, 0};
 
 ramchip char _ms_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
-ramchip char _ms_dlend[_MS_DLL_ARRAY_SIZE];
+ramchip char _ms_dlend[32];
 ramchip char _ms_dlend_save[_MS_DLL_ARRAY_SIZE];
 #ifdef MULTISPRITE_OVERLAY
 ramchip char _ms_dlend_save_overlay[_MS_DLL_ARRAY_SIZE];
@@ -410,6 +410,11 @@ INIT_BANK void multisprite_init()
 {
     *BACKGRND = 0x0;
     
+    // This is protection for out of screen sprites
+    for (X = 31; X >= _MS_DLL_ARRAY_SIZE; X--) {
+        _ms_dlend[X] = 0;
+    }
+
     multisprite_get_tv();
     multisprite_clear();
     multisprite_save();
