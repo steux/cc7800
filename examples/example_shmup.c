@@ -2,6 +2,7 @@
 #define _MS_TOP_SCROLLING_ZONE 1
 #define VERTICAL_SCROLLING
 #define INIT_BANK bank7
+#define DMA_MASKING_ON_RAM
 #include "multisprite.h"
 #include "joystick.h"
 #include "string.h"

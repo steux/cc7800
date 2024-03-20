@@ -2,6 +2,7 @@
 #include "gfx.h"
 #define DMA_CHECK
 #define VERTICAL_SCROLLING
+#define DMA_MASKING_ON_RAM
 #define _MS_DL_SIZE 64
 #define _MS_DL_MALLOC(y) ((y == 6 || y == 7 || y == 8)?_MS_DL_SIZE * 2:_MS_DL_SIZE)
 #include "multisprite.h"
