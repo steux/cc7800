@@ -11,61 +11,59 @@
 #define NULL 0
 
 char _libc_tmp, _libc_tmp2;
-short _libc_tmpshort;
 char *_libc_tmpptr, *_libc_tmpptr2;
 ramchip char _save_x, _save_y;
 
 #define itoa(val,str,radix) \
-    _libc_tmpshort = val; \
     _libc_tmpptr = str; \
-    _libc_itoa(); \
+    _libc_itoa(val); \
     _libc_tmpptr
 
-void _libc_itoa()
+void _libc_itoa(short val)
 {
     _save_x = X;
     _save_y = Y;
     Y = 0;
     X = 0;
-    if (_libc_tmpshort < 0) {
+    if (val < 0) {
         _libc_tmpptr[Y++] = '-';
-        _libc_tmpshort = -_libc_tmpshort;
+        val = -val;
     }
-    if (_libc_tmpshort >= 10000) {
+    if (val >= 10000) {
         X = '0';
         do {
             X++;
-            _libc_tmpshort -= 10000;
-        } while (_libc_tmpshort >= 0);
+            val -= 10000;
+        } while (val >= 0);
         X--;
-        _libc_tmpshort += 10000;
+        val += 10000;
         _libc_tmpptr[Y++] = X;
     }
-    if (X || _libc_tmpshort >= 1000) {
+    if (X || val >= 1000) {
         X = '0';
-        if (_libc_tmpshort >= 1000) {
+        if (val >= 1000) {
             do {
                 X++;
-                _libc_tmpshort -= 1000;
-            } while (_libc_tmpshort >= 0);
+                val -= 1000;
+            } while (val >= 0);
             X--;
-            _libc_tmpshort += 1000;
+            val += 1000;
         }
         _libc_tmpptr[Y++] = X;
     }
-    if (X || _libc_tmpshort >= 100) {
+    if (X || val >= 100) {
         X = '0';
-        if (_libc_tmpshort >= 100) {
+        if (val >= 100) {
             do {
                 X++;
-                _libc_tmpshort -= 100;
-            } while (_libc_tmpshort >= 0);
+                val -= 100;
+            } while (val >= 0);
             X--;
-            _libc_tmpshort += 100;
+            val += 100;
         }
         _libc_tmpptr[Y++] = X;
     }
-    _libc_tmp = _libc_tmpshort;
+    _libc_tmp = val;
     if (X || _libc_tmp >= 10) {
         X = '0';
         if (_libc_tmp >= 10) {
@@ -84,26 +82,27 @@ void _libc_itoa()
     Y = _save_y;
 }
 
-// Uses _libc_tmpshort. Don't use it with itoa in the same code
+short _libc_rand;
+
 void srand(int seed) {
-    _libc_tmpshort = seed;
+    _libc_rand = seed;
 }
 
 // https://codebase64.org/doku.php?id=base:16bit_xorshift_random_generator 
 char rand()
 {
-    load(_libc_tmpshort >> 8);
+    load(_libc_rand >> 8);
     asm("LSR", 1);
-    load(_libc_tmpshort);
+    load(_libc_rand);
     asm("ROR", 1);
-    asm("EOR _libc_tmpshort+1", 2);
-    store(_libc_tmpshort >> 8);
+    asm("EOR _libc_rand+1", 2);
+    store(_libc_rand >> 8);
     asm("ROR", 1);
-    asm("EOR _libc_tmpshort", 2);
-    store(_libc_tmpshort);
-    asm("EOR _libc_tmpshort+1", 2);
-    store(_libc_tmpshort >> 8);
-    return _libc_tmpshort;
+    asm("EOR _libc_rand", 2);
+    store(_libc_rand);
+    asm("EOR _libc_rand+1", 2);
+    store(_libc_rand >> 8);
+    return _libc_rand;
 }
 #endif // __STDLIB_H__
 
