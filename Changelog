@@ -1,3 +1,6 @@
+v0.2.24 (26/03/2024) :
+		- Added support for height 12 scattered memory
+
 v0.2.23 (03/12/2024) :
 		- Added paddles support in header
     - Enhanced memory mapping

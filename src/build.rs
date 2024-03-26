@@ -295,7 +295,7 @@ impl<'a> MemoryMap<'a> {
                     }
                 }
                 if scattered_8 {
-                    // Great. Let's fill this 4Kb of memory with 8 lines scattered data
+                    // Great. Let's fill this 2Kb of memory with 8 lines scattered data
 
                     // Let's select all the variables that will fit into this scattered data
                     let mut sv = Vec::<(String, u32)>::new();
@@ -437,6 +437,144 @@ impl<'a> MemoryMap<'a> {
                     }
                 }
             }
+
+            // Are we in a zone where 12 lines of scattered data can be stored ?
+            if size >= 0xc00 {
+                // Yes. Let's see if there is any remaining 8 lines scattered data to be stored
+                let mut scattered_12 = false;
+                for v in compiler_state.sorted_variables().iter() {
+                    if let VariableMemory::ROM(b) = v.1.memory {
+                        if b == self.bank {
+                            if let Some((l, _)) = v.1.scattered {
+                                if l == 12 && !self.set.contains(v.0) {
+                                    // OK. We have found a 12 lines scattered data zone that was not
+                                    // allocated to any zone. Let's create a new 12 lines scattered data zone
+                                    scattered_12 = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if scattered_12 {
+                    // Great. Let's fill this 3Kb of memory with 12 lines scattered data
+
+                    // Let's select all the variables that will fit into this scattered data
+                    let mut sv = Vec::<(String, u32)>::new();
+                    let mut fill = 0;
+
+                    // First pass to select in priority the ones that require holey DMA
+                    for v in compiler_state.sorted_variables().iter() {
+                        if let VariableMemory::ROM(b) = v.1.memory {
+                            if b == self.bank {
+                                if let Some((l, _)) = v.1.scattered {
+                                    if l == 12 && !self.set.contains(v.0) {
+                                        // OK. We have found a 8 lines scattered data zone that was not
+                                        // allocated to any zone. Let's set if it can fit into this area
+                                        if let VariableDefinition::Array(a) = &v.1.def {
+                                            let width = a.len() as u32 / 12;
+                                            if fill + width <= 256 {
+                                                fill += width;
+                                                sv.push((v.0.clone(), width));
+                                                self.set.insert(v.0);
+                                                self.remaining_scattered -= 1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if definitive && fill > 0 {
+                        // Write the effective scattered data
+                        if args.verbose {
+                            println!("Bank #{} : Putting 12 lines scattered data at ${:04x}. Zone filling is {}/256", self.bank, rorg, fill);
+                        }
+                        gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
+                        gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
+                        let mut counter;
+                        for i in &sv {
+                            gstate.write(&format!("\n{}", i.0))?;
+                            if args.verbose {
+                                println!(" - {}", i.0);
+                            }
+                            counter = 0;
+                            let v = compiler_state.variables.get(&i.0).unwrap();
+                            if let Some((_, w)) = v.scattered {
+                                if let VariableDefinition::Array(a) = &v.def {
+                                    for j in 0..i.1 {
+                                        let xx = if v.reversed {
+                                            &a[((j % w) + 11 * w + (j / w) * 12) as usize]
+                                        } else {
+                                            &a[((j % w) + (j / w) * 12) as usize]
+                                        };
+                                        if let VariableValue::Int(x) = xx {
+                                            if counter == 0 {
+                                                gstate.write("\n\thex ")?;
+                                            }
+                                            counter += 1;
+                                            if counter == 16 {
+                                                counter = 0;
+                                            }
+                                            gstate.write(&format!("{:02x}", x & 0xff))?;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        for l in 1..12 {
+                            gstate.write(&format!(
+                                "\n\n\tORG ${:04x}\n\tRORG ${:04x}",
+                                org + 256 * l,
+                                rorg + 256 * l
+                            ))?;
+                            let mut counter = 0;
+                            for i in &sv {
+                                let v = compiler_state.variables.get(&i.0).unwrap();
+                                if let Some((_, w)) = v.scattered {
+                                    if let VariableDefinition::Array(a) = &v.def {
+                                        for j in 0..i.1 {
+                                            let xx = if v.reversed {
+                                                &a[((j % w) + (11 - l) * w + (j / w) * 12) as usize]
+                                            } else {
+                                                &a[((j % w) + l * w + (j / w) * 12) as usize]
+                                            };
+                                            if let VariableValue::Int(x) = xx {
+                                                if counter == 0 {
+                                                    gstate.write("\n\thex ")?;
+                                                }
+                                                counter += 1;
+                                                if counter == 16 {
+                                                    counter = 0;
+                                                }
+                                                gstate.write(&format!("{:02x}", x & 0xff))?;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        gstate.write("\n")?;
+                    }
+
+                    // Go on with filling the memory
+                    if fill > 0 {
+                        return self.fill_memory(
+                            org + 0xc00,
+                            rorg + 0xc00,
+                            size - 0xc00,
+                            compiler_state,
+                            gstate,
+                            args,
+                            true,
+                            true,
+                            definitive,
+                        );
+                    }
+                }
+            }
+
             if self.remaining_scattered > 0 {
                 // Well, we have scattered data, so let's try to find a place for them
                 self.fill_memory(
@@ -808,8 +946,12 @@ fn write_a78_header(
             audio = 5;
         }
     }
-    let controller = if compiler_state.variables.get("PADDLES").is_some() { 3 } else { 1 };
-    
+    let controller = if compiler_state.variables.get("PADDLES").is_some() {
+        3
+    } else {
+        1
+    };
+
     gstate.write(&format!(
         "
     ORG ${:x}
