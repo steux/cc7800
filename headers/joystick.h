@@ -1,6 +1,6 @@
 /*
     joystick.h : Joystick management for the Atari 7800
-    Copyleft 2023 Bruno STEUX 
+    Copyleft 2023-2024 Bruno STEUX 
 
     This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
 */
@@ -33,37 +33,37 @@ INIT_BANK void joystick_init()
 
 void joystick_update()
 {
-    joystick[1] = ~*SWCHA;
     // Player 0
     joystick[0] &= JOYSTICK_HAS_TWO_BUTTONS;
-    joystick[0] |= (joystick[1] >> 4);
-    if (!(*INPT4 & 0x80)) {
+    joystick[0] |= ((~*SWCHA) >> 4);
+    if (*INPT4 >= 0) {
         // This is a single button joystick.
         if (joystick[0] & JOYSTICK_HAS_TWO_BUTTONS) {
             *SWCHB |= 4; // In order to protect the console
         }
-        joystick[0] = JOYSTICK_BUTTON1;
+        joystick[0] |= JOYSTICK_BUTTON1;
     } else if (joystick[0] & JOYSTICK_HAS_TWO_BUTTONS) {
-        if (*INPT1 & 0x80) {
+        if (*INPT1 < 0) {
             joystick[0] |= JOYSTICK_BUTTON1;
         }
-        if (*INPT0 & 0x80) {
+        if (*INPT0 < 0) {
             joystick[0] |= JOYSTICK_BUTTON2;
         }
     }
     // Player 1
-    joystick[1] &= JOYSTICK_HAS_TWO_BUTTONS | 0x0f;
-    if (!(*INPT5 & 0x80)) {
+    joystick[1] &= JOYSTICK_HAS_TWO_BUTTONS;
+    joystick[1] |= (~*SWCHA) & 0x0f;
+    if (*INPT5 >= 0) {
         // This is a single button joystick.
         if (joystick[1] & JOYSTICK_HAS_TWO_BUTTONS) {
             *SWCHB |= 0x10; // In order to protect the console
         }
-        joystick[1] = JOYSTICK_BUTTON1;
+        joystick[1] |= JOYSTICK_BUTTON1;
     } else if (joystick[1] & JOYSTICK_HAS_TWO_BUTTONS) {
-        if (*INPT3 & 0x80) {
+        if (*INPT3 < 0) {
             joystick[1] |= JOYSTICK_BUTTON1;
         }
-        if (*INPT2 & 0x80) {
+        if (*INPT2 < 0) {
             joystick[1] |= JOYSTICK_BUTTON2;
         }
     }
