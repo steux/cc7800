@@ -257,17 +257,22 @@ impl<'a> MemoryMap<'a> {
 
                     // Go on with filling the memory
                     if fill > 0 {
-                        return self.fill_memory(
-                            org + 0x1000,
-                            rorg + 0x1000,
-                            size - 0x1000,
-                            compiler_state,
-                            gstate,
-                            args,
-                            true,
-                            true,
-                            definitive,
-                        );
+                        if size > 0x1000 {
+                            return self.fill_memory(
+                                org + 0x1000,
+                                rorg + 0x1000,
+                                size - 0x1000,
+                                compiler_state,
+                                gstate,
+                                args,
+                                true,
+                                true,
+                                definitive,
+                            );
+                        }
+                        return Err(Error::Configuration {
+                            error: "Memory full".to_string(),
+                        });
                     }
                 }
             }
@@ -423,17 +428,22 @@ impl<'a> MemoryMap<'a> {
 
                     // Go on with filling the memory
                     if fill > 0 {
-                        return self.fill_memory(
-                            org + 0x800,
-                            rorg + 0x800,
-                            size - 0x800,
-                            compiler_state,
-                            gstate,
-                            args,
-                            true,
-                            true,
-                            definitive,
-                        );
+                        if size > 0x800 {
+                            return self.fill_memory(
+                                org + 0x800,
+                                rorg + 0x800,
+                                size - 0x800,
+                                compiler_state,
+                                gstate,
+                                args,
+                                true,
+                                true,
+                                definitive,
+                            );
+                        }
+                        return Err(Error::Configuration {
+                            error: "Memory full".to_string(),
+                        });
                     }
                 }
             }
@@ -560,17 +570,33 @@ impl<'a> MemoryMap<'a> {
 
                     // Go on with filling the memory
                     if fill > 0 {
-                        return self.fill_memory(
-                            org + 0xc00,
-                            rorg + 0xc00,
-                            size - 0xc00,
-                            compiler_state,
-                            gstate,
-                            args,
-                            true,
-                            true,
-                            definitive,
-                        );
+                        if size > 0x1000 {
+                            self.fill_memory(
+                                org + 0xc00,
+                                rorg + 0xc00,
+                                0x400,
+                                compiler_state,
+                                gstate,
+                                args,
+                                false,
+                                true,
+                                definitive,
+                            )?;
+                            return self.fill_memory(
+                                org + 0x1000,
+                                rorg + 0x1000,
+                                size - 0x1000,
+                                compiler_state,
+                                gstate,
+                                args,
+                                true,
+                                true,
+                                definitive,
+                            );
+                        }
+                        return Err(Error::Configuration {
+                            error: "Memory full".to_string(),
+                        });
                     }
                 }
             }
