@@ -2205,3 +2205,83 @@ char multisprite_sparse_tiling_collision(char top, char left, char right)
 
 #endif // __ATARI7800_MULTISPRITE__
  
+#define multisprite_display_bitmap(ptr, left, top, height) \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_display_bitmap(left, top, height);
+
+// Sparse tiling simple display
+void _ms_display_bitmap(char left, char top, char height)
+{
+    char *ptr, data[5], y, bottom;
+    _ms_tmp2 = 0;
+
+    bottom = top + height;
+    if (_ms_buffer) {
+        top += _MS_DLL_ARRAY_SIZE; 
+        bottom += _MS_DLL_ARRAY_SIZE;
+    }
+
+    for (X = top; X < bottom; _ms_tmp2++) {
+        Y = _ms_tmp2;
+        ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
+        _ms_tmpptr = _ms_dls[X];
+        y = _ms_dlend[X];
+        Y = 0;
+        // First 5 bytes serie (setting the mode)
+        data[0] = ptr[Y++];
+        data[1] = ptr[Y++];
+        data[2] = ptr[Y++];
+        data[3] = ptr[Y++];
+        data[4] = ptr[Y++];
+        _save_y = Y;
+        Y = y; // 6 cycles
+        _ms_tmpptr[Y++] = data[0]; // 11 cycles
+        _ms_tmpptr[Y++] = data[1];
+        _ms_tmpptr[Y++] = data[2];
+        _ms_tmpptr[Y++] = data[3];
+        _ms_tmpptr[Y++] = data[4] + left;
+        y = Y; // 21 cycles
+        Y = _save_y;
+        // The other series of 4 bytes
+        data[0] = ptr[Y++];
+        data[1] = ptr[Y++];
+        while (data[1]) {
+            data[2] = ptr[Y++];
+            data[3] = ptr[Y++];
+            _save_y = Y;
+            Y = y; // 6 cycles
+            _ms_tmpptr[Y++] = data[0]; // 11 cycles
+            _ms_tmpptr[Y++] = data[1];
+            _ms_tmpptr[Y++] = data[2];
+            _ms_tmpptr[Y++] = data[3] + left;
+            y = Y; // 21 cycles
+            Y = _save_y;
+            data[0] = ptr[Y++];
+            data[1] = ptr[Y++];
+        }
+        _ms_dlend[X++] = y;
+    }
+}
+
+void multisprite_disable_holeydma()
+{
+    if (_ms_pal_detected) Y = 3; else Y = 0;
+    for (X = 0; X != 14; X++) {
+        Y++; Y++; Y++;
+        _ms_b0_dll[Y] &= 0x9f;
+        _ms_b1_dll[Y] &= 0x9f;
+    }
+}
+
+void multisprite_enable_holeydma()
+{
+    if (_ms_pal_detected) Y = 3; else Y = 0;
+    for (X = 0; X != 14; X++) {
+        Y++; Y++; Y++;
+        if (X >= _MS_TOP_DISPLAY) {
+            _ms_b0_dll[Y] |= 0x40;
+            _ms_b1_dll[Y] |= 0x40;
+        }
+    }
+}
