@@ -159,12 +159,37 @@ impl<'a> MemoryMap<'a> {
                             }
                         }
                     } else if rorg <= 0x8000 {
-                        // Not holeydma zone. Accepts only 0x8000 or lower
+                        //Accepts only 0x8000 or lower
+                        // Not holeydma zone, but displayable when oley DMA is active
                         for v in compiler_state.sorted_variables().iter() {
                             if let VariableMemory::ROM(b) = v.1.memory {
                                 if b == self.bank {
                                     if let Some((l, _)) = v.1.scattered {
                                         if l == 16 && !self.set.contains(v.0) && !v.1.holeydma {
+                                            // OK. We have found a 16 lines scattered data zone that was not
+                                            // allocated to any zone. Let's set if it can fit into this area
+                                            if let VariableDefinition::Array(a) = &v.1.def {
+                                                let width = a.len() as u32 / 16;
+                                                if fill + width <= 256 {
+                                                    fill += width;
+                                                    sv.push((v.0.clone(), width));
+                                                    self.set.insert(v.0);
+                                                    self.remaining_scattered -= 1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Zones where data can be displayed only when holey DMA has been
+                        // previously dactivated
+                        for v in compiler_state.sorted_variables().iter() {
+                            if let VariableMemory::ROM(b) = v.1.memory {
+                                if b == self.bank {
+                                    if let Some((l, _)) = v.1.scattered {
+                                        if l == 16 && !self.set.contains(v.0) && v.1.noholeydma {
                                             // OK. We have found a 16 lines scattered data zone that was not
                                             // allocated to any zone. Let's set if it can fit into this area
                                             if let VariableDefinition::Array(a) = &v.1.def {
@@ -257,7 +282,7 @@ impl<'a> MemoryMap<'a> {
 
                     // Go on with filling the memory
                     if fill > 0 {
-                        if size > 0x1000 {
+                        if size >= 0x1000 {
                             return self.fill_memory(
                                 org + 0x1000,
                                 rorg + 0x1000,
@@ -352,6 +377,30 @@ impl<'a> MemoryMap<'a> {
                                 }
                             }
                         }
+                    } else {
+                        // Zones where data can be displayed only when holey DMA has been
+                        // previously dactivated
+                        for v in compiler_state.sorted_variables().iter() {
+                            if let VariableMemory::ROM(b) = v.1.memory {
+                                if b == self.bank {
+                                    if let Some((l, _)) = v.1.scattered {
+                                        if l == 8 && !self.set.contains(v.0) && v.1.noholeydma {
+                                            // OK. We have found a 16 lines scattered data zone that was not
+                                            // allocated to any zone. Let's set if it can fit into this area
+                                            if let VariableDefinition::Array(a) = &v.1.def {
+                                                let width = a.len() as u32 / 8;
+                                                if fill + width <= 256 {
+                                                    fill += width;
+                                                    sv.push((v.0.clone(), width));
+                                                    self.set.insert(v.0);
+                                                    self.remaining_scattered -= 1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     if definitive && fill > 0 {
@@ -428,7 +477,7 @@ impl<'a> MemoryMap<'a> {
 
                     // Go on with filling the memory
                     if fill > 0 {
-                        if size > 0x800 {
+                        if size >= 0x800 {
                             return self.fill_memory(
                                 org + 0x800,
                                 rorg + 0x800,
@@ -570,7 +619,7 @@ impl<'a> MemoryMap<'a> {
 
                     // Go on with filling the memory
                     if fill > 0 {
-                        if size > 0x1000 {
+                        if size >= 0x1000 {
                             self.fill_memory(
                                 org + 0xc00,
                                 rorg + 0xc00,
