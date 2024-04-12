@@ -413,4 +413,22 @@ void _conio_putch()
     _conio_cursor_move_right();
 }
 
+inline void conio_restore_dl(char l)
+{
+    char line = (l << 2) - l + 7; // line = l * 3 + 7
+    if (_ms_pal_detected) line += 3;
+    X = line;
+    _ms_b0_dll[X++] = _ms_conio_dls[Y = l] >> 8;
+    _ms_b0_dll[X] = _ms_conio_dls[Y];
+}
+
+inline void conio_set_dl(char line, char *dl)
+{
+    line = (line << 2) - line + 7; // line = line * 3 + 7
+    if (_ms_pal_detected) line += 3;
+    X = line;
+    _ms_b0_dll[X++] = dl >> 8;
+    _ms_b0_dll[X] = dl;
+}
+
 #endif // __CONIO_H__
