@@ -1,5 +1,6 @@
 v0.2.25 (04/12/2024) :
     - Added noholeydma keyword supprt 
+		- Corrected a bug with included assembler (oops)
 
 v0.2.24 (03/26/2024) :
     - Added support for height 12 scattered memory

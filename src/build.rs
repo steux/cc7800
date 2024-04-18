@@ -707,6 +707,7 @@ impl<'a> MemoryMap<'a> {
                 if self.bank == basm && filled + s <= size && !self.set_asm.contains(&i) {
                     // Check if this one needs to be generated
                     self.set_asm.insert(i);
+                    self.remaining_assembler -= 1;
                     if definitive {
                         gstate.write(&asm.0)?;
                     }
