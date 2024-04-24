@@ -85,6 +85,7 @@ void _libc_itoa(short val)
 short _libc_rand;
 
 void srand(int seed) {
+    if (seed == 0) seed = 1;
     _libc_rand = seed;
 }
 
