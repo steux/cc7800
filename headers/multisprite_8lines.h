@@ -123,6 +123,91 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             }\
         }
 
+#define multisprite_display_double_sprite(x, y, gfx, width, palette, mode) \
+	_ms_tmp = (y) & 0x07; \
+	X = (y) >> 3; \
+        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
+            _ms_tmpptr = _ms_dls[X]; \
+            Y = _ms_dlend[X]; \
+            if (Y >= _MS_DL_LIMIT) { \
+                _ms_dmaerror++; \
+            } else { \
+                _ms_tmpptr[Y++] = (gfx);\
+                _ms_tmp4 = Y++; \
+                _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_dlend[X] = Y; \
+                _ms_tmpptr[++Y] = 0; \
+                _ms_tmpptr[Y = _ms_tmp4] = (mode)?0xc0:0x40; \
+                if (_ms_tmp) { \
+                    _ms_tmp3 = (gfx); \
+                    _ms_tmp2 = (((gfx) >> 8) - 0x08) | _ms_tmp; \
+                        X++; \
+                        _MS_DMA_CHECK((20 + 3 * width * 3 + 1) / 2) { \
+                            _ms_tmpptr = _ms_dls[X];  \
+                            Y = _ms_dlend[X]; \
+                            if (Y >= _MS_DL_LIMIT - 5) { \
+                                _ms_dmaerror++; \
+                            } else { \
+                                _ms_tmpptr[Y++] = _ms_tmp3; \
+                                _ms_tmp4 = Y++; \
+                                _ms_tmpptr[Y++] = _ms_tmp2; \
+                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = (x); \
+                                _ms_tmp3 += width; \
+                                _ms_tmpptr[Y++] = _ms_tmp3; \
+                                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
+                                _ms_tmpptr[Y++] = ((gfx) >> 8) | _ms_tmp; \
+                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = (x); \
+                                _ms_dlend[X] = Y; \
+                                _ms_tmpptr[++Y] = 0; \
+                                _ms_tmpptr[Y = _ms_tmp4] = (mode)?0xc0:0x40; \
+                            } \
+                        } \
+                    X++; \
+                    _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
+                        _ms_tmpptr = _ms_dls[X];  \
+                        Y = _ms_dlend[X]; \
+                        if (Y >= _MS_DL_LIMIT) { \
+                            _ms_dmaerror++; \
+                        } else { \
+                            _ms_tmpptr[Y++] = _ms_tmp3; \
+                            _ms_tmp4 = Y++; \
+                            _ms_tmpptr[Y++] = _ms_tmp2; \
+                            _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                            _ms_tmpptr[Y++] = (x); \
+                            _ms_dlend[X] = Y; \
+                            _ms_tmpptr[++Y] = 0; \
+                            _ms_tmpptr[Y = _ms_tmp4] = (mode)?0xc0:0x40; \
+                        } \
+                    } \
+                } else { \
+                    _ms_tmpptr2 = (gfx); \
+                    _ms_tmp2 = (_ms_tmpptr2 >> 8) | _ms_tmp; \
+                        X++; \
+                        _ms_tmpptr2 += width; \
+                        _MS_DMA_CHECK((10 + width * 3 + 1) / 2) { \
+                            _ms_tmpptr = _ms_dls[X];  \
+                            Y = _ms_dlend[X]; \
+                            if (Y >= _MS_DL_LIMIT) { \
+                                _ms_dmaerror++; \
+                            } else { \
+                                _ms_tmpptr[Y++] = _ms_tmpptr2; \
+                                _ms_tmp = Y++; \
+                                _ms_tmpptr[Y++] = _ms_tmp2; \
+                                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                                _ms_tmpptr[Y++] = (x); \
+                                _ms_dlend[X] = Y; \
+                                _ms_tmpptr[++Y] = 0; \
+                                _ms_tmpptr[Y = _ms_tmp] = (mode)?0xc0:0x40; \
+                            } \
+                        } \
+                } \
+            } \
+        }
+
 #define multisprite_display_big_sprite(x, y, gfx, width, palette, height, mode) \
 	_ms_tmp = (y) & 0x07; \
 	X = (y) >> 3; \
@@ -612,14 +697,14 @@ const char _ms_bit_extract[8] = {128, 64, 32, 16, 8, 4, 2, 1};
     if (_ms_tmp2 >= 0) { \
         if ((x1) <= (x2) + (((w2) >> 1) - 1)) { \
             if ((y1) <= (y2) + ((h2) - 1)) { \
-                _ms_tmp = (x1) + (((w1) >> 1) - 1) - (x2); \
+                _ms_tmp = ((x1) + (((w1) >> 1) - 1) - (x2)); \
                 if (_ms_tmp >= 0) { \
                     Y = _ms_tmp2 << ((w1 + w2 - 1) / 8); \
-                    while (_ms_tmp >= 8) { \
+                    while (_ms_tmp >= 4) { \
                         Y++; \
-                        _ms_tmp -= 8; \
+                        _ms_tmp -= 4; \
                     } \
-                    _ms_tmp3 = collision_map[Y] & _ms_bit_extract[X = _ms_tmp]; \
+                    _ms_tmp3 = collision_map[Y] & _ms_bit_extract[X = _ms_tmp << 1]; \
                 } \
             } \
         } \
