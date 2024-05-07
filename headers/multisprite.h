@@ -2203,8 +2203,6 @@ char multisprite_sparse_tiling_collision(char top, char left, char right)
     return intersect;
 }
 
-#endif // __ATARI7800_MULTISPRITE__
- 
 #define multisprite_display_bitmap(ptr, left, top, height) \
     _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
     _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
@@ -2285,3 +2283,5 @@ void multisprite_enable_holeydma()
         }
     }
 }
+
+#endif // __ATARI7800_MULTISPRITE__

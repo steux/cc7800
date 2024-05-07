@@ -812,5 +812,65 @@ char multisprite_sparse_tiling_collision(char top, char left, char right)
     return intersect;
 }
 
-#endif // __ATARI7800_MULTISPRITE_8LINES__
+#define multisprite_display_bitmap(ptr, left, top, height) \
+    _ms_sparse_tiles_ptr_high = ptr[Y = 0]; \
+    _ms_sparse_tiles_ptr_low = ptr[Y = 1]; \
+    _ms_display_bitmap(left, top, height);
+
+// Sparse tiling simple display
+void _ms_display_bitmap(char left, char top, char height)
+{
+    char *ptr, data[5], y, bottom, save_second_byte;
+    _ms_tmp2 = 0;
+
+    bottom = top + height;
+
+    for (X = top; X < bottom; _ms_tmp2++) {
+        Y = _ms_tmp2;
+        ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
+        _ms_tmpptr = _ms_dls[X];
+        y = _ms_dlend[X];
+        Y = 0;
+        // First 5 bytes serie (setting the mode)
+        data[0] = ptr[Y++];
+        save_second_byte = ptr[Y++];
+        if (save_second_byte) {
+            data[2] = ptr[Y++];
+            data[3] = ptr[Y++];
+            data[4] = ptr[Y++];
+            _save_y = Y;
+            Y = y; // 6 cycles
+            _ms_tmpptr[Y++] = data[0]; // 11 cycles
+            Y++;
+            _ms_tmpptr[Y++] = data[2];
+            _ms_tmpptr[Y++] = data[3];
+            _ms_tmpptr[Y++] = data[4] + left;
+            y = Y; // 21 cycles
+            Y = _save_y;
+            // The other series of 4 bytes
+            data[0] = ptr[Y++];
+            data[1] = ptr[Y++];
+            while (data[1]) {
+                data[2] = ptr[Y++];
+                data[3] = ptr[Y++];
+                _save_y = Y;
+                Y = y; // 6 cycles
+                _ms_tmpptr[Y++] = data[0]; // 11 cycles
+                _ms_tmpptr[Y++] = data[1];
+                _ms_tmpptr[Y++] = data[2];
+                _ms_tmpptr[Y++] = data[3] + left;
+                y = Y; // 21 cycles
+                Y = _save_y;
+                data[0] = ptr[Y++];
+                data[1] = ptr[Y++];
+            }
+            _ms_tmpptr[Y = _ms_dlend[X] + 1] = save_second_byte;
+            _ms_dlend[X] = y;
+            Y = y;
+            _ms_tmpptr[++Y] = 0;
+        }
+        X++;
+    }
+}
  
+#endif // __ATARI7800_MULTISPRITE_8LINES__
