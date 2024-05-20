@@ -38,6 +38,27 @@ struct MemoryMap<'a> {
     remaining_variables: u32,
 }
 
+fn check_gfx_variable_group<'a, I>(mut iter: I, prefix: &String) -> (u32, u32)
+where
+    I: Iterator<Item = &'a (&'a String, &'a Variable)>,
+{
+    let mut w = 0;
+    let mut advance_iterator = 0;
+    while let Some(v) = iter.next() {
+        if v.0.starts_with(prefix) {
+            if let VariableDefinition::Array(a) = &v.1.def {
+                w += a.len();
+                advance_iterator += 1;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    (w as u32, advance_iterator)
+}
+
 impl<'a> MemoryMap<'a> {
     fn new(compiler_state: &'a CompilerState, bank: u32) -> MemoryMap<'a> {
         let mut remaining_functions = 0;
@@ -137,73 +158,116 @@ impl<'a> MemoryMap<'a> {
                     let mut fill = 0;
 
                     if holeydma_enabled_zone {
-                        for v in compiler_state.sorted_variables().iter() {
-                            if let VariableMemory::ROM(b) = v.1.memory {
-                                if b == self.bank {
-                                    if let Some((l, _)) = v.1.scattered {
-                                        if l == 16 && !self.set.contains(v.0) {
-                                            // OK. We have found a 16 lines scattered data zone that was not
-                                            // allocated to any zone. Let's set if it can fit into this area
-                                            if let VariableDefinition::Array(a) = &v.1.def {
-                                                let width = a.len() as u32 / 16;
-                                                if fill + width <= 256 {
-                                                    fill += width;
-                                                    sv.push((v.0.clone(), width));
-                                                    self.set.insert(v.0);
-                                                    self.remaining_scattered -= 1;
+                        let svx = compiler_state.sorted_variables();
+                        let mut iter = svx.iter();
+                        let mut advance_iterator = 0;
+                        loop {
+                            for _ in 0..advance_iterator {
+                                iter.next();
+                            }
+                            if let Some(v) = iter.next() {
+                                if let VariableMemory::ROM(b) = v.1.memory {
+                                    if b == self.bank {
+                                        if let Some((l, _)) = v.1.scattered {
+                                            if l == 16 && !self.set.contains(v.0) {
+                                                // OK. We have found a 16 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let (w, ai) =
+                                                        check_gfx_variable_group(iter.clone(), v.0);
+                                                    let width = a.len() as u32 / 16;
+                                                    advance_iterator = ai;
+                                                    if fill + width + w / 16 <= 256 {
+                                                        advance_iterator = 0;
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                            } else {
+                                break;
                             }
                         }
                     } else if rorg <= 0x8000 {
                         //Accepts only 0x8000 or lower
                         // Not holeydma zone, but displayable when oley DMA is active
-                        for v in compiler_state.sorted_variables().iter() {
-                            if let VariableMemory::ROM(b) = v.1.memory {
-                                if b == self.bank {
-                                    if let Some((l, _)) = v.1.scattered {
-                                        if l == 16 && !self.set.contains(v.0) && !v.1.holeydma {
-                                            // OK. We have found a 16 lines scattered data zone that was not
-                                            // allocated to any zone. Let's set if it can fit into this area
-                                            if let VariableDefinition::Array(a) = &v.1.def {
-                                                let width = a.len() as u32 / 16;
-                                                if fill + width <= 256 {
-                                                    fill += width;
-                                                    sv.push((v.0.clone(), width));
-                                                    self.set.insert(v.0);
-                                                    self.remaining_scattered -= 1;
+                        let svx = compiler_state.sorted_variables();
+                        let mut iter = svx.iter();
+                        let mut advance_iterator = 0;
+                        loop {
+                            for _ in 0..advance_iterator {
+                                iter.next();
+                            }
+                            if let Some(v) = iter.next() {
+                                if let VariableMemory::ROM(b) = v.1.memory {
+                                    if b == self.bank {
+                                        if let Some((l, _)) = v.1.scattered {
+                                            if l == 16 && !self.set.contains(v.0) && !v.1.holeydma {
+                                                // OK. We have found a 16 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let (w, ai) =
+                                                        check_gfx_variable_group(iter.clone(), v.0);
+                                                    advance_iterator = ai;
+                                                    let width = a.len() as u32 / 16;
+                                                    if fill + width + w / 16 <= 256 {
+                                                        advance_iterator = 0;
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                            } else {
+                                break;
                             }
                         }
                     } else {
                         // Zones where data can be displayed only when holey DMA has been
                         // previously dactivated
-                        for v in compiler_state.sorted_variables().iter() {
-                            if let VariableMemory::ROM(b) = v.1.memory {
-                                if b == self.bank {
-                                    if let Some((l, _)) = v.1.scattered {
-                                        if l == 16 && !self.set.contains(v.0) && v.1.noholeydma {
-                                            // OK. We have found a 16 lines scattered data zone that was not
-                                            // allocated to any zone. Let's set if it can fit into this area
-                                            if let VariableDefinition::Array(a) = &v.1.def {
-                                                let width = a.len() as u32 / 16;
-                                                if fill + width <= 256 {
-                                                    fill += width;
-                                                    sv.push((v.0.clone(), width));
-                                                    self.set.insert(v.0);
-                                                    self.remaining_scattered -= 1;
+                        let svx = compiler_state.sorted_variables();
+                        let mut iter = svx.iter();
+                        let mut advance_iterator = 0;
+                        loop {
+                            for _ in 0..advance_iterator {
+                                iter.next();
+                            }
+                            if let Some(v) = iter.next() {
+                                if let VariableMemory::ROM(b) = v.1.memory {
+                                    if b == self.bank {
+                                        if let Some((l, _)) = v.1.scattered {
+                                            if l == 16 && !self.set.contains(v.0) && v.1.noholeydma
+                                            {
+                                                // OK. We have found a 16 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let (w, ai) =
+                                                        check_gfx_variable_group(iter.clone(), v.0);
+                                                    advance_iterator = ai;
+                                                    let width = a.len() as u32 / 16;
+                                                    if fill + width + w / 16 <= 256 {
+                                                        advance_iterator = 0;
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                            } else {
+                                break;
                             }
                         }
                     }
@@ -334,71 +398,116 @@ impl<'a> MemoryMap<'a> {
                     // Let's select all the variables that will fit into this scattered data
                     if holeydma_enabled_zone {
                         // First pass to select in priority the ones that require holey DMA
-                        for v in compiler_state.sorted_variables().iter() {
-                            if let VariableMemory::ROM(b) = v.1.memory {
-                                if b == self.bank {
-                                    if let Some((l, _)) = v.1.scattered {
-                                        if l == 8 && !self.set.contains(v.0) {
-                                            // OK. We have found a 8 lines scattered data zone that was not
-                                            // allocated to any zone. Let's set if it can fit into this area
-                                            if let VariableDefinition::Array(a) = &v.1.def {
-                                                let width = a.len() as u32 / 8;
-                                                if fill + width <= 256 {
-                                                    fill += width;
-                                                    sv.push((v.0.clone(), width));
-                                                    self.set.insert(v.0);
-                                                    self.remaining_scattered -= 1;
+                        let svx = compiler_state.sorted_variables();
+                        let mut iter = svx.iter();
+                        let mut advance_iterator = 0;
+                        loop {
+                            for _ in 0..advance_iterator {
+                                iter.next();
+                            }
+                            if let Some(v) = iter.next() {
+                                if let VariableMemory::ROM(b) = v.1.memory {
+                                    if b == self.bank {
+                                        if let Some((l, _)) = v.1.scattered {
+                                            if l == 8 && !self.set.contains(v.0) {
+                                                // OK. We have found a 16 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let (w, ai) =
+                                                        check_gfx_variable_group(iter.clone(), v.0);
+                                                    let width = a.len() as u32 / 8;
+                                                    advance_iterator = ai;
+                                                    if fill + width + w / 8 <= 256 {
+                                                        advance_iterator = 0;
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                            } else {
+                                break;
                             }
                         }
                     } else if rorg <= 0x8000 {
-                        for v in compiler_state.sorted_variables().iter() {
-                            if let VariableMemory::ROM(b) = v.1.memory {
-                                if b == self.bank {
-                                    if let Some((l, _)) = v.1.scattered {
-                                        if l == 8 && !self.set.contains(v.0) && !v.1.holeydma {
-                                            // OK. We have found a 8 lines scattered data zone that was not
-                                            // allocated to any zone. Let's set if it can fit into this area
-                                            if let VariableDefinition::Array(a) = &v.1.def {
-                                                let width = a.len() as u32 / 8;
-                                                if fill + width <= 256 {
-                                                    fill += width;
-                                                    sv.push((v.0.clone(), width));
-                                                    self.set.insert(v.0);
-                                                    self.remaining_scattered -= 1;
+                        let svx = compiler_state.sorted_variables();
+                        let mut iter = svx.iter();
+                        let mut advance_iterator = 0;
+                        loop {
+                            for _ in 0..advance_iterator {
+                                iter.next();
+                            }
+                            if let Some(v) = iter.next() {
+                                if let VariableMemory::ROM(b) = v.1.memory {
+                                    if b == self.bank {
+                                        if let Some((l, _)) = v.1.scattered {
+                                            if l == 8 && !self.set.contains(v.0) && !v.1.holeydma {
+                                                if v.0 == "dragon_right_2" {
+                                                    advance_iterator = 0;
+                                                }
+                                                // OK. We have found a 8 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let (w, ai) =
+                                                        check_gfx_variable_group(iter.clone(), v.0);
+                                                    advance_iterator = ai;
+                                                    let width = a.len() as u32 / 8;
+                                                    if fill + width + w / 8 <= 256 {
+                                                        advance_iterator = 0;
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                            } else {
+                                break;
                             }
                         }
                     } else {
                         // Zones where data can be displayed only when holey DMA has been
                         // previously dactivated
-                        for v in compiler_state.sorted_variables().iter() {
-                            if let VariableMemory::ROM(b) = v.1.memory {
-                                if b == self.bank {
-                                    if let Some((l, _)) = v.1.scattered {
-                                        if l == 8 && !self.set.contains(v.0) && v.1.noholeydma {
-                                            // OK. We have found a 16 lines scattered data zone that was not
-                                            // allocated to any zone. Let's set if it can fit into this area
-                                            if let VariableDefinition::Array(a) = &v.1.def {
-                                                let width = a.len() as u32 / 8;
-                                                if fill + width <= 256 {
-                                                    fill += width;
-                                                    sv.push((v.0.clone(), width));
-                                                    self.set.insert(v.0);
-                                                    self.remaining_scattered -= 1;
+                        let svx = compiler_state.sorted_variables();
+                        let mut iter = svx.iter();
+                        let mut advance_iterator = 0;
+                        loop {
+                            for _ in 0..advance_iterator {
+                                iter.next();
+                            }
+                            if let Some(v) = iter.next() {
+                                if let VariableMemory::ROM(b) = v.1.memory {
+                                    if b == self.bank {
+                                        if let Some((l, _)) = v.1.scattered {
+                                            if l == 8 && !self.set.contains(v.0) && v.1.noholeydma {
+                                                // OK. We have found a 16 lines scattered data zone that was not
+                                                // allocated to any zone. Let's set if it can fit into this area
+                                                if let VariableDefinition::Array(a) = &v.1.def {
+                                                    let (w, ai) =
+                                                        check_gfx_variable_group(iter.clone(), v.0);
+                                                    advance_iterator = ai;
+                                                    let width = a.len() as u32 / 8;
+                                                    if fill + width + w / 8 <= 256 {
+                                                        advance_iterator = 0;
+                                                        fill += width;
+                                                        sv.push((v.0.clone(), width));
+                                                        self.set.insert(v.0);
+                                                        self.remaining_scattered -= 1;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                            } else {
+                                break;
                             }
                         }
                     }
