@@ -165,6 +165,7 @@ impl<'a> MemoryMap<'a> {
                             for _ in 0..advance_iterator {
                                 iter.next();
                             }
+                            advance_iterator = 0;
                             if let Some(v) = iter.next() {
                                 if let VariableMemory::ROM(b) = v.1.memory {
                                     if b == self.bank {
@@ -203,6 +204,7 @@ impl<'a> MemoryMap<'a> {
                             for _ in 0..advance_iterator {
                                 iter.next();
                             }
+                            advance_iterator = 0;
                             if let Some(v) = iter.next() {
                                 if let VariableMemory::ROM(b) = v.1.memory {
                                     if b == self.bank {
@@ -241,6 +243,7 @@ impl<'a> MemoryMap<'a> {
                             for _ in 0..advance_iterator {
                                 iter.next();
                             }
+                            advance_iterator = 0;
                             if let Some(v) = iter.next() {
                                 if let VariableMemory::ROM(b) = v.1.memory {
                                     if b == self.bank {
@@ -405,6 +408,7 @@ impl<'a> MemoryMap<'a> {
                             for _ in 0..advance_iterator {
                                 iter.next();
                             }
+                            advance_iterator = 0;
                             if let Some(v) = iter.next() {
                                 if let VariableMemory::ROM(b) = v.1.memory {
                                     if b == self.bank {
@@ -441,14 +445,12 @@ impl<'a> MemoryMap<'a> {
                             for _ in 0..advance_iterator {
                                 iter.next();
                             }
+                            advance_iterator = 0;
                             if let Some(v) = iter.next() {
                                 if let VariableMemory::ROM(b) = v.1.memory {
                                     if b == self.bank {
                                         if let Some((l, _)) = v.1.scattered {
                                             if l == 8 && !self.set.contains(v.0) && !v.1.holeydma {
-                                                if v.0 == "dragon_right_2" {
-                                                    advance_iterator = 0;
-                                                }
                                                 // OK. We have found a 8 lines scattered data zone that was not
                                                 // allocated to any zone. Let's set if it can fit into this area
                                                 if let VariableDefinition::Array(a) = &v.1.def {
@@ -482,6 +484,7 @@ impl<'a> MemoryMap<'a> {
                             for _ in 0..advance_iterator {
                                 iter.next();
                             }
+                            advance_iterator = 0;
                             if let Some(v) = iter.next() {
                                 if let VariableMemory::ROM(b) = v.1.memory {
                                     if b == self.bank {
