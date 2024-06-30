@@ -263,7 +263,7 @@ ramchip char _ms_pal_frame_skip_counter;
 
 INIT_BANK void multisprite_init();
 INIT_BANK void multisprite_clear();
-INIT_BANK void multisprite_save();
+void multisprite_save();
 void multisprite_restore();
 void multisprite_flip();
 
@@ -1102,7 +1102,7 @@ void multisprite_top_display_clear()
 }
 
 // This one should be done during VBLANK, since we are copying from write buffer to currently displayed buffer
-INIT_BANK void multisprite_save()
+void multisprite_save()
 {
     while (!(*MSTAT & 0x80)); // Wait for VBLANK
     if (_ms_buffer) {
@@ -1120,7 +1120,7 @@ INIT_BANK void multisprite_save()
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 2; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
             _ms_tmpptr2 = _ms_dls[X = _ms_tmp];
-            for (Y = _ms_dlend[X] - 1; Y >= 0; Y--) {
+            for (Y = _ms_dlend_save[X] - 1; Y >= 0; Y--) {
                 _ms_tmpptr2[Y] = _ms_tmpptr[Y];
             } 
         }
@@ -1141,7 +1141,7 @@ INIT_BANK void multisprite_save()
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 2; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
             _ms_tmpptr2 = _ms_dls[X = _ms_tmp];
-            for (Y = _ms_dlend[X] - 1; Y >= 0; Y--) {
+            for (Y = _ms_dlend_save[X] - 1; Y >= 0; Y--) {
                 _ms_tmpptr[Y] = _ms_tmpptr2[Y];
             } 
         }
