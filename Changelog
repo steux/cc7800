@@ -1,5 +1,6 @@
 v0.2.26 (05/20/2024) :
     - Implemented gfx grouping based on prefix
+    - Bug fix in const unsigned int arrays generation
 
 v0.2.25 (04/12/2024) :
     - Added noholeydma keyword supprt 
@@ -9,7 +10,7 @@ v0.2.24 (03/26/2024) :
     - Added support for height 12 scattered memory
 
 v0.2.23 (03/12/2024) :
-		- Added paddles support in header
+    - Added paddles support in header
     - Enhanced memory mapping
 
 v0.2.22 (02/12/2024) :

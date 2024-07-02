@@ -989,19 +989,43 @@ impl<'a> MemoryMap<'a> {
                                         }
                                         if v.1.var_type == VariableType::ShortPtr {
                                             for vx in arr {
-                                                if counter == 0 {
-                                                    gstate.write("\n\thex ")?;
-                                                }
-                                                counter += 1;
-                                                if counter == 16 {
-                                                    counter = 0;
-                                                }
-                                                if let VariableValue::Int(i) = vx {
-                                                    gstate.write(&format!(
-                                                        "{:02x}",
-                                                        (i >> 8) & 0xff
-                                                    ))?;
-                                                }
+                                                match vx {
+                                                    VariableValue::Int(i) => {
+                                                        if counter == 0 {
+                                                            gstate.write("\n\thex ")?;
+                                                        }
+                                                        counter += 1;
+                                                        if counter == 16 {
+                                                            counter = 0;
+                                                        }
+                                                        gstate.write(&format!(
+                                                            "{:02x}",
+                                                            (i >> 8) & 0xff
+                                                        ))
+                                                    }
+                                                    VariableValue::LowPtr((s, offset)) => {
+                                                        counter = 0;
+                                                        if *offset != 0 {
+                                                            gstate.write(&format!(
+                                                                "\n\t.byte >({} + {})",
+                                                                s, offset
+                                                            ))
+                                                        } else {
+                                                            gstate
+                                                                .write(&format!("\n\t.byte >{}", s))
+                                                        }
+                                                    }
+                                                    VariableValue::HiPtr((_, _)) => {
+                                                        if counter == 0 {
+                                                            gstate.write("\n\thex ")?;
+                                                        }
+                                                        counter += 1;
+                                                        if counter == 16 {
+                                                            counter = 0;
+                                                        }
+                                                        gstate.write(" ")
+                                                    }
+                                                }?;
                                             }
                                         }
                                         gstate.write("\n")?;
