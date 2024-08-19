@@ -1147,10 +1147,14 @@ fn write_a78_header(
     };
     if memoryonchip {
         cartb |= 4;
-        mapper_options |= 1;
+        mapper_options = 1;
     }
-    if compiler_state.variables.get("POKEY").is_some() {
-        if memoryonchip || bankswitching_scheme == "48K" || bankswitching_scheme == "52K" {
+    if compiler_state.variables.contains_key("EXFIX") {
+        cartb |= 16;
+        mapper_options = 5;
+    }
+    if compiler_state.variables.contains_key("POKEY") {
+        if mapper_options != 0 || bankswitching_scheme == "48K" || bankswitching_scheme == "52K" {
             cartb |= 64;
             audio = 2;
         } else {
@@ -1158,7 +1162,7 @@ fn write_a78_header(
             audio = 5;
         }
     }
-    let controller = if compiler_state.variables.get("PADDLES").is_some() {
+    let controller = if compiler_state.variables.contains_key("PADDLES") {
         3
     } else {
         1
@@ -1739,10 +1743,15 @@ pub fn build_cartridge(
     }
 
     // Generate code for all banks
+    let exfix = compiler_state.variables.contains_key("EXFIX");
+    println!("/// exfix = {exfix}");
     for b in 0..=maxbank {
         let (bank, banksize, rorg) = if bankswitching_scheme == "SuperGame" {
-            if b == 7 {
+            if b == maxbank {
                 (0, 0x4000, 0xc000)
+            } else if exfix && b == maxbank - 1 {
+                println!("/// I was here");
+                (b + 1, 0x4000, 0x4000)
             } else {
                 (b + 1, 0x4000, 0x8000)
             }
@@ -1760,6 +1769,7 @@ pub fn build_cartridge(
         } else {
             banksize
         };
+
         let mut map = MemoryMap::new(compiler_state, bank);
         map.fill_memory(
             org,
