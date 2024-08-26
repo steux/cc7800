@@ -1744,13 +1744,13 @@ pub fn build_cartridge(
 
     // Generate code for all banks
     let exfix = compiler_state.variables.contains_key("EXFIX");
-    println!("/// exfix = {exfix}");
+    //println!("/// exfix = {exfix}");
     for b in 0..=maxbank {
         let (bank, banksize, rorg) = if bankswitching_scheme == "SuperGame" {
             if b == maxbank {
                 (0, 0x4000, 0xc000)
             } else if exfix && b == maxbank - 1 {
-                println!("/// I was here");
+                //println!("/// I was here");
                 (b + 1, 0x4000, 0x4000)
             } else {
                 (b + 1, 0x4000, 0x8000)
