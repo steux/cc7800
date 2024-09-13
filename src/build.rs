@@ -1139,6 +1139,26 @@ fn write_a78_header(
             cartb = 2; // SuperGame
             mapper = 1;
         }
+        "SuperGame256" => {
+            romsize = 256 * 1024;
+            headerpos = 0x8000 - 0x80;
+            cartb = 2; // SuperGame
+            mapper = 1;
+        }
+        "SuperGame/EXFIX" => {
+            romsize = 128 * 1024;
+            headerpos = 0x8000 - 0x80;
+            cartb = 2 | 16; // SuperGame with EXFIX
+            mapper = 1;
+            mapper_options = 5;
+        }
+        "SuperGame256/EXFIX" => {
+            romsize = 256 * 1024;
+            headerpos = 0x8000 - 0x80;
+            cartb = 2 | 16; // SuperGame with EXFIX
+            mapper = 1;
+            mapper_options = 5;
+        }
         _ => {
             return Err(Error::Unimplemented {
                 feature: "Unknown bankswitching scheme",
@@ -1148,10 +1168,6 @@ fn write_a78_header(
     if memoryonchip {
         cartb |= 4;
         mapper_options = 1;
-    }
-    if compiler_state.variables.contains_key("EXFIX") {
-        cartb |= 16;
-        mapper_options = 5;
     }
     if compiler_state.variables.contains_key("POKEY") {
         if mapper_options != 0 || bankswitching_scheme == "48K" || bankswitching_scheme == "52K" {
@@ -1342,14 +1358,22 @@ pub fn build_cartridge(
     }
 
     if maxbank != 0 {
-        bankswitching_scheme = "SuperGame";
+        let exfix = compiler_state.variables.contains_key("EXFIX");
         if maxbank > 7 {
-            return Err(Error::Configuration {
-                error: "Atari 7800 Super Game bankswitching scheme is limited to 8 banks (0 to 7)"
-                    .to_string(),
-            });
+            maxbank = 15;
+            if exfix {
+                bankswitching_scheme = "SuperGame256/EXFIX";
+            } else {
+                bankswitching_scheme = "SuperGame256";
+            }
+        } else {
+            maxbank = 7;
+            if exfix {
+                bankswitching_scheme = "SuperGame/EXFIX";
+            } else {
+                bankswitching_scheme = "SuperGame";
+            }
         }
-        maxbank = 7;
     }
 
     // Start generation
@@ -1743,14 +1767,11 @@ pub fn build_cartridge(
     }
 
     // Generate code for all banks
-    let exfix = compiler_state.variables.contains_key("EXFIX");
-    //println!("/// exfix = {exfix}");
     for b in 0..=maxbank {
-        let (bank, banksize, rorg) = if bankswitching_scheme == "SuperGame" {
+        let (bank, banksize, rorg) = if bankswitching_scheme.starts_with("SuperGame") {
             if b == maxbank {
                 (0, 0x4000, 0xc000)
-            } else if exfix && b == maxbank - 1 {
-                //println!("/// I was here");
+            } else if bankswitching_scheme.ends_with("EXFIX") && b == maxbank - 1 {
                 (b + 1, 0x4000, 0x4000)
             } else {
                 (b + 1, 0x4000, 0x8000)
@@ -1759,7 +1780,7 @@ pub fn build_cartridge(
             (0, romsize, 0x10000 - romsize)
         };
 
-        let org = if bankswitching_scheme == "SuperGame" {
+        let org = if bankswitching_scheme.starts_with("SuperGame") {
             0x8000 + b * banksize
         } else {
             0x10000 - romsize
