@@ -861,12 +861,15 @@ impl<'a> MemoryMap<'a> {
                         self.set.insert(f.0);
                         self.remaining_functions -= 1;
                     } else {
+                        let short_interrupt = if f.1.interrupt {
+                            compiler_state.variables.contains_key("SHORT_INTERRUPT")
+                        } else { false };
                         let s = gstate.functions_code.get(f.0).unwrap().size_bytes()
-                            + if f.1.interrupt { 17 } else { 1 };
+                            + if f.1.interrupt && !short_interrupt { 17 } else { 1 };
                         if filled + s <= size {
                             if definitive {
                                 gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
-                                if f.1.interrupt {
+                                if f.1.interrupt && !short_interrupt {
                                     gstate.write("\tPHA\n")?;
                                     gstate.write("\tTXA\n")?;
                                     gstate.write("\tPHA\n")?;
@@ -877,13 +880,15 @@ impl<'a> MemoryMap<'a> {
                                 }
                                 gstate.write_function(f.0)?;
                                 if f.1.interrupt {
-                                    gstate.write("\tPLA\n")?;
-                                    gstate.write("\tSTA cctmp\n")?;
-                                    gstate.write("\tPLA\n")?;
-                                    gstate.write("\tTAY\n")?;
-                                    gstate.write("\tPLA\n")?;
-                                    gstate.write("\tTAX\n")?;
-                                    gstate.write("\tPLA\n")?;
+                                    if !short_interrupt {
+                                        gstate.write("\tPLA\n")?;
+                                        gstate.write("\tSTA cctmp\n")?;
+                                        gstate.write("\tPLA\n")?;
+                                        gstate.write("\tTAY\n")?;
+                                        gstate.write("\tPLA\n")?;
+                                        gstate.write("\tTAX\n")?;
+                                        gstate.write("\tPLA\n")?;
+                                    }
                                     gstate.write("\tRTI\n")?;
                                 } else {
                                     gstate.write("\tRTS\n")?;

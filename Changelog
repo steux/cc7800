@@ -1,5 +1,6 @@
 v0.2.26 (05/20/2024) :
-	  - Added 256Kb ROM support (SuperGame256)
+    - Added SHORT_INTERRUPT feature
+    - Added 256Kb ROM support (SuperGame256)
     - Added EXFIX bankswitching scheme support
     - Implemented gfx grouping based on prefix
     - Bug fix in const unsigned int arrays generation
