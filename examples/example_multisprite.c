@@ -24,7 +24,7 @@ const char background[20] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 void main()
 {
-    multisprite_init();
+    multisprite_init(0);
     multisprite_set_charbase(tiles);
     
     for (i = 0; i != _MS_DLL_ARRAY_SIZE; i++) {

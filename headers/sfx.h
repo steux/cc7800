@@ -17,7 +17,7 @@ ramchip char _sfx_frames[2];
 ramchip char _sfx_priority[2];
 ramchip char _sfx_tick[2];
 
-void sfx_init()
+inline void sfx_init()
 {
     _sfx_ptr[0] = NULL;
     _sfx_ptr[1] = NULL;
@@ -74,7 +74,12 @@ void sfx_play()
                 tmpptr = _sfx_ptr[X];
                 AUDF0[X] = tmp = tmpptr[Y = 0];
                 AUDC0[X] = tmp2 = tmpptr[++Y];
+#ifdef SFX_HALF_VOLUME
+                AUDV0[X] = tmpptr[++Y] >> 1;
+#else
+
                 AUDV0[X] = tmpptr[++Y];
+#endif
                 if (!tmp && !tmp2 && !tmpptr[Y]) {
                     _sfx_ptr[X] = 0;
                 } else {

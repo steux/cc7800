@@ -13,7 +13,13 @@
 #define _ty _libc_tmp2
 #define octant _libc_tmp3
 #include "atan2.asm"
-inline char _atan2() { asm("jsr _atan2_8"); }
+inline char _atan2() { 
+    _save_x = X;
+    _save_y = Y;
+    asm("jsr _atan2_8"); 
+    X = _save_x;
+    Y = _save_y;
+}
 #define atan2(y, x) (_tx = (x), _ty = (y), _atan2())
 #undef _tx
 #undef _ty

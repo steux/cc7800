@@ -17,6 +17,7 @@ holeydma reversed scattered(16,2) char bb_char1[32] = {
 	0xc8, 0xe5, 0xbb, 0x84, 0x0c, 0x20, 0x2a, 0x90, 0x0e, 0x50, 0x3f, 0x94, 0x3d, 0x68, 0x5d, 0x6a
 };
 
+const char SHORT_INTERRUPT = 1;
 void interrupt dli()
 {
     *BACKGRND = 0x32; 
@@ -24,7 +25,7 @@ void interrupt dli()
 
 void main()
 {
-    multisprite_init();
+    multisprite_init(0);
 
     multisprite_enable_dli(7);
     

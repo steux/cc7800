@@ -2,7 +2,6 @@
 #include "gfx.h"
 #define DMA_CHECK
 #define VERTICAL_SCROLLING
-#define DMA_MASKING_ON_RAM
 #define _MS_DL_SIZE 64
 #define _MS_DL_MALLOC(y) ((y == 6 || y == 7 || y == 8)?_MS_DL_SIZE * 2:_MS_DL_SIZE)
 #include "multisprite.h"
@@ -28,7 +27,7 @@ void main()
 {
     counter = 0;
 
-    multisprite_init();
+    multisprite_init(0);
     multisprite_set_charbase(tiles);
    
     // Set up a full background 
@@ -82,7 +81,7 @@ void main()
 
         while (*MSTAT & 0x80); 
         multisprite_flip();
-        multisprite_vertical_scrolling(-1);
+        multisprite_vertical_scrolling(1);
         multisprite_reserve_dma(104, sizeof(hello_world), 2);
         for (i = 0; i != NB_SPRITES; i++) {
             X = i;

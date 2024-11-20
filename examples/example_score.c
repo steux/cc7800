@@ -2,7 +2,8 @@
 #include "string.h"
 #include "prosystem.h"
 #define VERTICAL_SCROLLING
-#define _MS_TOP_SCROLLING_ZONE 1
+#define _MS_NB_TOP_ZONES 1
+#define _MS_NB_SCROLLING_ZONES 13
 #include "multisprite.h"
 
 char i, counter, xpos, ypos;
@@ -20,10 +21,6 @@ const char vertical_pingpong[24] = { 0, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 
 
 const char background[22] = { 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0 };
 
-holeydma reversed scattered(16,2) char bb_char1[32] = {
-	0x01, 0x00, 0x01, 0x40, 0x0a, 0x94, 0x2a, 0x90, 0x3b, 0xa0, 0xc8, 0xe5, 0xc8, 0xe4, 0xc8, 0xd0,
-	0xc8, 0xe5, 0xbb, 0x84, 0x0c, 0x20, 0x2a, 0x90, 0x0e, 0x50, 0x3f, 0x94, 0x3d, 0x68, 0x5d, 0x6a
-};
 reversed scattered(16,4) char tiles[64] = {
 	0x5a, 0x5a, 0x95, 0x95, 0x69, 0x69, 0x65, 0x65, 0x69, 0x69, 0x95, 0x95, 0xa5, 0xa5, 0x65, 0x65,
 	0xa5, 0xa5, 0xa9, 0xa9, 0x96, 0x96, 0xa6, 0xa6, 0x96, 0x96, 0xa9, 0xa9, 0x5a, 0x5a, 0xa6, 0xa6,
@@ -55,6 +52,11 @@ reversed scattered(16,20) char digits[320] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+holeydma reversed scattered(16,2) char bb_char1[32] = {
+	0x01, 0x00, 0x01, 0x40, 0x0a, 0x94, 0x2a, 0x90, 0x3b, 0xa0, 0xc8, 0xe5, 0xc8, 0xe4, 0xc8, 0xd0,
+	0xc8, 0xe5, 0xbb, 0x84, 0x0c, 0x20, 0x2a, 0x90, 0x0e, 0x50, 0x3f, 0x94, 0x3d, 0x68, 0x5d, 0x6a
+};
+
 ramchip int score;
 ramchip char display_score_str[5];
 ramchip char display_score_ascii[6];
@@ -72,15 +74,20 @@ void display_score_update()
     } while (Y);
 }
 
+const char custom_dl[] = {display_score_str, 0x60, display_score_str >> 8, _ms_width_palette(5, 3), 0, 0, 0};
+
 void main()
 {
     score = 0;
 
-    multisprite_init();
+    multisprite_init(0);
     multisprite_set_charbase(tiles);
+    
+    // Score display on the top zone
+    multisprite_set_top_zone_dl(0, custom_dl);
    
-    // Set up a full background 
-    for (counter = 0; counter < _MS_DLL_ARRAY_SIZE - 1; counter++) {
+    // Setup a full background 
+    for (counter = 0; counter < _MS_DLL_ARRAY_SIZE; counter++) {
         if (counter & 2) {
             ptr = background + 2;
         } else {
@@ -88,9 +95,6 @@ void main()
         }
         multisprite_display_tiles(0, _MS_DLL_ARRAY_SIZE - 1 - counter, ptr, 20, 1);
     }
-    // Score display
-    display_score_update();
-    multisprite_display_tiles(0, 0, display_score_str, 5, 3);
     multisprite_save();
 
     *P0C1 = multisprite_color(0x1c); // Setup Palette 0: Yellow
@@ -132,7 +136,7 @@ void main()
         }
         
         multisprite_flip();
-        multisprite_vertical_scrolling(-1);
+        multisprite_vertical_scrolling(1);
 
         for (i = 0; i != NB_SPRITES; i++) {
             X = i;
