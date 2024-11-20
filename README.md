@@ -18,13 +18,13 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
 
 - Produces DASM compatible code ([DASM](https://github.com/dasm-assembler/dasm) is required as a second stage compiler) 
 - Uses only 1 byte of RAM
+- Local variables and function parameters make smart usage of zeropage memory.
 - Scattering of ROM data is supported through the scattered keyword, which greatly simplifies the use of Holey DMA and sprite
   data layout.
 - X and Y registers are directly mapped to X and Y variables, just like if they were declared as unsigned char global variables.
 - All C constructs are implemented (for, if, while, goto, etc).
-- Supports SuperGame bankswitching and extra RAM on cart
+- Supports SuperGame bankswitching (including EXROM) and extra RAM on cart
 - Clean bootstrap code is automatically generated
-
 
 ## Known limitations
 
@@ -34,7 +34,7 @@ cc7800 is implemented in the Rust programming language, a touch of modernity for
 - 16-bits arithmetics is severly constrained. Generated code may generate an error if too complex (carry propagation check).
 - No 32-bits operations, no floating point.
 - Works with one C file. No linking provided. Use `#include "other_file.c"` to cope with this.
-
+- Functions are not reentrant, since cc7800 doesn't use the stack for parameters passing.
 
 ## How to install
 
@@ -85,7 +85,7 @@ In order to convert from 16-bits to 8-bits, use the `>> 8` special operation to 
 
 ### Optimizations
 
-X and Y are `unsigned char` typed, BUT in order to optimize the loops, they are considered `signed char` when compared to 0. Hence the code `do { something; Y-- } while (Y >= 0);` will be implemented with a `BPL` (branch if plus) instruction, just like you would do in assembler. Beware then that if Y > 128, due to the complement-to-2 binary representation, it will be considered negative number and the loop will exit immediately.
+X and Y are `unsigned char` typed, BUT in order to optimize the loops, they are considered `signed char` when compared to 0. Hence the code `do { something; Y-- } while (Y >= 0);` will be implemented with a `BPL` (branch if plus) instruction, just like you would do in assembler. Beware then that if Y >= 128, due to the complement-to-2 binary representation, it will be considered negative number and the loop will exit immediately.
 
 ## TODO
 
