@@ -1597,7 +1597,7 @@ void _ms_move_dlls_up()
 
 void _ms_move_save_up()
 {
-    X = _ms_vscroll_coarse_offset + _MS_NB_SCROLLING_ZONES + 1;
+    X = _ms_vscroll_coarse_offset + _MS_NB_SCROLLING_ZONES;
     if (X >= 16) X -= 16;
 
 #ifdef BIDIR_VERTICAL_SCROLLING
@@ -1778,7 +1778,7 @@ void _ms_vertical_scrolling()
     } else if (_ms_vscroll_fine_offset >= 16) {
         // TODO: Check the current last zone and remove the DMA masking object
         _ms_vscroll_coarse_offset++; 
-        if (_ms_vscroll_coarse_offset == _MS_DLL_ARRAY_SIZE - 1)
+        if (_ms_vscroll_coarse_offset == _MS_DLL_ARRAY_SIZE)
             _ms_vscroll_coarse_offset = 0;
         _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_up();
