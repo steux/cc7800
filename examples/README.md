@@ -3,7 +3,7 @@ Examples for cc7800
 
 To compile (from the cc7800 main directory) :
 ```
-cc7800 -g -v --insert-code -Iheaders examples/XXX.c
+cc7800 -g -v --insert-code -Iheaders -Iexamples examples/XXX.c
 ```
 or from the examples directory :
 ```

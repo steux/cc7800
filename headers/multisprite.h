@@ -1011,7 +1011,7 @@ INIT_BANK void multisprite_init(char options)
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[Y = 0] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[Y = 0] = 0x27; // 8 lines. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
             _ms_tmpptr[++Y] = _ms_set_wm_dl;
         }
@@ -1045,7 +1045,7 @@ INIT_BANK void multisprite_init(char options)
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[++Y] = 0x28; // 9 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = 0x29; // 10 lines. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         }
@@ -1769,7 +1769,7 @@ void _ms_vertical_scrolling()
     _ms_vscroll_fine_offset -= _ms_tmp;
     if (_ms_vscroll_fine_offset < 0) {
         _ms_vscroll_coarse_offset--; 
-        if (_ms_vscroll_coarse_offset == 255)
+        if (_ms_vscroll_coarse_offset < 0)
             _ms_vscroll_coarse_offset = _MS_DLL_ARRAY_SIZE - 1;
         _ms_vscroll_coarse_offset_shifted = _ms_vscroll_coarse_offset << 3; 
         _ms_move_dlls_down();
