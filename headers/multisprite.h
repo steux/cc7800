@@ -918,7 +918,7 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
 #define multisprite_set_charbase(ptr) *CHARBASE = (ptr) >> 8;
 
 // Macro to convert NTSC colors to PAL colors
-#define multisprite_color(color) ((color >= 0xf0)?(0x10 + (color & 0x0f)):((color >= 0x10)?(color + (_ms_pal_detected & 0x10)):color))
+#define multisprite_color(color) ((color >= 0xf0)?(0x20 + (color & 0x0f)):((color >= 0x10)?(color + (_ms_pal_detected & 0x10)):color))
 
 #define multisprite_enable_dli(line) _ms_tmp = line; _multisprite_enable_dli()
 #define multisprite_disable_dli(line) _ms_tmp = line; _multisprite_disable_dli()
