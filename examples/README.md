@@ -46,6 +46,17 @@ The top zone is not subject to double buffering and sprites are not drawn on it.
 manually set by `multisprite_set_top_zone_dl` to which a display list (manually crafted) must be provided. The example
 shows how to set this display list to display a score.
 
+example_tiled.c
+---------------
+
+This example introduces 3 new concept : the interaction with Tiled (used to defined the background tiling), 
+bidirectionnal vertical scrolling (used here to vertically pan the background tiling) and `multisprite.h`
+horizontal scrolling. The latter has very little capabilities : it only scrolls a display list per line, by modifying
+the x position of the display list. Every 8 pixels, the pointer of the display list is incremented or decremented wrt
+the scrolling direction. It's really only meant to scroll simple backgrounds made of one or two display lists par zone.
+For more complex scrolling (i.e. for horizontal shooters), please use `example_horizontal_scrolling.c` which uses
+sparse tiling.
+
 test_helloworld.c
 -----------------
 

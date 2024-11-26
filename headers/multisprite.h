@@ -925,8 +925,8 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
 
 INIT_BANK void multisprite_get_tv()
 {
-    while (!(*MSTAT & 0x80)); // Wait for VBLANK
-    while (*MSTAT & 0x80); // Wait for end of VBLANK
+    while (!(*MSTAT < 0)); // Wait for VBLANK
+    while (*MSTAT < 0); // Wait for end of VBLANK
 
     X = 0;
     do {
@@ -1030,7 +1030,6 @@ INIT_BANK void multisprite_init(char options)
         _ms_tmpptr[++Y] = 0x40; // 1 line
         _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
         _ms_tmpptr[++Y] = _ms_blank_dl;
-        X++; X++;
         if (_ms_pal_detected) {
             // 16 blank lines
             _ms_tmpptr[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
@@ -1050,6 +1049,7 @@ INIT_BANK void multisprite_init(char options)
             _ms_tmpptr[++Y] = _ms_blank_dl;
         }
         _ms_tmpptr = _ms_b1_dll;
+        X = _MS_DLL_ARRAY_SIZE;
     }
 
 #ifdef VERTICAL_SCROLLING
@@ -1093,7 +1093,12 @@ INIT_BANK void multisprite_clear()
 #endif
     }
 #ifdef VERTICAL_SCROLLING
+#ifdef BIDIR_VERTICAL_SCROLLING
+    _ms_top_sbuffer_size = 0;
+    _ms_bottom_sbuffer_size = 0;
+#else
     _ms_sbuffer_size = 0;
+#endif
     _ms_delayed_vscroll = 0;
 #endif
 }
@@ -1638,7 +1643,7 @@ void multisprite_flip()
 #ifdef DEBUG
         *BACKGRND = 0x0;
 #endif
-        while (!(*MSTAT & 0x80)); // Wait for VBLANK
+        while (!(*MSTAT < 0)); // Wait for VBLANK
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
         *DPPL = _ms_b1_dll;
 #ifdef DEBUG
@@ -1685,7 +1690,7 @@ void multisprite_flip()
 #ifdef DEBUG
         *BACKGRND = 0x0;
 #endif
-        while (!(*MSTAT & 0x80)); // Wait for VBLANK
+        while (!(*MSTAT < 0)); // Wait for VBLANK
         *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer
         *DPPL = _ms_b0_dll;
 #ifdef DEBUG
@@ -1799,7 +1804,9 @@ void _ms_vertical_scrolling()
     if (_ms_buffer) X += _MS_DLL_ARRAY_SIZE; \
     _ms_tmpptr = _ms_dls[X]; \
     Y = (offset) + 4; \
-    _ms_horizontal_tiles_scrolling()
+    if (Y < _ms_dlend[X]) { \
+        _ms_horizontal_tiles_scrolling(); \
+    }
 
 void _ms_horizontal_tiles_scrolling()
 {
@@ -1896,14 +1903,14 @@ void _ms_horizontal_tiles_scrolling()
 
 void _ms_horizontal_scrolling_visible()
 {
-    for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+    for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
         multisprite_horizontal_tiles_scrolling(0, _ms_tmp2, _ms_delayed_hscroll);
     }
 }
 
 void _ms_horizontal_scrolling()
 {
-    for (_ms_tmp2 = _MS_TOP_SCROLLING_ZONE; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
+    for (_ms_tmp2 = 0; _ms_tmp2 != _MS_DLL_ARRAY_SIZE; _ms_tmp2++) {
         multisprite_horizontal_tiles_scrolling(0, _ms_tmp2, _ms_delayed_hscroll);
     }
 #ifdef BIDIR_VERTICAL_SCROLLING
