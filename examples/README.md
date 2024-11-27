@@ -49,13 +49,23 @@ shows how to set this display list to display a score.
 example_tiled.c
 ---------------
 
-This example introduces 3 new concept : the interaction with Tiled (used to defined the background tiling), 
+This example introduces 3 new concepts : the interaction with Tiled (used to defined the background tiling), 
 bidirectionnal vertical scrolling (used here to vertically pan the background tiling) and `multisprite.h`
 horizontal scrolling. The latter has very little capabilities : it only scrolls a display list per line, by modifying
-the x position of the display list. Every 8 pixels, the pointer of the display list is incremented or decremented wrt
+the x position of the first element of each display list list. 
+Every 8 pixels, the pointer of that display list list element is incremented or decremented wrt
 the scrolling direction. It's really only meant to scroll simple backgrounds made of one or two display lists par zone.
 For more complex scrolling (i.e. for horizontal shooters), please use `example_horizontal_scrolling.c` which uses
 sparse tiling.
+
+example_tiled2.c
+----------------
+
+Again a full tiled background display examply, this time very simplified due to the `tiling.h` header. The `tiling_init`
+and `tiling_goto` do all the job by simply setting the full background each time it is called (i.e. it's very simple
+to use, but not very fast. But anyway full background display on the Atari 7800 is not very fast, due to the Maria chip
+architecture. It's also not very nice looking since all tiles must share the same palette). Note that `tiling_goto`
+manages correctly out of bounds display. Please consider sparse tiling for better looking background display. 
 
 test_helloworld.c
 -----------------
