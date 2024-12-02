@@ -133,6 +133,20 @@ example_tiatracker.c
 This example shows how to use exported TIATracker music for cc7800. In order to generate the right C header for your TIA
 music, you have to use the forked version of TIATracker available at https://github.com/steux/tiatracker 
 
+example_vertical_scrolling_sparse.c
+-----------------------------------
+
+This is an example of scrolling with `multisprite.h` and sparse tiling. This is quite simple and indeed very powerful
+for making shoot'em'up games. All the resources required to build the example can be found in the shmup subdirectory.
+
+example_vertical_scrolling_sparse_vmem.c
+-----------------------------------
+
+This is an example of scrolling with `multisprite.h` and sparse tiling, this time using RAM at $4000 as video RAM. The
+principle is that all the necessary data are transferred to RAM on the fly to be used as immediate mode. There is strictly no
+tiled/indirect display mode used for the tiles, so CPU and DMA can be used at their maximum. Note however that this may
+not be the simplest way to make a game, as sacrificing ROM at $4000 for RAM reduces the ability to use a lot of code or graphics.  
+
 example_breakout.c
 ------------------
 

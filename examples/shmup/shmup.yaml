@@ -1,0 +1,180 @@
+palettes:
+  - name: grey
+    colors:
+    - [64, 64, 64] # Dark grey
+    - [128, 128, 128] # Medium grey
+    - [192, 192, 192] # Light grey
+  - name: blue 
+    colors: 
+    - [0, 0, 128] # Blue
+    - [0, 0, 255] # Light blue
+    - [0, 255, 255] # Turquoise
+  - name: green 
+    colors: 
+    - [0, 128, 0] # Dark green
+    - [0, 255, 0] # Light green
+    - [255, 255, 255] # White
+  - name: fire
+    colors:
+    - [255, 0, 0] # Red
+    - [255, 143, 0] # Orange
+    - [255, 241, 0] # Yellow
+  - name: all
+    colors:
+    - [64, 64, 64] # Dark grey
+    - [128, 128, 128] # Medium grey
+    - [192, 192, 192] # Light grey
+    - [0, 0, 128] # Blue
+    - [0, 0, 255] # Light blue
+    - [0, 255, 255] # Turquoise
+    - [0, 128, 0] # Dark green
+    - [0, 255, 0] # Light green
+    - [255, 255, 255] # White
+    - [255, 0, 0] # Red
+    - [255, 143, 0] # Orange
+    - [255, 241, 0] # Yellow
+  - name: gameover
+    colors:
+    - [255, 21, 17] # Red
+    - [255, 98, 96] # Orange
+    - [255, 255, 255] # White
+sprite_sheets:
+  - image: shmup_enemies.png
+    bank: 1
+    sprites:
+      - name: boss
+        top: 0
+        left: 0
+        height: 48 
+        width: 48
+        palette: all
+        mode: 160B
+  - image: shmup.png
+    holeydma: 16
+    sprites:
+      - name: digits 
+        top: 96
+        left: 0
+        height: 16
+        width: 160
+        palette: green
+      - name: lives 
+        top: 96
+        left: 160
+        height: 16
+        width: 48 
+        mode: 160B
+        palette: all 
+      - name: explosion1 
+        top: 0
+        left: 0
+        height: 48
+        width: 48 
+        palette: fire
+      - name: explosion2 
+        top: 0
+        left: 48 
+        height: 48
+        width: 48
+        palette: fire
+      - name: explosion3 
+        top: 0
+        left: 96
+        height: 48
+        width: 48
+        palette: fire
+      - name: explosion4 
+        top: 0
+        left: 144
+        height: 48
+        width: 48
+        palette: fire
+      - name: explosion5 
+        top: 0
+        left: 192
+        height: 48
+        width: 48
+        palette: fire
+      - name: bullet
+        top: 48 
+        left: 0
+        height: 8
+        width: 8
+        palette: fire
+      - name: spaceship 
+        top: 48 
+        left: 8
+        height: 32
+        width: 24
+        mode: 160B
+        palette: all
+      - name: missiles
+        top: 48
+        left: 32
+        width: 24
+        palette: fire
+      - name: exhaust1
+        top: 48
+        left: 56
+        width: 8
+        height: 16
+        palette: fire
+      - name: exhaust2
+        top: 48
+        left: 64 
+        width: 8
+        height: 16
+        palette: fire
+      - name: exhaust3
+        top: 48
+        left: 72
+        width: 8
+        height: 16
+        palette: fire
+      - name: exhauststart
+        top: 48
+        left: 80
+        width: 16 
+        height: 8
+        palette: fire
+      - name: small_explosion1
+        top: 64
+        left: 32
+        width: 16 
+        height: 16
+        palette: fire
+      - name: small_explosion2 
+        top: 64
+        left: 48 
+        width: 16 
+        height: 16
+        palette: fire
+      - name: small_explosion3 
+        top: 64
+        left: 64 
+        width: 16 
+        height: 16
+        palette: fire
+      - name: skull
+        top: 48
+        left: 96
+        width: 64 
+        height: 48
+        palette: grey 
+    collisions:
+      - sprite1: bullet 
+        sprite2: spaceship
+  - image: gameover.png
+    sprites:
+      - name: game
+        top: 0
+        left: 0
+        height: 16
+        width: 72
+        palette: gameover
+      - name: over 
+        top: 0
+        left: 72 
+        height: 16
+        width: 72
+        palette: gameover

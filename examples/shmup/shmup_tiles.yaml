@@ -1,0 +1,61 @@
+palettes:
+  - name: grey
+    colors:
+    - [64, 64, 64] # Dark grey
+    - [128, 128, 128] # Medium grey
+    - [192, 192, 192] # Light grey
+  - name: blue 
+    colors: 
+    - [0, 0, 128] # Blue
+    - [0, 0, 255] # Light blue
+    - [0, 255, 255] # Turquoise
+sprite_sheets:
+  - image: shmup_tiles.png
+    bank: 1
+    sprites:
+      - name: blue_objects1
+        top: 0 
+        left: 0
+        height: 96
+        width: 256
+        holeydma: false
+        palette: blue
+        palette_number: 1
+        mode: 160A
+      - name: blue_objects2
+        top: 96 
+        left: 0
+        height: 16 
+        width: 160
+        holeydma: false
+        palette: blue
+        palette_number: 1
+        mode: 160A
+      - name: blue_objects3
+        top: 112
+        left: 0
+        height: 16 
+        width: 128
+        holeydma: false
+        palette: blue
+        palette_number: 1
+        mode: 160A
+      - name: grey_objects1
+        top: 96 
+        left: 160
+        height: 16 
+        width: 96
+        holeydma: false
+        palette: grey
+        palette_number: 0
+        mode: 160A
+      - name: grey_objects2
+        top: 112 
+        left: 128
+        height: 16 
+        width: 128
+        holeydma: false
+        palette: grey
+        palette_number: 0
+        mode: 160A
+
