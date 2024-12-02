@@ -67,6 +67,33 @@ to use, but not very fast. But anyway full background display on the Atari 7800 
 architecture. It's also not very nice looking since all tiles must share the same palette). Note that `tiling_goto`
 manages correctly out of bounds display. Please consider sparse tiling for better looking background display. 
 
+example_sparse_tiling.c
+-----------------------
+
+This example shows how to use Tiled and spare tiling. The idea behind sparse tiling is to not cover all the background
+with tiles (due the sparse name), to save DMA/CPU (very important on the Atari 7800, since this is the main 
+bottleneck of the machine). Other big advantages of sparse tiling is the possibility to mix palettes and the
+ability the mix immediate and tiling/indirect modes (immediate drawing being faster on the 7800), and also to mix
+display modes (in this example, 160A and 160B tiles).
+
+Basically, using sparse tiling is done through the `tiles7800` utility (from `tools7800`)  that is able to generate sparse tiling data through the
+`--sparse` option. In addition to a TMX file (designed by Tiled editor), you'll have to provide the .yaml tiles
+definition (so that tiles7800 can identify which tile is what, associate the correct palette, resolution).
+
+In this example, the header `sparse_tiling.h` is used, which provides a nice `sparse_tiling_goto` function that helps
+displaying a part of the tiles when panning is required.
+
+example_sparse_tiling_hires.c
+-----------------------------
+
+This example is similar to the previous one, but the tiles are in 320 A/C mode (i.e. highres mode).
+
+example_sparse_tiling_320BD.c
+-----------------------------
+
+The same with a 320 B/D mode display. Frankly, given the 320B awkwardness and 320D uselessness, go for 320 A/C
+if you want to use highres. That will be be my advice of the day. 
+
 example_bombjack1.c
 -------------------
 
