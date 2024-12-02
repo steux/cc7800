@@ -67,6 +67,27 @@ to use, but not very fast. But anyway full background display on the Atari 7800 
 architecture. It's also not very nice looking since all tiles must share the same palette). Note that `tiling_goto`
 manages correctly out of bounds display. Please consider sparse tiling for better looking background display. 
 
+example_bombjack1.c
+-------------------
+
+This example is a good example of sparse tiling for drawing background and platform. Here, the background is drawn
+using the `multisprite_sparse_tiling` function. Note one of the nicest features of sparse tiling: the ability to
+overlay several tiles with different palettes, allowing to use 160A mode with more than 4 colors in the same
+8x8 tile block (for instance at the top of the pyramid, where we have a blue background from palette 4 and 
+the sphinx colors from palette 5.
+
+This example shows also the ability to customize the display beyond the `multisprite_init` function. Here, we're using the overscan region to make a 240p display instead of the 224p standard display of `multisprite_init`.
+
+example_bombjack2.c
+-------------------
+
+This example adds the bombjack character. It's a good example of how to animate a sprite according to user's inputs.
+It's also a good example of the `multisprite_sparse_tiling_collision` function found in `multisprite.h`.
+This is also a major example of the `MULTISPRITE_OVERLAY` feature, where the background is saved with
+`multisprite_save` and the bombs, which are on overlay over the background, are saved through the
+`multisprite_save_overlay` function. This enables some static sprites not to be drawn at each frames, while
+still being updatable (like in this example when bombs are redrawn when one explodes). 
+
 test_helloworld.c
 -----------------
 

@@ -1,0 +1,296 @@
+palettes:
+  - name: fire
+    colors:
+    - [255, 0, 0] # Red
+    - [255, 143, 0] # Orange
+    - [255, 241, 0] # Yellow
+  - name: sphinx 
+    colors:
+    - [113, 95, 26] # Drak Green
+    - [152, 137, 65] # Brown
+    - [195, 180, 112] # Yellow
+  - name: sky 
+    colors: 
+    - [0, 1, 204] # Blue
+    - [0, 0, 255] # Light blue
+    - [0, 255, 255] # Turquoise
+sprite_sheets:
+  - image: bombjack_tiles.png
+    sprites:
+      - name: digits
+        top: 224
+        left: 0
+        width: 160
+        height: 16
+        holeydma: false
+        palette: fire
+      - name: platform
+        top: 0
+        left: 64
+        width: 48
+        height: 16
+        holeydma: false
+        palette: fire
+        palette_number: 3
+      - name: top_border 
+        top: 0
+        left: 112 
+        width: 32 
+        height: 16
+        holeydma: false
+        palette: fire
+        palette_number: 3
+      - name: bottom_border 
+        top: 0
+        left: 144 
+        width: 32
+        height: 16
+        holeydma: false
+        palette: fire
+        palette_number: 3
+      - name: sky 
+        top: 0 
+        left: 0
+        height: 16
+        width: 16
+        holeydma: false
+        palette: sky 
+        palette_number: 4
+      - name: pyramid_top1
+        top: 0 
+        left: 48
+        height: 16
+        width: 16
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid_top2
+        top: 16 
+        left: 32
+        height: 16
+        width: 48
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid1
+        top: 32 
+        left: 16 
+        height: 16
+        width: 32
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid2
+        top: 32 
+        left: 48 
+        height: 16
+        width: 32
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid3
+        top: 32 
+        left: 80 
+        height: 16
+        width: 16
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid4
+        top: 48 
+        left: 0 
+        height: 16
+        width: 32
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid5
+        top: 48 
+        left: 32 
+        height: 16
+        width: 16 
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid6
+        top: 48 
+        left: 96 
+        height: 16
+        width: 16 
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid7
+        top: 64 
+        left: 0 
+        height: 16
+        width: 16 
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid8
+        top: 64 
+        left: 16 
+        height: 16
+        width: 16 
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: pyramid9
+        top: 64 
+        left: 112 
+        height: 16
+        width: 16 
+        holeydma: false
+        palette: sphinx
+        background: sky
+        palette_number: 5
+      - name: sky_head_left1
+        top: 16
+        left: 112
+        height: 16
+        width: 16
+        holeydma: false
+        palette: sky 
+        palette_number: 4
+      - name: sky_head_left2
+        top: 32 
+        left: 112
+        height: 16
+        width: 16
+        holeydma: false
+        palette: sky 
+        palette_number: 4
+      - name: sky_head_right
+        top: 16 
+        left: 160
+        height: 16
+        width: 16
+        holeydma: false
+        palette: sky 
+        palette_number: 4
+      - name: sphinx_head1
+        top: 32 
+        left: 128 
+        height: 16
+        width: 64 
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head2
+        top: 48 
+        left: 128 
+        height: 16
+        width: 16 
+        holeydma: false
+        background: sky_head_left1
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head3
+        top: 48 
+        left: 144 
+        height: 16
+        width: 32 
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head4
+        top: 48 
+        left: 176 
+        height: 16
+        width: 16 
+        holeydma: false
+        background: sky_head_right
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head5
+        top: 64 
+        left: 128 
+        height: 16
+        width: 16 
+        holeydma: false
+        background: sky_head_left2
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head6
+        top: 64 
+        left: 144 
+        height: 16
+        width: 48 
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head7
+        top: 64 
+        left: 192 
+        height: 128 
+        width: 16 
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_head8
+        top: 80 
+        left: 128 
+        height: 16
+        width: 64 
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_body1
+        top: 96 
+        left: 112 
+        height: 16
+        width: 80
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_body2
+        top: 112 
+        left: 64
+        height: 16
+        width: 128
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_body3
+        top: 128 
+        left: 64
+        height: 16
+        width: 128
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_body4
+        top: 128 
+        left: 192 
+        height: 16
+        width: 32
+        holeydma: false
+        background: sky
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_body5
+        top: 144 
+        left: 128 
+        height: 16
+        width: 64
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
+      - name: sphinx_ground 
+        top: 128 
+        left: 0 
+        height: 32
+        width: 16
+        holeydma: false
+        palette: sphinx
+        palette_number: 5
