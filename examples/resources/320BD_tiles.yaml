@@ -1,0 +1,94 @@
+palettes:
+  - name: firestones 
+    colors: 
+    - [180, 250, 222] # Light Turquoise
+    - [164, 48, 24] # Red
+    - [57, 178, 172] # Dark Turquoise
+  - name: whiteblueorange
+    colors:
+    - [13, 0, 255] # Blue
+    - [255, 255, 255] # White
+    - [255, 143, 0] # Orange
+sprite_sheets:
+  - image: 320BD_tiles.png
+    sprites:
+      - name: white_tubes
+        top: 0 
+        left: 0
+        width: 192
+        holeydma: false
+        palette_number: 4
+        mode: 320D
+        palette: whiteblueorange
+      - name: white_objects 
+        top: 16
+        left: 0
+        width: 96 
+        holeydma: false
+        palette_number: 4
+        mode: 320D
+        palette: whiteblueorange
+      - name: colored_cube 
+        top: 32 
+        left: 0 
+        width: 16
+        palette_number: 4
+        holeydma: false
+        mode: 320B
+        palette: whiteblueorange
+      - name: falling_water 
+        top: 48 
+        left: 0 
+        width: 48
+        palette_number: 5
+        holeydma: false
+        mode: 320D
+        palette: whiteblueorange
+      - name: fire 
+        top: 64
+        left: 0 
+        width: 48
+        palette_number: 0
+        holeydma: false
+        mode: 320D
+        palette: firestones
+      - name: bigstone_top
+        top: 32
+        left: 64 
+        width: 32
+        palette_number: 0
+        holeydma: false
+        mode: 320B
+        palette: firestones
+      - name: bigstone_bottom
+        top: 48 
+        left: 64 
+        width: 32
+        palette_number: 0
+        holeydma: false
+        mode: 320B
+        palette: firestones
+      - name: smallstones1
+        top: 16
+        left: 96 
+        width: 32
+        palette_number: 0
+        holeydma: false
+        mode: 320B
+        palette: firestones
+      - name: smallstones2
+        top: 32 
+        left: 96 
+        width: 64 
+        palette_number: 0
+        holeydma: false
+        mode: 320B
+        palette: firestones
+      - name: smallstones3
+        top: 48
+        left: 96 
+        width: 64
+        palette_number: 0
+        holeydma: false
+        mode: 320B
+        palette: firestones

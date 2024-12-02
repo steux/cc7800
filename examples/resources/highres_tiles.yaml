@@ -1,0 +1,41 @@
+palettes:
+  - name: example
+    colors: 
+    - [255, 255, 255] # White
+    - [29, 142, 187] # Blue
+    - [255, 143, 0] # Orange
+    - [110, 47, 39] # Red
+sprite_sheets:
+  - image: highres_tiles.png
+    sprites:
+      - name: blue_tubes
+        top: 0 
+        left: 0
+        width: 192
+        holeydma: false
+        palette_number: 1
+        mode: 320A
+      - name: objects 
+        top: 16
+        left: 0
+        width: 48 
+        holeydma: false
+        mode: 320A
+        palette_number: 0
+      - name: colored_cube 
+        top: 32 
+        left: 0 
+        width: 16
+        palette_number: 0
+        palette: example
+        holeydma: false
+        mode: 320C
+      - name: orange_tubes 
+        top: 48 
+        left: 0 
+        width: 192
+        palette_number: 2
+        holeydma: false
+        alias: blue_tubes
+        mode: 320A
+

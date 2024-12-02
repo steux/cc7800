@@ -59,10 +59,10 @@ holeydma reversed scattered(16,2) char bb_char1[32] = {
 
 ramchip int score;
 ramchip char display_score_str[5];
-ramchip char display_score_ascii[6];
 
 void display_score_update()
 {
+    char display_score_ascii[6];
     itoa(score, display_score_ascii, 10);
     Y = strlen(display_score_ascii); 
     for (X = 0; X != 5 - Y; X++) {

@@ -1,6 +1,6 @@
 /*
     sparse_tiling.h: tiling display for the Atari 7800
-    Copyleft 2023 Bruno STEUX 
+    Copyleft 2023-2024 Bruno STEUX 
 
     This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
 */
@@ -665,16 +665,16 @@ void _sparse_tiling_goto()
     char *ptr, data[5], y, tmp, bottom;
 
     // Skip the lines on top
-    _ms_tmp = _MS_TOP_SCROLLING_ZONE;
+    _ms_tmp = 0;
     _ms_tmp2 = _tiling_ypos;
     if (_tiling_ypos < 0) {
         _ms_tmp -= _tiling_ypos;
         _ms_tmp2 = 0;
     }
-    if (_tiling_ypos + (15 - _MS_TOP_SCROLLING_ZONE - TILING_HEIGHT) >= 0) {
-        bottom = _MS_TOP_SCROLLING_ZONE + TILING_HEIGHT - _tiling_ypos;
+    if (_tiling_ypos + (_MS_NB_SCROLLING_ZONES + 1 - TILING_HEIGHT) >= 0) {
+        bottom = TILING_HEIGHT - _tiling_ypos;
     } else {
-        bottom = 15;
+        bottom = _MS_NB_SCROLLING_ZONES + 1;
     }
     if (_ms_buffer) {
         _ms_tmp += _MS_DLL_ARRAY_SIZE; 

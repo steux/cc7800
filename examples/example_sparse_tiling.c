@@ -2,105 +2,50 @@
 #include "string.h"
 #include "prosystem.h"
 #include "joystick.h"
-#define _MS_TOP_SCROLLING_ZONE 1
+#define _MS_NB_TOP_ZONES 1
+#define _MS_NB_SCROLLING_ZONES 13
 
 // Generated from tiles7800 --sparse tiles.yaml sparse.tmx
 const char tilemap_0_0[6] = {0, 0, 0, 0, 0, 0};
 const char tilemap_0_data[] = {5, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-6) & 0x1f), 33, 96, 0xff};
-const char tilemap_1_0[5] = {0, 0, 0, 0, 0};
-const char tilemap_1_data[] = {4, 0, tilemap_1_0, 0x60, tilemap_1_0 >> 8, (1 << 5) | ((-5) & 0x1f), 29, 96, 0xff};
-const char tilemap_2_0[4] = {0, 0, 0, 0};
-const char tilemap_2_data[] = {3, 0, tilemap_2_0, 0x60, tilemap_2_0 >> 8, (1 << 5) | ((-4) & 0x1f), 24, 96, 0xff};
-const char tilemap_3_0[3] = {0, 0, 0};
-const char tilemap_3_1[1] = {22};
-const char tilemap_3_data[] = {2, 0, tilemap_3_0, 0x60, tilemap_3_0 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 14, 14, tilemap_3_1, 0x60, tilemap_3_1 >> 8, (2 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_4_0[2] = {0, 0};
+const char tilemap_1_data[] = {4, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-5) & 0x1f), 29, 96, 0xff};
+const char tilemap_2_data[] = {3, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-4) & 0x1f), 24, 96, 0xff};
+const char tilemap_3_data[] = {2, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 14, 14, chest + 0, 0x40, chest + 0 >> 8, (2 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
 const char tilemap_4_1[20] = {14, 16, 14, 16, 14, 16, 14, 16, 14, 16, 14, 16, 14, 16, 14, 16, 14, 16, 14, 16};
-const char tilemap_4_data[] = {1, 0, tilemap_4_0, 0x60, tilemap_4_0 >> 8, (1 << 5) | ((-2) & 0x1f), 15, 19, 10, tilemap_4_1, 0xe0, tilemap_4_1 >> 8, (4 << 5) | ((-20) & 0x1f), 96, 96, 0xff};
-const char tilemap_5_0[1] = {0};
-const char tilemap_5_1[1] = {12};
-const char tilemap_5_data[] = {0, 0, tilemap_5_0, 0x60, tilemap_5_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 11, 11, tilemap_5_1, 0x60, tilemap_5_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_6_0[1] = {12};
-const char tilemap_6_data[] = {11, 11, tilemap_6_0, 0x60, tilemap_6_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_7_0[1] = {12};
-const char tilemap_7_data[] = {11, 11, tilemap_7_0, 0x60, tilemap_7_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_8_0[1] = {8};
-const char tilemap_8_1[1] = {12};
-const char tilemap_8_data[] = {8, 8, tilemap_8_0, 0x60, tilemap_8_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 11, 11, tilemap_8_1, 0x60, tilemap_8_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
+const char tilemap_4_data[] = {1, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-2) & 0x1f), 15, 19, 10, tilemap_4_1, 0xe0, tilemap_4_1 >> 8, (4 << 5) | ((-20) & 0x1f), 96, 96, 0xff};
+const char tilemap_5_data[] = {0, 0, tiles + 0, 0x40, tiles + 0 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 11, 11, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_6_data[] = {11, 11, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_8_data[] = {8, 8, tiles + 8, 0x40, tiles + 8 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 11, 11, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
 const char tilemap_9_0[11] = {20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20};
 const char tilemap_9_data[] = {18, 8, tilemap_9_0, 0x60, tilemap_9_0 >> 8, (0 << 5) | ((-11) & 0x1f), 56, 96, 0xff};
-const char tilemap_10_0[1] = {12};
-const char tilemap_10_data[] = {17, 17, tilemap_10_0, 0x60, tilemap_10_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_11_0[1] = {12};
-const char tilemap_11_data[] = {17, 17, tilemap_11_0, 0x60, tilemap_11_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_12_0[1] = {12};
-const char tilemap_12_data[] = {17, 17, tilemap_12_0, 0x60, tilemap_12_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_13_0[1] = {8};
-const char tilemap_13_1[1] = {12};
-const char tilemap_13_2[1] = {8};
-const char tilemap_13_data[] = {10, 10, tilemap_13_0, 0x60, tilemap_13_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 17, 17, tilemap_13_1, 0x60, tilemap_13_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 22, 22, tilemap_13_2, 0x60, tilemap_13_2 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_14_0[12] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18};
-const char tilemap_14_1[1] = {18};
-const char tilemap_14_data[] = {21, 10, tilemap_14_0, 0x60, tilemap_14_0 >> 8, (0 << 5) | ((-12) & 0x1f), 60, 22, 22, tilemap_14_1, 0x60, tilemap_14_1 >> 8, (0 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_15_0[1] = {12};
-const char tilemap_15_data[] = {11, 11, tilemap_15_0, 0x60, tilemap_15_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_16_0[1] = {12};
-const char tilemap_16_data[] = {11, 11, tilemap_16_0, 0x60, tilemap_16_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_17_0[1] = {12};
-const char tilemap_17_data[] = {11, 11, tilemap_17_0, 0x60, tilemap_17_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_18_0[2] = {14, 16};
-const char tilemap_18_1[1] = {12};
-const char tilemap_18_2[3] = {0, 0, 0};
-const char tilemap_18_data[] = {6, 6, tilemap_18_0, 0xe0, tilemap_18_0 >> 8, (4 << 5) | ((-2) & 0x1f), 15, 11, 11, tilemap_18_1, 0x60, tilemap_18_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 18, 16, tilemap_18_2, 0x60, tilemap_18_2 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 96, 0xff};
-const char tilemap_19_0[7] = {20, 20, 20, 20, 20, 20, 20};
-const char tilemap_19_1[1] = {0};
-const char tilemap_19_data[] = {12, 6, tilemap_19_0, 0x60, tilemap_19_0 >> 8, (0 << 5) | ((-7) & 0x1f), 38, 15, 15, tilemap_19_1, 0x60, tilemap_19_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_20_0[1] = {12};
-const char tilemap_20_1[2] = {0, 0};
-const char tilemap_20_data[] = {7, 7, tilemap_20_0, 0x60, tilemap_20_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 17, 16, tilemap_20_1, 0x60, tilemap_20_1 >> 8, (1 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
-const char tilemap_21_0[1] = {12};
-const char tilemap_21_1[1] = {0};
-const char tilemap_21_data[] = {7, 7, tilemap_21_0, 0x60, tilemap_21_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 18, 18, tilemap_21_1, 0x60, tilemap_21_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_22_0[1] = {12};
-const char tilemap_22_1[3] = {0, 0, 0};
-const char tilemap_22_data[] = {7, 7, tilemap_22_0, 0x60, tilemap_22_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 17, 15, tilemap_22_1, 0x60, tilemap_22_1 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 96, 0xff};
-const char tilemap_23_0[1] = {12};
-const char tilemap_23_data[] = {7, 7, tilemap_23_0, 0x60, tilemap_23_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_24_0[1] = {12};
-const char tilemap_24_1[1] = {8};
-const char tilemap_24_data[] = {7, 7, tilemap_24_0, 0x60, tilemap_24_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 14, 14, tilemap_24_1, 0x60, tilemap_24_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_25_0[7] = {20, 20, 20, 20, 20, 20, 20};
-const char tilemap_25_1[1] = {12};
-const char tilemap_25_2[1] = {20};
-const char tilemap_25_data[] = {12, 6, tilemap_25_0, 0x60, tilemap_25_0 >> 8, (0 << 5) | ((-7) & 0x1f), 38, 13, 13, tilemap_25_1, 0x60, tilemap_25_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 14, 14, tilemap_25_2, 0x60, tilemap_25_2 >> 8, (0 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_26_0[1] = {0};
-const char tilemap_26_1[1] = {12};
-const char tilemap_26_data[] = {0, 0, tilemap_26_0, 0x60, tilemap_26_0 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 13, 13, tilemap_26_1, 0x60, tilemap_26_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_27_0[2] = {0, 0};
-const char tilemap_27_1[1] = {12};
-const char tilemap_27_data[] = {1, 0, tilemap_27_0, 0x60, tilemap_27_0 >> 8, (1 << 5) | ((-2) & 0x1f), 15, 13, 13, tilemap_27_1, 0x60, tilemap_27_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_28_0[3] = {0, 0, 0};
-const char tilemap_28_1[1] = {12};
-const char tilemap_28_data[] = {2, 0, tilemap_28_0, 0x60, tilemap_28_0 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 13, 13, tilemap_28_1, 0x60, tilemap_28_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_29_0[4] = {0, 0, 0, 0};
-const char tilemap_29_1[1] = {12};
-const char tilemap_29_data[] = {3, 0, tilemap_29_0, 0x60, tilemap_29_0 >> 8, (1 << 5) | ((-4) & 0x1f), 24, 13, 13, tilemap_29_1, 0x60, tilemap_29_1 >> 8, (1 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
-const char tilemap_30_0[5] = {0, 0, 0, 0, 0};
-const char tilemap_30_1[12] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18};
-const char tilemap_30_2[3] = {18, 18, 18};
-const char tilemap_30_data[] = {4, 0, tilemap_30_0, 0x60, tilemap_30_0 >> 8, (1 << 5) | ((-5) & 0x1f), 29, 24, 13, tilemap_30_1, 0x60, tilemap_30_1 >> 8, (0 << 5) | ((-12) & 0x1f), 60, 27, 25, tilemap_30_2, 0x60, tilemap_30_2 >> 8, (0 << 5) | ((-3) & 0x1f), 20, 96, 0xff};
-const char tilemap_31_0[6] = {0, 0, 0, 0, 0, 0};
-const char tilemap_31_data[] = {5, 0, tilemap_31_0, 0x60, tilemap_31_0 >> 8, (1 << 5) | ((-6) & 0x1f), 33, 96, 0xff};
-const char tilemap_data_ptrs_high[32] = {tilemap_0_data >> 8, tilemap_1_data >> 8, tilemap_2_data >> 8, tilemap_3_data >> 8, tilemap_4_data >> 8, tilemap_5_data >> 8, tilemap_6_data >> 8, tilemap_7_data >> 8, tilemap_8_data >> 8, tilemap_9_data >> 8, tilemap_10_data >> 8, tilemap_11_data >> 8, tilemap_12_data >> 8, tilemap_13_data >> 8, tilemap_14_data >> 8, tilemap_15_data >> 8, tilemap_16_data >> 8, tilemap_17_data >> 8, tilemap_18_data >> 8, tilemap_19_data >> 8, tilemap_20_data >> 8, tilemap_21_data >> 8, tilemap_22_data >> 8, tilemap_23_data >> 8, tilemap_24_data >> 8, tilemap_25_data >> 8, tilemap_26_data >> 8, tilemap_27_data >> 8, tilemap_28_data >> 8, tilemap_29_data >> 8, tilemap_30_data >> 8, tilemap_31_data >> 8};
+const char tilemap_10_data[] = {17, 17, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_13_data[] = {10, 10, tiles + 8, 0x40, tiles + 8 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 17, 17, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 22, 22, tiles + 8, 0x40, tiles + 8 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_14_0[13] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18};
+const char tilemap_14_data[] = {22, 10, tilemap_14_0, 0x60, tilemap_14_0 >> 8, (0 << 5) | ((-13) & 0x1f), 65, 96, 0xff};
+const char tilemap_18_data[] = {6, 6, rainbow_tile + 0, 0xc0, rainbow_tile + 0 >> 8, (4 << 5) | ((-4) & 0x1f), 11, 11, 11, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 18, 16, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 96, 0xff};
+const char tilemap_19_data[] = {12, 6, tilemap_9_0, 0x60, tilemap_9_0 >> 8, (0 << 5) | ((-7) & 0x1f), 38, 15, 15, tiles + 0, 0x40, tiles + 0 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_20_data[] = {7, 7, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 17, 16, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
+const char tilemap_21_data[] = {7, 7, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 18, 18, tiles + 0, 0x40, tiles + 0 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_22_data[] = {7, 7, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 17, 15, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 96, 0xff};
+const char tilemap_23_data[] = {7, 7, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_24_data[] = {7, 7, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 14, 14, tiles + 8, 0x40, tiles + 8 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_25_data[] = {14, 14, pink_tiles + 2, 0x40, pink_tiles + 2 >> 8, (0 << 5) | ((-2) & 0x1f), 8, 13, 13, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 12, 6, tilemap_9_0, 0x60, tilemap_9_0 >> 8, (0 << 5) | ((-7) & 0x1f), 38, 96, 0xff};
+const char tilemap_26_data[] = {0, 0, tiles + 0, 0x40, tiles + 0 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 13, 13, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_27_data[] = {1, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-2) & 0x1f), 15, 13, 13, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_28_data[] = {2, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-3) & 0x1f), 20, 13, 13, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_29_data[] = {3, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-4) & 0x1f), 24, 13, 13, tiles + 12, 0x40, tiles + 12 >> 8, (1 << 5) | ((-2) & 0x1f), 8, 96, 0xff};
+const char tilemap_30_1[15] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18};
+const char tilemap_30_data[] = {4, 0, tilemap_0_0, 0x60, tilemap_0_0 >> 8, (1 << 5) | ((-5) & 0x1f), 29, 27, 13, tilemap_30_1, 0x60, tilemap_30_1 >> 8, (0 << 5) | ((-15) & 0x1f), 74, 96, 0xff};
 
-const char tilemap_data_ptrs_low[32] = {tilemap_0_data & 0xff, tilemap_1_data & 0xff, tilemap_2_data & 0xff, tilemap_3_data & 0xff, tilemap_4_data & 0xff, tilemap_5_data & 0xff, tilemap_6_data & 0xff, tilemap_7_data & 0xff, tilemap_8_data & 0xff, tilemap_9_data & 0xff, tilemap_10_data & 0xff, tilemap_11_data & 0xff, tilemap_12_data & 0xff, tilemap_13_data & 0xff, tilemap_14_data & 0xff, tilemap_15_data & 0xff, tilemap_16_data & 0xff, tilemap_17_data & 0xff, tilemap_18_data & 0xff, tilemap_19_data & 0xff, tilemap_20_data & 0xff, tilemap_21_data & 0xff, tilemap_22_data & 0xff, tilemap_23_data & 0xff, tilemap_24_data & 0xff, tilemap_25_data & 0xff, tilemap_26_data & 0xff, tilemap_27_data & 0xff, tilemap_28_data & 0xff, tilemap_29_data & 0xff, tilemap_30_data & 0xff, tilemap_31_data & 0xff};
+const char tilemap_data_ptrs_high[32] = {tilemap_0_data >> 8, tilemap_1_data >> 8, tilemap_2_data >> 8, tilemap_3_data >> 8, tilemap_4_data >> 8, tilemap_5_data >> 8, tilemap_6_data >> 8, tilemap_6_data >> 8, tilemap_8_data >> 8, tilemap_9_data >> 8, tilemap_10_data >> 8, tilemap_10_data >> 8, tilemap_10_data >> 8, tilemap_13_data >> 8, tilemap_14_data >> 8, tilemap_6_data >> 8, tilemap_6_data >> 8, tilemap_6_data >> 8, tilemap_18_data >> 8, tilemap_19_data >> 8, tilemap_20_data >> 8, tilemap_21_data >> 8, tilemap_22_data >> 8, tilemap_23_data >> 8, tilemap_24_data >> 8, tilemap_25_data >> 8, tilemap_26_data >> 8, tilemap_27_data >> 8, tilemap_28_data >> 8, tilemap_29_data >> 8, tilemap_30_data >> 8, tilemap_0_data >> 8};
+
+const char tilemap_data_ptrs_low[32] = {tilemap_0_data & 0xff, tilemap_1_data & 0xff, tilemap_2_data & 0xff, tilemap_3_data & 0xff, tilemap_4_data & 0xff, tilemap_5_data & 0xff, tilemap_6_data & 0xff, tilemap_6_data & 0xff, tilemap_8_data & 0xff, tilemap_9_data & 0xff, tilemap_10_data & 0xff, tilemap_10_data & 0xff, tilemap_10_data & 0xff, tilemap_13_data & 0xff, tilemap_14_data & 0xff, tilemap_6_data & 0xff, tilemap_6_data & 0xff, tilemap_6_data & 0xff, tilemap_18_data & 0xff, tilemap_19_data & 0xff, tilemap_20_data & 0xff, tilemap_21_data & 0xff, tilemap_22_data & 0xff, tilemap_23_data & 0xff, tilemap_24_data & 0xff, tilemap_25_data & 0xff, tilemap_26_data & 0xff, tilemap_27_data & 0xff, tilemap_28_data & 0xff, tilemap_29_data & 0xff, tilemap_30_data & 0xff, tilemap_0_data & 0xff};
 
 const char *tilemap_data_ptrs[2] = {tilemap_data_ptrs_high, tilemap_data_ptrs_low};
 
 #define TILING_HEIGHT 32
 #define TILING_WIDTH 32
 #include "sparse_tiling.h"
-
 
 reversed scattered(16,14) char tiles[224] = {
 	0x50, 0x50, 0x00, 0x00, 0xaa, 0xbf, 0xfe, 0xfe, 0xab, 0xea, 0xcf, 0xcf, 0x2a, 0xa8, 0x50, 0x50,
@@ -156,12 +101,12 @@ reversed scattered(16,20) char digits[320] = {
 
 ramchip int score;
 ramchip char display_score_str[5];
-ramchip char display_score_ascii[6];
 
 ramchip int x, y;
 
 void display_score_update()
 {
+    char display_score_ascii[6];
     itoa(score, display_score_ascii, 10);
     Y = strlen(display_score_ascii); 
     for (X = 0; X != 5 - Y; X++) {
@@ -173,17 +118,21 @@ void display_score_update()
     } while (Y);
 }
 
+const char custom_dl[] = {display_score_str, 0x60, display_score_str >> 8, _ms_width_palette(5, 0), 0, 0, 0};
+
 void main()
 {
     score = 0;
     x = 0; y = 0;
 
-    multisprite_init();
+    multisprite_init(0);
     multisprite_set_charbase(tiles);
+    
+    // Score display on the top zone
+    multisprite_set_top_zone_dl(0, custom_dl);
+   
     sparse_tiling_init(tilemap_data_ptrs);
     joystick_init();
-    multisprite_display_tiles(0, 0, display_score_str, 5, 0);
-    multisprite_save();
 
     *P0C1 = multisprite_color(0x1c); // Setup Palette 0: Yellow
     *P0C2 = multisprite_color(0xc5); // Green

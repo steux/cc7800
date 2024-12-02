@@ -1,0 +1,40 @@
+palettes:
+  - name: rainbow
+    colors: 
+    - [254, 0, 255]
+    - [178, 0, 255]
+    - [13, 0, 255]
+    - [0, 255, 25]
+    - [255, 241, 0]
+    - [255, 143, 0]
+    - [255, 0, 0]
+    - [255, 255, 255]
+sprite_sheets:
+  - image: tiles.png
+    sprites:
+      - name: tiles
+        top: 0 
+        left: 0
+        width: 112
+        holeydma: false
+        palette_number: 1
+      - name: rainbow_tile
+        top: 16
+        left: 0
+        width: 16
+        holeydma: false
+        mode: 160B
+        palette: rainbow
+        palette_number: 4
+      - name: pink_tiles
+        top: 16
+        left: 32
+        width: 32
+        palette_number: 0
+        holeydma: false
+      - name: chest
+        top: 16
+        left: 16
+        width: 16
+        palette_number: 2
+        holeydma: false
