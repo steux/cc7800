@@ -176,7 +176,6 @@ test_rand.c
 Custom made display using only the `prosystem.h` header (no helper). 
 `rand()` function from `stdlib.h` is used to continuously alter the background color. Note that this code is for NTSC only.
 
-
 test_conio.c
 ------------
 
