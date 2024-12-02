@@ -1,0 +1,77 @@
+palettes:
+  - name: ball_suitcase
+    colors:
+      - [112, 40, 0] # Red brick. Dark
+      - [156, 32, 32] # Red brick
+      - [252, 252, 104] # Yellow
+      - [236, 236, 236] # White
+  - name: bricks
+    colors:
+      - [64, 64, 64] # Dark grey
+      - [108, 108, 108] # Light grey
+      - [0, 60, 0] # Green
+      - [0, 0, 136] # Blue
+sprite_sheets:
+  - image: breakout.png
+    holeydma: 8
+    sprites:
+      - name: suitcase_odd
+        left: 0
+        top: 0
+        height: 8
+        width: 24
+        palette: ball_suitcase
+        mode: 320C
+      - name: suitcase_even
+        left: 1
+        top: 0
+        height: 8
+        width: 24
+        palette: ball_suitcase
+        mode: 320C
+      - name: ball_even
+        left: 16
+        top: 8
+        height: 8
+        width: 8
+        palette: ball_suitcase
+        mode: 320C
+      - name: ball_odd
+        left: 24
+        top: 8
+        height: 8
+        width: 24
+        palette: ball_suitcase
+        mode: 320C
+      - name: brick
+        left: 0
+        top: 8
+        height: 8
+        width: 16
+        mode: 320A
+      - name: side_brick
+        left: 0
+        top: 16
+        height: 8
+        width: 56
+        mode: 320A
+      - name: prison_bars
+        left: 0
+        top: 24
+        height: 8
+        width: 16
+        palette: bricks
+        mode: 320C
+      - name: indestructible_brick
+        left: 32
+        top: 24
+        height: 8
+        width: 16
+        palette: bricks
+        mode: 320C
+      - name: dollar_brick
+        left: 16
+        top: 24
+        height: 8
+        width: 16
+        mode: 320A

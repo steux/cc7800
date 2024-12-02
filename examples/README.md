@@ -115,6 +115,12 @@ This is also a major example of the `MULTISPRITE_OVERLAY` feature, where the bac
 `multisprite_save_overlay` function. This enables some static sprites not to be drawn at each frames, while
 still being updatable (like in this example when bombs are redrawn when one explodes). 
 
+example_breakout.c
+------------------
+
+This is an example of paddle game using `multisprite_8lines.h` header. It's a highres gfx little game that can
+be used as a starting point for an akranoid like game. 
+
 test_helloworld.c
 -----------------
 
