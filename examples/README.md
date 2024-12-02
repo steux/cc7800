@@ -115,6 +115,24 @@ This is also a major example of the `MULTISPRITE_OVERLAY` feature, where the bac
 `multisprite_save_overlay` function. This enables some static sprites not to be drawn at each frames, while
 still being updatable (like in this example when bombs are redrawn when one explodes). 
 
+example_sfx.c
+-------------
+
+This example uses `conio.h` header to propose a simple text GUI to play TIA sound effects converted from 7800basic.
+The sound output is provided by the `sfx.h` header and the `sfx_init`, `sfx_schedule` and `sfx_play` functions. 
+
+example_rmtracker.c
+-------------------
+
+This example shows how to use the `rmtplayer.h` to play Pokey music generated with RMT (Raster Music Tracker,
+a free great tool available on https://github.com/VinsCool/RASTER-Music-Tracker) 
+
+example_tiatracker.c
+--------------------
+
+This example shows how to use exported TIATracker music for cc7800. In order to generate the right C header for your TIA
+music, you have to use the forked version of TIATracker available at https://github.com/steux/tiatracker 
+
 example_breakout.c
 ------------------
 

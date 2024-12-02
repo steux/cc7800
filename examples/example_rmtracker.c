@@ -1,7 +1,9 @@
 #include "prosystem.h"
 #include "rmtplayer.h"
-#include "examples/RMT_Alien3.asm"
 #include "conio.h"
+
+// Converted with rmt2cc7800 Alien\ 3\ Title.rmt > Alien\ 3\ Title.rmt.c
+#include "resources/Alien 3 Title.rmt.c"
 
 char i, j, k, l;
 
@@ -17,10 +19,7 @@ void main()
         putch('1' + i);
     }
 
-    asm("LDX #<RMTSTART", 2); // Give pointer to RMT music
-    asm("LDY #>RMTSTART", 2);
-    load(0); // Song line in A register 
-    asm("JSR rmt_init", 3);
+    pokey_init();
 
     textcolor(1);
 
@@ -45,6 +44,6 @@ void main()
         while (*MSTAT & 0x80); // Wait for end of VBLANK
         while (!(*MSTAT & 0x80)); // Wait for VBLANK
         *BACKGRND = 0x0f;
-        asm("JSR rmt_play");
+        pokey_play();
     } while(1);
 }

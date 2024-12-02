@@ -6,8 +6,8 @@ unsigned char * const XAUDF0    = 0x17;     // Audio Frequency Channel 0        
 unsigned char * const XAUDF1    = 0x18;     // Audio Frequency Channel 1                    write-only
 unsigned char XAUDV0, XAUDV1;
 
-#include "miniblast_tiatracker.h"
-#include "miniblast_trackdata.h"
+#include "resources/miniblast_tiatracker.h"
+#include "resources/miniblast_trackdata.h"
 #include "conio.h"
 
 char i, j, k, l;
