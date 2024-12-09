@@ -133,6 +133,10 @@ example_tiatracker.c
 This example shows how to use exported TIATracker music for cc7800. In order to generate the right C header for your TIA
 music, you have to use the forked version of TIATracker available at https://github.com/steux/tiatracker 
 
+
+The next examples form the basis of a Shoot'em up game (vertical scrolling with background,
+collision detection, small effective sprites (bullets), explosions...)
+
 example_vertical_scrolling_sparse.c
 -----------------------------------
 
@@ -147,11 +151,36 @@ principle is that all the necessary data are transferred to RAM on the fly to be
 tiled/indirect display mode used for the tiles, so CPU and DMA can be used at their maximum. Note however that this may
 not be the simplest way to make a game, as sacrificing ROM at $4000 for RAM reduces the ability to use a lot of code or graphics.  
 
+example_explosions.c
+--------------------
+
+This an example of use of the `multisprite_display_big_sprite` macro, which allows to use taller than 16 pixels high
+sprites more efficiently than by subsequent calls to `multisprite_display_sprite`. 
+
+example_small_sprites.c
+-----------------------
+
+This is an example of the `multisprite_display_small_sprites` macro, which can provide a significant gain both on CPU 
+(sprite drawing) and DMA (one 1 display list impacted). Statistically, displaying a 8 pixels high sprites with this macro will provide a 25% gain not only on CPU side,
+but also on DMA side, since in 50% of case, the sprite will overlay only 1 display list zone.
+
+example_collision.c
+-------------------
+
+This is an example of the pixel accurate detection collision provided by the `multisprite.h` header combined
+with `sprites7800`. It uses the `multisprite_compute_collision` and `multisprite_collision_detected` macros, and
+the `collisions` keyword of `sprites7800` (see lines 164 to 166 of `shmup/resources/shmup.yaml`).
+
 example_breakout.c
 ------------------
 
 This is an example of paddle game using `multisprite_8lines.h` header. It's a highres gfx little game that can
-be used as a starting point for an akranoid like game. 
+be used as a starting point for an arkanoid like game. 
+
+example_3d.c
+------------
+
+To be expanded. At the moment, only atan2 function is implemented...
 
 test_helloworld.c
 -----------------

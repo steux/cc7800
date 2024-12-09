@@ -1,0 +1,16 @@
+palettes:
+  - name: fire
+    colors:
+    - [255, 241, 0] # Yellow
+    - [255, 143, 0] # Orange
+    - [255, 0, 0] # Red
+sprite_sheets:
+  - image: missile.png
+    holeydma: 16
+    sprites:
+      - name: missile
+        top: 0
+        left: 0
+        height: 8
+        width: 8
+        palette: fire
