@@ -19,7 +19,7 @@ void main()
         putch('1' + i);
     }
 
-    pokey_init();
+    pokey_init(RMTSTART);
 
     textcolor(1);
 

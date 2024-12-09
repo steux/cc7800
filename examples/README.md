@@ -171,6 +171,12 @@ This is an example of the pixel accurate detection collision provided by the `mu
 with `sprites7800`. It uses the `multisprite_compute_collision` and `multisprite_collision_detected` macros, and
 the `collisions` keyword of `sprites7800` (see lines 164 to 166 of `shmup/resources/shmup.yaml`).
 
+example_shmup.c
+---------------
+
+This is a SuperGame example integrating all the previous examples. Compilation options include `-DPOKEY_MUSIC` to
+activate background music, and `-DMULTISPRITE_USE_VIDEO_MEMORY` to activate video memory at $4000 to free CPU.
+
 example_breakout.c
 ------------------
 

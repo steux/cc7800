@@ -548,23 +548,6 @@ ramchip char _ms_dldma_save[_MS_DLL_ARRAY_SIZE];
             } \
         }
 
-#define multisprite_display_sprite_top(x, y, gfx, width, palette, mode) \
-	if (_ms_buffer) X = y + _MS_DLL_ARRAY_SIZE; else X = y; \
-        _MS_DMA_CHECK((8 + (width << 1) + width + 1) >> 1) { \
-            _ms_tmpptr = _ms_dls[X]; \
-            Y = _ms_dlend[X]; \
-            if (Y >= _MS_DL_LIMIT) { \
-                _ms_dmaerror++; \
-            } else { \
-                _ms_tmpptr[Y++] = (gfx); \
-                _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
-                _ms_tmpptr[Y++] = ((gfx) >> 8); \
-                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
-                _ms_tmpptr[Y++] = (x); \
-                _ms_dlend[X] = Y; \
-            }\
-        }
-
 #define multisprite_display_sprite_fast(x, y, gfx, width, palette) \
         _ms_tmp2 = (y) + _ms_vscroll_fine_offset; \
         _ms_tmp = _ms_tmp2 & 0x0f; \
