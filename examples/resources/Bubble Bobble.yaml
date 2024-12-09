@@ -1,0 +1,40 @@
+sprite_sheets:
+  - image: Bubble Bobble.png
+    sprites:
+      - name: tiles
+        top: 16
+        left: 0
+        width: 32 
+        holeydma: false
+      - name: chars0
+        top: 32
+        left: 0
+        width: 256
+        holeydma: true
+      - name: chars1
+        top: 48 
+        left: 0
+        width: 256
+        holeydma: true
+      - name: chars2
+        top: 64 
+        left: 0
+        width: 256
+        holeydma: true
+      - name: chars3
+        top: 80 
+        left: 0
+        width: 256
+        holeydma: true
+      - name: bb_char1
+        top: 0
+        left: 0
+        width: 16
+        holeydma: true
+      - name: chest 
+        top: 0
+        left: 16 
+        width: 16
+        holeydma: false
+
+
