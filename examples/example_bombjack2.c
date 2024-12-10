@@ -456,7 +456,7 @@ void display_init()
 {
     char y;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(digits);
     joystick_init();
     

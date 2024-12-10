@@ -55,7 +55,7 @@ void display_arrangement(char a)
 void main()
 {
     char y;
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(platform);
     // Top border in overscan
     if (_ms_pal_detected) {

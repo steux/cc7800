@@ -173,7 +173,7 @@ ramchip char spaceship_x, spaceship_y, spaceship_state, spaceship_state_counter;
 void main()
 {
     char i;
-    multisprite_init(0);
+    multisprite_init();
     
     // Grey palette
     *P0C1 = 0x04;

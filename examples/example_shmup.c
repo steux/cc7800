@@ -182,7 +182,7 @@ INIT_BANK void init()
 {
     sfx_init();
 
-    multisprite_init(0);
+    multisprite_init();
 #ifndef MULTISPRITE_USE_VIDEO_MEMORY
     multisprite_set_charbase(blue_objects1);
 #endif

@@ -29,7 +29,7 @@ void main()
 {
     counter = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(tiles);
    
     // Set up a full background 

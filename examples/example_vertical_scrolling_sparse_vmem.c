@@ -14,7 +14,7 @@ void main()
     char counter = 255;
     char done = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_vscroll_init_sparse_tiles_vmem(tilemap_data_ptrs, blue_objects1);
 
     // Grey palette

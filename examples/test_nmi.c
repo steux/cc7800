@@ -25,7 +25,7 @@ void interrupt dli()
 
 void main()
 {
-    multisprite_init(0);
+    multisprite_init();
 
     multisprite_enable_dli(7);
     

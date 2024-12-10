@@ -87,7 +87,7 @@ void main()
 {
     x = 0; y = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(blue_tubes);
     sparse_tiling_init(tilemap_data_ptrs);
     joystick_init();

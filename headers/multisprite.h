@@ -185,7 +185,7 @@ ramchip char _ms_buffer; // Double buffer state
 ramchip char _ms_pal_detected;
 ramchip char _ms_pal_frame_skip_counter;
 
-INIT_BANK void multisprite_init(char options);
+INIT_BANK void multisprite_init();
 INIT_BANK void multisprite_clear();
 void multisprite_save();
 void multisprite_restore();
@@ -970,10 +970,9 @@ inline void multisprite_start()
 #endif
 }
 
-INIT_BANK void multisprite_init(char options)
+INIT_BANK void multisprite_init()
 {
     *BACKGRND = 0x0;
-    char interrupt = (options & 1)?128:0;
 
     multisprite_get_tv();
     multisprite_clear();
@@ -1005,7 +1004,7 @@ INIT_BANK void multisprite_init(char options)
         }
         // 16 pixel high regions (14 regions = 224 pixels)
         for (_ms_tmp2 = 0; _ms_tmp2 != _MS_NB_SCROLLING_ZONES; X++, _ms_tmp2++) {
-            _ms_tmpptr[++Y] = interrupt | 0x4f; // 16 lines
+            _ms_tmpptr[++Y] = 0x4f; // 16 lines
             _ms_tmpptr[++Y] = _ms_dls[X] >> 8; // High address
             _ms_tmpptr[++Y] = _ms_dls[X]; // Low address
         }

@@ -125,7 +125,7 @@ void main()
     score = 0;
     x = 0; y = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(tiles);
     
     // Score display on the top zone

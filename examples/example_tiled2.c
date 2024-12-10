@@ -114,7 +114,7 @@ void main()
     short int x, y;
     score = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(tiles);
     joystick_init();
    

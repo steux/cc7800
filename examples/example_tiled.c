@@ -121,7 +121,7 @@ void main()
     score = 0;
     xoffset = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(tiles);
     joystick_init();
    

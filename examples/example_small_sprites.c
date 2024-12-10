@@ -19,7 +19,7 @@ holeydma reversed scattered(16,1) char missile[16] = {
 
 void main()
 {
-    multisprite_init(0);
+    multisprite_init();
     
     *P0C1 = multisprite_color(0x1c); // Yellow 
     *P0C2 = multisprite_color(0x37); // Orange

@@ -129,7 +129,7 @@ holeydma reversed scattered(16,6) char explosion5_2[96] = {
 void main()
 {
     char i, j = 0, k, l = 0, x, y;
-    multisprite_init(0);
+    multisprite_init();
     
     *P0C1 = multisprite_color(0x1c); // Yellow 
     *P0C2 = multisprite_color(0x37); // Orange

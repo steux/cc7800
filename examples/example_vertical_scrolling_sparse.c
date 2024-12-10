@@ -13,7 +13,7 @@ void main()
     char counter = 255;
     char done = 0;
 
-    multisprite_init(0);
+    multisprite_init();
     multisprite_set_charbase(blue_objects1);
     multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
 
