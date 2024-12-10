@@ -179,6 +179,19 @@ activate background music, and `-DMULTISPRITE_USE_VIDEO_MEMORY` to activate vide
 What is interesting here is the use of DLI (Display List Interrupt) to switch from one charbase (to display digits in
 the upper part) to another tileset (to display background)
 
+The following examples form the basis of a horizontal shooter. The examples are based on the R-Type
+arcade game :
+
+example_horizontal_scrolling.c
+------------------------------
+
+This is a SuperGame example showing the horizontal scrolling capabilities of `sparse_tiling.h` header,
+through the `sparse_tiling_display` and `sparse_tiling_scroll` functions. A `-DMULTISPRITE_USE_VIDEO_MEMORY` compilation option
+is available to activate video memory at $4000 to free CPU/DMA (at the expense of the precious $4000-$8000 memory area).
+This also enables the vertical tiles mirroring capabilities of `tiles7800`.
+
+The following 2 examples make use of the `bitmap7800` tool :
+
 example_BCs_title_screen.c
 --------------------------
 
