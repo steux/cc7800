@@ -1,0 +1,227 @@
+palettes:
+  - name: fire
+    colors:
+    - [255, 143, 0] # Orange
+    - [255, 241, 0] # Yellow
+    - [255, 255, 255] # White
+  - name: blue_red 
+    colors:
+    - [41, 77, 212] # Dark blue
+    - [255, 0, 0] # Red
+    - [102, 131, 255] # Blue
+  - name: grey
+    colors:
+    - [64, 64, 64] # Dark grey 
+    - [128, 128, 128] # Grey
+    - [192, 192, 192] # Light grey
+  - name: all
+    colors:
+    - [255, 143, 0] # Orange
+    - [255, 241, 0] # Yellow
+    - [255, 255, 255] # White
+    - [41, 77, 212] # Dark blue
+    - [255, 0, 0] # Red
+    - [102, 131, 255] # Blue
+    - [64, 64, 64] # Dark grey 
+    - [128, 128, 128] # Grey
+    - [192, 192, 192] # Light grey
+    - [0, 26, 0] # Dark green
+    - [0, 50, 0] # Green
+    - [0, 72, 0] # Light green
+
+sprite_sheets:
+  - image: RType_sprites.png
+    sprites:
+      - name: R9
+        top: 0
+        left: 0 
+        width: 32
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: missile
+        top: 0
+        left: 32
+        width: 16 
+        holeydma: true
+        palette: fire
+      - name: big_circle_top
+        top: 16 
+        left: 0
+        width: 48
+        holeydma: true
+        palette: blue_red
+      - name: big_circle_bottom
+        top: 48 
+        left: 0
+        width: 48
+        holeydma: true
+        palette: blue_red
+      - name: circles_top 
+        top: 24
+        left: 40
+        width: 120
+        holeydma: true
+        palette: blue_red
+      - name: circles_bottom 
+        top: 40 
+        left: 40
+        width: 120
+        holeydma: true
+        palette: blue_red
+      - name: satellite1
+        top: 0
+        left: 48
+        width: 16
+        mode: 160B
+        holeydma: true
+        palette: all
+      - name: satellite2
+        top: 0
+        left: 64 
+        width: 16
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: satellite3
+        top: 0
+        left: 80 
+        width: 16
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: satellite4
+        top: 0
+        left: 96 
+        width: 16
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: laserstraight
+        top: 0
+        left: 112
+        width: 48
+        palette: blue_red
+      - name: laserdown
+        top: 0
+        left: 160
+        width: 16
+        palette: blue_red
+      - name: laserup
+        top: 0
+        left: 208
+        width: 16
+        palette: blue_red
+      - name: star1
+        top: 0
+        left: 224
+        width: 8
+        palette: fire
+      - name: star2
+        top: 0
+        left: 232
+        width: 8
+        palette: fire
+      - name: big_explosion1 
+        top: 64 
+        left: 0
+        height: 48
+        width: 48 
+        palette: fire
+      - name: big_explosion2 
+        top: 64
+        left: 48 
+        height: 48
+        width: 48
+        palette: fire
+      - name: big_explosion3 
+        top: 64
+        left: 96
+        height: 48
+        width: 48
+        palette: fire
+      - name: big_explosion4 
+        top: 64
+        left: 144
+        height: 48
+        width: 48
+        palette: fire
+      - name: big_explosion5 
+        top: 64
+        left: 192
+        height: 48
+        width: 48
+        palette: fire
+      - name: big_fire
+        top: 112
+        left: 0
+        width: 64
+        palette: blue_red
+      - name: game
+        top: 112
+        left: 64
+        width: 72
+        palette: blue_red
+      - name: over 
+        top: 112
+        left: 136 
+        width: 72
+        palette: blue_red
+      - name: beam1
+        top: 128
+        left: 0 
+        width: 16
+        palette: fire
+      - name: beam2
+        top: 128
+        left: 16 
+        width: 16
+        palette: fire
+      - name: beam3
+        top: 128
+        left: 32
+        width: 16
+        palette: fire
+      - name: patapata1
+        top: 128
+        left: 48
+        width: 16
+        palette: blue_red
+      - name: patapata2
+        top: 128
+        left: 64 
+        width: 16
+        palette: blue_red
+      - name: patapata3
+        top: 128
+        left: 80
+        width: 16
+        palette: blue_red
+      - name: bullet1
+        top: 128
+        left: 96
+        width: 8
+        palette: fire
+      - name: explosion1
+        top: 128
+        left: 104
+        width: 16 
+        palette: fire
+      - name: explosion2
+        top: 128
+        left: 120
+        width: 16 
+        palette: fire
+      - name: explosion3
+        top: 128
+        left: 136
+        width: 16 
+        palette: fire
+      - name: explosion4
+        top: 128
+        left: 152
+        width: 16 
+        palette: fire
+    collisions:
+      - sprite1: bullet1
+        sprite2: R9

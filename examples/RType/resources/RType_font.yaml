@@ -1,0 +1,49 @@
+palettes:
+  - name: 320C
+    colors:
+    - [255, 241, 0] # Yellow
+    - [255, 0, 0] # Red
+    - [128, 128, 128] # Grey
+    - [0, 72, 0] # Green
+
+sprite_sheets:
+  - image: RType_font.png
+    mode: 320A
+    holeydma: 8
+    sprites:
+      - name: alphabet
+        top: 0
+        left: 0
+        width: 144
+        height: 16 
+        holeydma: false 
+      - name: signs 
+        top: 16 
+        left: 0
+        width: 72
+        height: 8 
+        holeydma: false 
+      - name: beam_meter_out 
+        top: 24
+        left: 0
+        width: 144
+        height: 8 
+        holeydma: false 
+      - name: beam_meter_in 
+        top: 32 
+        left: 0
+        width: 136
+        height: 8 
+        holeydma: false
+      - name: lives
+        top: 16
+        left: 72
+        width: 24
+        height: 8
+        holeydma: false
+        mode: 320C
+        palette: 320C
+
+
+
+

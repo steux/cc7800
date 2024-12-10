@@ -1,0 +1,190 @@
+palettes:
+  - name: beige 
+    colors:
+    - [101, 82, 55] # Brown
+    - [147, 129, 101] # Light brown
+    - [194, 183, 153] # Beige
+  - name: blue 
+    colors: 
+    - [41, 77, 212] # Dark blue
+    - [102, 131, 255] # Blue
+    - [142, 230, 250] # Light blue
+  - name: rose
+    colors:
+    - [140, 60, 59] # Dark Rose
+    - [207, 124, 122] # Rose
+    - [227, 194, 193] # Light rose
+  - name: grey
+    colors:
+    - [64, 64, 64] # Dark grey 
+    - [128, 128, 128] # Grey
+    - [192, 192, 192] # Light grey
+
+sprite_sheets:
+  - image: RType_tiles_mirror.png
+    bank: 1
+    mirror: !Vertical
+    sprites:
+      - name: brown_tiles1 
+        top: 0
+        left: 0
+        width: 224 
+        height: 32
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_tiles2 
+        top: 32 
+        left: 16
+        width: 48
+        height: 48
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_tiles3 
+        top: 32 
+        left: 128
+        width: 32
+        height: 16 
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_tiles4 
+        top: 48 
+        left: 16
+        width: 224 
+        height: 16 
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_tiles5 
+        top: 64 
+        left: 16
+        width: 208 
+        height: 16 
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_attach 
+        top: 80 
+        left: 64
+        width: 32 
+        height: 16 
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_tiles6 
+        top: 80
+        left: 176
+        width: 32 
+        height: 16 
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: rose_thing3_top
+        top: 80
+        left: 112
+        width: 16 
+        height: 16
+        holeydma: false
+        palette: rose 
+        palette_number: 6
+      - name: rose_thing4_top
+        top: 80
+        left: 128
+        width: 16 
+        height: 16
+        holeydma: false
+        palette: rose 
+        palette_number: 6
+      - name: rose_thing5_top
+        top: 96
+        left: 112
+        width: 32 
+        height: 16
+        holeydma: false
+        palette: rose 
+        palette_number: 6
+      - name: rose_thing6_top
+        top: 96
+        left: 144
+        width: 16 
+        height: 16
+        holeydma: false
+        palette: rose 
+        palette_number: 6
+      - name: brown_thing3_top
+        top: 80
+        left: 144
+        width: 16
+        height: 16
+        holeydma: false
+        background: rose_thing3_top
+        palette: beige
+        palette_number: 4
+      - name: brown_thing4_top
+        top: 80
+        left: 160 
+        width: 16
+        height: 16
+        holeydma: false
+        background: rose_thing4_top
+        palette: beige
+        palette_number: 4
+      - name: brown_thing5_top
+        top: 80
+        left: 176
+        width: 48
+        height: 16
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: brown_thing6_top
+        top: 96
+        left: 176
+        width: 16 
+        height: 16
+        holeydma: false
+        palette: beige
+        background: rose_thing6_top
+        palette_number: 4
+      - name: brown_thing7_top
+        top: 96
+        left: 192 
+        width: 16 
+        height: 16
+        holeydma: false
+        palette: beige
+        palette_number: 4
+      - name: swamp
+        top: 32 
+        left: 0 
+        width: 16 
+        height: 16
+        holeydma: false
+        palette: blue 
+        palette_number: 5
+      - name: swamp_rose
+        top: 96 
+        left: 16
+        width: 96
+        height: 16
+        holeydma: false
+        palette: rose 
+        palette_number: 6
+      - name: grey_targets 
+        top: 80 
+        left: 0 
+        width: 48
+        height: 16
+        holeydma: false
+        palette: grey 
+        palette_number: 7
+  - image: RType_background.png
+    bank: 1
+    sprites:
+      - name: background_level1
+        top: 0
+        left: 0
+        width: 192
+        height: 32
