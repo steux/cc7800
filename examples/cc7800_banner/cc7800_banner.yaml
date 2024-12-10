@@ -1,0 +1,22 @@
+background: [0, 0, 0]
+palettes:
+  - colors:
+      - [255, 5, 0] # Red 
+      - [255, 86, 0] # Orange
+      - [255, 193, 0] # Yellow
+      - [158, 223, 0] # Mustard
+      - [0, 255, 98] # Green
+      - [0, 192, 255] # Light Blue
+      - [0, 37, 255] # Blue
+      - [0, 0, 137] # Dark blue
+bitmap_sheets:
+  - image: cc7800.png
+    dl_height: 8 
+    mode: 320A
+    bitmaps:
+      - name: cc7800_banner
+        left: 0
+        top: 0
+        width: 128
+        xoffset: 48
+        height: 24 
