@@ -1,5 +1,5 @@
 #include "conio.h"
-#include "example_cc7800_banner_bitmap.c"
+#include "cc7800_banner/cc7800_banner_bitmap.c"
 
 const char rainbow_color[8] = {
     0x32, 0x26, 0x17, 0xe9, 0xca, 0xb9, 0x96, 0x83 

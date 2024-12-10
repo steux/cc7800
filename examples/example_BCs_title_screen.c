@@ -1,9 +1,9 @@
 #include "prosystem.h"
 #include "multisprite.h"
 
-// Generated from bitmap7800 BC's.yaml > example_BCs_title_screen_bitmap.c
+// Generated from bitmap7800 BC's.yaml > title_screen_bitmap.c
 #define BITMAP_TABLE_BANK bank0 
-#include "example_BCs_title_screen_bitmap.c"
+#include "BCs/title_screen_bitmap.c"
 
 void main()
 {
