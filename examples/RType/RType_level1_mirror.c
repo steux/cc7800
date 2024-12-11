@@ -26,9 +26,9 @@ bank1 const char tilemap_level1_5_data[] = {96, 0xff};
 bank1 const char tilemap_level1_8_0[4] = {29, 107, 109, 111};
 bank1 const char tilemap_level1_8_data[] = {23, 20, tilemap_level1_8_0, 0x60, tilemap_level1_8_0 >> 8, (4 << 5) | ((-4) & 0x1f), 24, 24, 24, tilemap_level1_3_2, 0x60, tilemap_level1_3_2 >> 8, (7 << 5) | ((-1) & 0x1f), 11, 96, 0xff};
 bank1 const char tilemap_level1_9_0[4] = {29, 79, 81, 83};
-bank1 const char tilemap_level1_9_1[3] = {145, 147, 149};
-bank1 const char tilemap_level1_9_2[2] = {161, 163};
-bank1 const char tilemap_level1_9_data[] = {23, 20, tilemap_level1_9_0, 0x60, tilemap_level1_9_0 >> 8, (4 << 5) | ((-4) & 0x1f), 24, 24, 24, tilemap_level1_4_2, 0x60, tilemap_level1_4_2 >> 8, (7 << 5) | ((-1) & 0x1f), 11, 35, 33, tilemap_level1_9_1, 0x60, tilemap_level1_9_1 >> 8, (6 << 5) | ((-3) & 0x1f), 20, 36, 35, tilemap_level1_9_2, 0x60, tilemap_level1_9_2 >> 8, (4 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
+bank1 const char tilemap_level1_9_2[3] = {145, 147, 149};
+bank1 const char tilemap_level1_9_3[2] = {161, 163};
+bank1 const char tilemap_level1_9_data[] = {23, 20, tilemap_level1_9_0, 0x60, tilemap_level1_9_0 >> 8, (4 << 5) | ((-4) & 0x1f), 24, 24, 24, tilemap_level1_4_2, 0x60, tilemap_level1_4_2 >> 8, (7 << 5) | ((-1) & 0x1f), 11, 35, 33, tilemap_level1_9_2, 0x60, tilemap_level1_9_2 >> 8, (6 << 5) | ((-3) & 0x1f), 20, 36, 35, tilemap_level1_9_3, 0x60, tilemap_level1_9_3 >> 8, (4 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
 bank1 const char tilemap_level1_10_0[12] = {29, 57, 59, 61, 133, 135, 133, 135, 133, 135, 133, 135};
 bank1 const char tilemap_level1_10_1[2] = {141, 143};
 bank1 const char tilemap_level1_10_2[5] = {151, 153, 155, 157, 159};
@@ -45,8 +45,7 @@ bank1 const char tilemap_level1_12_3[4] = {164, 164, 164, 164};
 bank1 const char tilemap_level1_12_4[16] = {1, 3, 5, 7, 9, 11, 13, 15, 85, 87, 89, 91, 93, 95, 97, 99};
 bank1 const char tilemap_level1_12_5[10] = {101, 103, 9, 11, 13, 15, 17, 19, 21, 23};
 bank1 const char tilemap_level1_12_6[16] = {164, 164, 164, 164, 164, 164, 164, 164, 164, 164, 164, 164, 164, 164, 164, 164};
-bank1 const char tilemap_level1_12_7[2] = {164, 164};
-bank1 const char tilemap_level1_12_data[] = {2, 0, tilemap_level1_12_0, 0x60, tilemap_level1_12_0 >> 8, (4 << 5) | ((-3) & 0x1f), 20, 9, 3, tilemap_level1_12_1, 0x60, tilemap_level1_12_1 >> 8, (6 << 5) | ((-7) & 0x1f), 38, 15, 10, tilemap_level1_12_2, 0x60, tilemap_level1_12_2 >> 8, (4 << 5) | ((-6) & 0x1f), 33, 19, 16, tilemap_level1_12_3, 0x60, tilemap_level1_12_3 >> 8, (5 << 5) | ((-4) & 0x1f), 24, 35, 20, tilemap_level1_12_4, 0x60, tilemap_level1_12_4 >> 8, (4 << 5) | ((-16) & 0x1f), 78, 45, 36, tilemap_level1_12_5, 0x60, tilemap_level1_12_5 >> 8, (4 << 5) | ((-10) & 0x1f), 51, 61, 46, tilemap_level1_12_6, 0x60, tilemap_level1_12_6 >> 8, (5 << 5) | ((-16) & 0x1f), 78, 63, 62, tilemap_level1_12_7, 0x60, tilemap_level1_12_7 >> 8, (5 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
+bank1 const char tilemap_level1_12_data[] = {2, 0, tilemap_level1_12_0, 0x60, tilemap_level1_12_0 >> 8, (4 << 5) | ((-3) & 0x1f), 20, 9, 3, tilemap_level1_12_1, 0x60, tilemap_level1_12_1 >> 8, (6 << 5) | ((-7) & 0x1f), 38, 15, 10, tilemap_level1_12_2, 0x60, tilemap_level1_12_2 >> 8, (4 << 5) | ((-6) & 0x1f), 33, 19, 16, tilemap_level1_12_3, 0x60, tilemap_level1_12_3 >> 8, (5 << 5) | ((-4) & 0x1f), 24, 35, 20, tilemap_level1_12_4, 0x60, tilemap_level1_12_4 >> 8, (4 << 5) | ((-16) & 0x1f), 78, 45, 36, tilemap_level1_12_5, 0x60, tilemap_level1_12_5 >> 8, (4 << 5) | ((-10) & 0x1f), 51, 61, 46, tilemap_level1_12_6, 0x60, tilemap_level1_12_6 >> 8, (5 << 5) | ((-16) & 0x1f), 78, 63, 62, tilemap_level1_12_3, 0x60, tilemap_level1_12_3 >> 8, (5 << 5) | ((-2) & 0x1f), 15, 96, 0xff};
 
 bank1 const char tilemap_level1_data_ptrs_high[13] = {tilemap_level1_0_data >> 8, tilemap_level1_1_data >> 8, tilemap_level1_2_data >> 8, tilemap_level1_3_data >> 8, tilemap_level1_4_data >> 8, tilemap_level1_5_data >> 8, tilemap_level1_5_data >> 8, tilemap_level1_5_data >> 8, tilemap_level1_8_data >> 8, tilemap_level1_9_data >> 8, tilemap_level1_10_data >> 8, tilemap_level1_11_data >> 8, tilemap_level1_12_data >> 8};
 
