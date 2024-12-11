@@ -6,12 +6,12 @@
 #ifdef MULTISPRITE_USE_VIDEO_MEMORY
 // Generated from sprites7800 RType_tiles_mirror.yaml
 #include "RType/RType_tiles_mirror.c"
-// Generated from tiles7800 --sparse RType_tiles_mirror.yaml --varname tilemap_level1 RType_level1_mirror.tmx -m 16
+// Generated from tiles7800 --sparse RType_tiles_mirror.yaml --force-left-to-right-order --varname tilemap_level1 RType_level1_mirror.tmx -m 16
 #include "RType/RType_level1_mirror.c"
 #else
 // Generated from sprites7800 RType_tiles.yaml
 #include "RType/RType_tiles.c"
-// Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx -m 16
+// Generated from tiles7800 --sparse RType_tiles.yaml  --force-left-to-right-order --forbid-immediate --varname tilemap_level1 RType_level1.tmx -m 16
 #include "RType/RType_level1.c"
 #endif
 
