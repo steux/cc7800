@@ -11,25 +11,25 @@ bank7 {
 #ifdef POKEY_MUSIC
 #define POKEY_AT_450
 #include "rmtplayer.h"
-#include "RMT_RType.c"
+#include "RType/RMT_RType.c"
 #endif
 }
 
 // Generated from sprites7800 RType_tiles.yaml
-#include "example_RType_tiles_mirror.c"
+#include "RType/RType_tiles_mirror.c"
 
 // Generated from sprites7800 RType_sprites.yaml
-#include "example_RType_sprites.c"
+#include "RType/RType_sprites.c"
 
 // Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
-#include "example_RType_level1_mirror.c"
+#include "RType/RType_level1_mirror.c"
 
 const signed short dx[48] = {300, 289, 259, 212, 149, 77, 0, -77, -150, -212, -259, -289, -300, -289, -259, -212, -149, -77, 0, 77, 149, 212, 259, 289, 450, 434, 389, 318, 224, 116, 0, -116, -225, -318, -389, -434, -450, -434, -389, -318, -224, -116, 0, 116, 224, 318, 389, 434};
 const signed short dy[48] = {0, 124, 240, 339, 415, 463, 480, 463, 415, 339, 240, 124, 0, -124, -239, -339, -415, -463, -480, -463, -415, -339, -240, -124, 0, 186, 360, 509, 623, 695, 720, 695, 623, 509, 360, 186, 0, -186, -359, -509, -623, -695, -720, -695, -623, -509, -360, -186};
 
 bank7 {
 // Generated from sprites7800 RType_font.yaml
-#include "example_RType_font.c"
+#include "RType/RType_font.c"
 
 const char sfx_pewpew[66] = {
 	0x10, 0, 0x00, 0x1c, 0x04, 0x0f, 0x1c, 0x04, 0x0f, 0x09, 0x04, 0x0b, 0x03, 0x0c, 0x0a, 0x04,
@@ -89,8 +89,8 @@ const char sfx_powerup[165] = {
 }
 
 bank1 {
-#include "example_atariage_logo.c"
-#include "example_merry_christmas_big_sprite.c"
+#include "RType/atariage_logo.c"
+#include "RType/merry_christmas_big_sprite.c"
 }
 
 // Game state management
@@ -197,7 +197,7 @@ void big_explosion(char x, char y)
 }
 
 // Put the dobkeratops code in Bank 1 & gfx in Bank 2
-#include "example_dobkeratops_banked.c"
+#include "RType/dobkeratops_banked.c"
 
 INIT_BANK void game_init()
 {
