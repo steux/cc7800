@@ -1,0 +1,389 @@
+palettes:
+  - name: blue_yellow_cars
+    colors:
+      - [0, 0, 136] # blue
+      - [184, 184, 64] # Yellow
+      - [64, 64, 64] # Dark Grey
+      - [176, 176, 176] # Grey
+sprite_sheets:
+  - image: steering_wheel.png
+    sprites:
+      - name: steering_indicator
+        left: 0
+        top: 0
+        height: 8
+        width: 8
+        mode: 320A
+      - name: starting_line 
+        left: 8
+        top: 0
+        height: 8
+        width: 8
+        mode: 320A
+      - name: steering_wheel1
+        left: 0
+        top: 8
+        height: 8
+        width: 56
+        holeydma: false
+        mode: 320A
+      - name: steering_wheel2
+        left: 0
+        top: 16
+        height: 8
+        width: 64
+        holeydma: false
+        mode: 320A
+      - name: steering_wheel3
+        left: 0
+        top: 24
+        height: 8
+        width: 16
+        holeydma: false
+        mode: 320A
+      - name: steering_wheel4
+        left: 48
+        top: 24
+        height: 8
+        width: 16
+        holeydma: false
+        mode: 320A
+  - image: cars.png
+    holeydma: 8
+    sprites:
+      - name: car0
+        left: 0
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car1
+        left: 16
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car2
+        left: 32
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car3
+        left: 48
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car4
+        left: 64
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car5
+        left: 80
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car6
+        left: 96
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car7
+        left: 112
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car8
+        left: 128
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car9
+        left: 144
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car10
+        left: 160
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car11
+        left: 176
+        top: 48
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car12
+        left: 192
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car13
+        left: 176
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car14
+        left: 160
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car15
+        left: 144
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car16
+        left: 128
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car17
+        left: 112
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car18
+        left: 96
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car19
+        left: 80
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car20
+        left: 64
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car21
+        left: 48
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car22
+        left: 32
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: car23
+        left: 16
+        top: 64
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car0
+        left: 0
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car1
+        left: 16
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car2
+        left: 32
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car3
+        left: 48
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car4
+        left: 64
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car5
+        left: 80
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car6
+        left: 96
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car7
+        left: 112
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car8
+        left: 128
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car9
+        left: 144
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car10
+        left: 160
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car11
+        left: 176
+        top: 80
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car12
+        left: 192
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car13
+        left: 176
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car14
+        left: 160
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car15
+        left: 144
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car16
+        left: 128
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car17
+        left: 112
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car18
+        left: 96
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car19
+        left: 80
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car20
+        left: 64
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car21
+        left: 48
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car22
+        left: 32
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C
+      - name: backlight_car23
+        left: 16
+        top: 96
+        height: 16
+        width: 16
+        palette: blue_yellow_cars
+        mode: 320C

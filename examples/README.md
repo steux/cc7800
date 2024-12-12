@@ -226,7 +226,15 @@ example_breakout.c
 ------------------
 
 This is an example of paddle game using `multisprite_8lines.h` header. It's a highres gfx little game that can
-be used as a starting point for an arkanoid like game. 
+be used as a starting point for an arkanoid like game. Note that the ball uses 2 different sprites for odd and
+even horizontal position, giving access to high res display accuracy (a sprite in high res can only be 
+positioned at low-res position accuracy (i.e. 0 < x < 160). 
+
+example_gas_paddles.c
+---------------------
+
+This is an example of another paddle game using `multisprite_8lines.h` header, featuring a 4 players paddle game.
+This one uses 320A/C mode display.
 
 example_3d.c
 ------------
