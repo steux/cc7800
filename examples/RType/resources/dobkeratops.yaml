@@ -1,0 +1,128 @@
+palettes:
+  - name: all
+    colors:
+    - [243, 206, 160]
+    - [247, 156, 109]
+    - [201, 103, 62]
+    - [147, 69, 22]
+    - [101, 35, 7]
+    - [245, 239, 216]
+    - [193, 184, 154]
+    - [89, 77, 61]
+    - [57, 48, 39]
+    - [60, 207, 70]
+    - [63, 158, 35]
+    - [255, 255, 255]
+  - name: tail
+    colors:
+    - [243, 206, 160]
+    - [247, 156, 109]
+    - [201, 103, 62]
+sprite_sheets:
+  - image: dobkeratops.png
+    sprites:
+      - name: dob1 
+        top: 0
+        left: 0
+        width: 128 # 148
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob2 
+        top: 16 
+        left: 0
+        width: 128 # 144
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob3 
+        top: 32 
+        left: 12
+        width: 96
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob4 
+        top: 48 
+        left: 12
+        width: 128 # 136
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob5 
+        top: 64 
+        left: 74
+        width: 64
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob6 
+        top: 80 
+        left: 70
+        width: 76
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob7 
+        top: 96 
+        left: 74
+        width: 72
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob8 
+        top: 112 
+        left: 74
+        width: 76
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob9 
+        top: 128
+        left: 80 
+        width: 68
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob10 
+        top: 144
+        left: 50 
+        width: 76
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: dob11 
+        top: 160
+        left: 0 
+        width: 112 # 148
+        holeydma: true
+        mode: 160B
+        palette: all
+      - name: tail1 
+        top: 181
+        left: 78 
+        width: 16
+        holeydma: true
+        mode: 160A
+        palette: tail 
+      - name: tail2 
+        top: 183
+        left: 52 
+        width: 16
+        holeydma: true
+        mode: 160A
+        palette: tail 
+      - name: tail3 
+        top: 183
+        left: 30 
+        width: 16
+        holeydma: true
+        mode: 160A
+        palette: tail 
+      - name: tail4
+        top: 180
+        left: 0 
+        width: 16
+        holeydma: true
+        mode: 160B
+        palette: all

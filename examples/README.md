@@ -190,6 +190,14 @@ through the `sparse_tiling_display` and `sparse_tiling_scroll` functions. A `-DM
 is available to activate video memory at $4000 to free CPU/DMA (at the expense of the precious $4000-$8000 memory area).
 This also enables the vertical tiles mirroring capabilities of `tiles7800`.
 
+example_dobkeratops.c
+---------------------
+
+This is an example of displaying a really big 160B sprite, which the 7800 handles particularly well. This is also an
+example of how to generate a sinus based multi-sprite animation (the boss tail).
+
+
+
 The following 2 examples make use of the `bitmap7800` tool :
 
 example_BCs_title_screen.c
