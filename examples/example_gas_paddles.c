@@ -9,13 +9,13 @@ unsigned char X, Y;
 const char PADDLES = 1; // Set paddles in a78 header
 
 // Generated with misc/genfont_dots.c < c64.bin
-#include "example_gas_paddles_dotfont.c"
+#include "gas_paddles/gas_paddles_dotfont.c"
 
 // Generated with tiles7800 --sparse circuit.yaml --immediate circuit.tmx
-#include "example_gas_paddles_tilemap.c"
+#include "gas_paddles/gas_paddles_tilemap.c"
 
 // Generated with sprites7800 cars.yaml
-#include "example_gas_paddles_sprites.c"
+#include "gas_paddles/gas_paddles_sprites.c"
 
 const char *car_models[24] = {car0, car1, car2, car3, car4, car5, car6, car7, car8, car9, car10, car11, car12, car13, car14, car15, car16, car17, car18, car19, car20, car21, car22, car23};
 const char *backlight_car_models[24] = {backlight_car0, backlight_car1, backlight_car2, backlight_car3, backlight_car4, backlight_car5, backlight_car6, backlight_car7, backlight_car8, backlight_car9, backlight_car10, backlight_car11, backlight_car12, backlight_car13, backlight_car14, backlight_car15, backlight_car16, backlight_car17, backlight_car18, backlight_car19, backlight_car20, backlight_car21, backlight_car22, backlight_car23};
