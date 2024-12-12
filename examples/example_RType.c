@@ -6,16 +6,16 @@
 #include "joystick.h"
 
 // Generated from sprites7800 RType_tiles.yaml
-#include "example_RType_tiles.c"
+#include "RType/RType_tiles.c"
 
 // Generated from sprites7800 RType_sprites.yaml
-#include "example_RType_sprites.c"
+#include "RType/RType_sprites.c"
 
 // Generated from tiles7800 --sparse RType_tiles.yaml --varname tilemap_level1 RType_level1.tmx 
-#include "example_RType_level1.c"
+#include "RType/RType_level1.c"
 
 // Generated from sprites7800 RType_font.yaml
-#include "example_RType_font.c"
+#include "RType/RType_font.c"
 
 // DLI management
 void interrupt dli()

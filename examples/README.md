@@ -196,6 +196,12 @@ example_dobkeratops.c
 This is an example of displaying a really big 160B sprite, which the 7800 handles particularly well. This is also an
 example of how to generate a sinus based multi-sprite animation (the boss tail).
 
+example_RType.c
+---------------
+
+This is the horizontal scrolling example with the addition of a controllable spaceship. The use of
+`sparse_tiling_collision` allows to detect collision between sprites and a scrolling sparse tiling background.
+An interesting addition is a custom display setup with a 320A/C (high res) bottom score display area.
 
 
 The following 2 examples make use of the `bitmap7800` tool :
