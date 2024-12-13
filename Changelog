@@ -1,10 +1,12 @@
+v0.2.27 (12/13/2024) :
+    - Bug fix in sprites grouping
+
 v0.2.26 (05/20/2024) :
     - Added SHORT_INTERRUPT feature
     - Added 256Kb ROM support (SuperGame256)
     - Added EXFIX bankswitching scheme support
     - Implemented gfx grouping based on prefix
     - Bug fix in const unsigned int arrays generation
-    - Bug fix in sprites grouping
 
 v0.2.25 (04/12/2024) :
     - Added noholeydma keyword supprt 

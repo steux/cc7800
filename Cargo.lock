@@ -86,7 +86,7 @@ dependencies = [
 
 [[package]]
 name = "cc7800"
-version = "0.2.26"
+version = "0.2.27"
 dependencies = [
  "cc6502",
  "clap",
