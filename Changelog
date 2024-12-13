@@ -4,6 +4,7 @@ v0.2.26 (05/20/2024) :
     - Added EXFIX bankswitching scheme support
     - Implemented gfx grouping based on prefix
     - Bug fix in const unsigned int arrays generation
+    - Bug fix in sprites grouping
 
 v0.2.25 (04/12/2024) :
     - Added noholeydma keyword supprt 

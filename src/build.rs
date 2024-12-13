@@ -44,8 +44,9 @@ where
 {
     let mut w = 0;
     let mut advance_iterator = 0;
+    let p = format!("{prefix}_");
     while let Some(v) = iter.next() {
-        if v.0.starts_with(prefix) {
+        if v.0.starts_with(&p) {
             if let VariableDefinition::Array(a) = &v.1.def {
                 w += a.len();
                 advance_iterator += 1;
@@ -196,7 +197,7 @@ impl<'a> MemoryMap<'a> {
                         }
                     } else if rorg <= 0x8000 {
                         //Accepts only 0x8000 or lower
-                        // Not holeydma zone, but displayable when oley DMA is active
+                        // Not holeydma zone, but displayable when Holey DMA is active
                         let svx = compiler_state.sorted_variables();
                         let mut iter = svx.iter();
                         let mut advance_iterator = 0;
@@ -863,9 +864,15 @@ impl<'a> MemoryMap<'a> {
                     } else {
                         let short_interrupt = if f.1.interrupt {
                             compiler_state.variables.contains_key("SHORT_INTERRUPT")
-                        } else { false };
+                        } else {
+                            false
+                        };
                         let s = gstate.functions_code.get(f.0).unwrap().size_bytes()
-                            + if f.1.interrupt && !short_interrupt { 17 } else { 1 };
+                            + if f.1.interrupt && !short_interrupt {
+                                17
+                            } else {
+                                1
+                            };
                         if filled + s <= size {
                             if definitive {
                                 gstate.write(&format!("\n{}\tSUBROUTINE\n", f.0))?;
