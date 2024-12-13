@@ -1,0 +1,18 @@
+palettes:
+  - name: grey 
+    colors:
+    - [73, 75, 72] # Dark Grey
+    - [149, 152, 148] # Light Grey
+    - [255, 255, 255] # White
+
+sprite_sheets:
+  - image: christmas.png
+    sprites:
+      - name: christmas
+        top: 0 
+        left: 0 
+        width: 128 
+        height: 96 
+        holeydma: true
+        mode: 160A
+        palette: grey

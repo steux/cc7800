@@ -1,0 +1,27 @@
+palettes:
+  - name: all
+    colors:
+    - [255, 143, 0] # Orange
+    - [255, 241, 0] # Yellow
+    - [255, 255, 255] # White
+    - [41, 77, 212] # Dark blue
+    - [255, 0, 0] # Red
+    - [102, 131, 255] # Blue
+    - [64, 64, 64] # Dark grey 
+    - [128, 128, 128] # Grey
+    - [192, 192, 192] # Light grey
+    - [0, 26, 0] # Dark green
+    - [0, 50, 0] # Green
+    - [0, 72, 0] # Light green
+
+sprite_sheets:
+  - image: RType_sprites.png
+    sprites:
+      - name: atariage_logo 
+        top: 144 
+        left: 0 
+        width: 64
+        height: 64 
+        holeydma: true
+        mode: 160B
+        palette: all

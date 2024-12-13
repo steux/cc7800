@@ -203,6 +203,12 @@ This is the horizontal scrolling example with the addition of a controllable spa
 `sparse_tiling_collision` allows to detect collision between sprites and a scrolling sparse tiling background.
 An interesting addition is a custom display setup with a 320A/C (high res) bottom score display area.
 
+example_RType2.c
+----------------
+
+A bigger example elaborating on the previous ones, showing how to combine everything together to build
+a game and a christmas card.
+
 
 The following 2 examples make use of the `bitmap7800` tool :
 
