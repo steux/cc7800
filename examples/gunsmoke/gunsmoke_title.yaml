@@ -1,0 +1,14 @@
+background: [255, 255, 255]
+palettes:
+bitmap_sheets:
+  - image: gunsmoke_title.png 
+    dl_height: 16
+    mode: 320C 
+    noholeydma: true
+    bank: 1
+    bitmaps:
+      - name: title
+        left: 0
+        top: 0
+        width: 240
+        height: 64 
