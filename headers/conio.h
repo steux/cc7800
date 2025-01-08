@@ -8,15 +8,15 @@
 #ifndef __CONIO_H__
 #define __CONIO_H__
 
-#define CONIO_NB_LINES 25 
-ramchip char _conio_screen[CONIO_NB_LINES * 40]; 
-
 // Conio shares the memory with multisprite DLLs, as well as PAL/NTSC auto detection
 #include "multisprite.h"
 
+#define CONIO_NB_LINES 25 
+ramchip char _conio_screen[CONIO_NB_LINES * 40]; 
+
 const char *_ms_conio_dls[CONIO_NB_LINES] = {
-    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14,
-    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8, _ms_b1_dl9
+    _ms_b0_dl0, _ms_b0_dl1, _ms_b0_dl2, _ms_b0_dl3, _ms_b0_dl4, _ms_b0_dl5, _ms_b0_dl6, _ms_b0_dl7, _ms_b0_dl8, _ms_b0_dl9, _ms_b0_dl10, _ms_b0_dl11, _ms_b0_dl12, _ms_b0_dl13, _ms_b0_dl14, _ms_b0_dl15, 
+    _ms_b1_dl0, _ms_b1_dl1, _ms_b1_dl2, _ms_b1_dl3, _ms_b1_dl4, _ms_b1_dl5, _ms_b1_dl6, _ms_b1_dl7, _ms_b1_dl8
 };
 
 reversed scattered(8,1) char font[1024]={
