@@ -1,6 +1,6 @@
 /*
     multisprite.h : multisprite display for the Atari 7800
-    Copyleft 2023-2024 Bruno STEUX 
+    Copyleft 2023-2025 Bruno STEUX 
 
     This file is distributed as a companion file to cc7800 - a subset of C compiler for the Atari 7800
     
@@ -10,6 +10,7 @@
     v0.4: Moved _MS_DLL_ARRAY_SIZE to 16 in order to find a way to display off-screen sprites
     v0.5: Added DMA_MASKING_ON_RAM option (DMA masking zone prepended on every DL. Faster but more memory consuming)
     v0.6: Allowing out of screen sprites in vertical scrolling mode 
+    v0.6.1: Better memory sharing with conio.h
 */
 
 #ifndef __ATARI7800_MULTISPRITE__
@@ -34,11 +35,13 @@
 #define _MS_DL_MALLOC(y) _MS_DL_SIZE
 #define _MS_DL_LIMIT (_MS_DL_SIZE - 7)
 #else
+#ifndef _MS_DL_LIMIT
 const char _ms_dl_limits[_MS_DLL_ARRAY_SIZE * 2] = {
     _MS_DL_MALLOC(0) - 7, _MS_DL_MALLOC(1) - 7, _MS_DL_MALLOC(2) - 7, _MS_DL_MALLOC(3) - 7, _MS_DL_MALLOC(4) - 7, _MS_DL_MALLOC(5) - 7, _MS_DL_MALLOC(6) - 7, _MS_DL_MALLOC(7) - 7, _MS_DL_MALLOC(8) - 7, _MS_DL_MALLOC(9) - 7, _MS_DL_MALLOC(10) - 7, _MS_DL_MALLOC(11) - 7, _MS_DL_MALLOC(12) - 7, _MS_DL_MALLOC(13) - 7, _MS_DL_MALLOC(14) - 7, _MS_DL_MALLOC(15) - 7,
     _MS_DL_MALLOC(0) - 7, _MS_DL_MALLOC(1) - 7, _MS_DL_MALLOC(2) - 7, _MS_DL_MALLOC(3) - 7, _MS_DL_MALLOC(4) - 7, _MS_DL_MALLOC(5) - 7, _MS_DL_MALLOC(6) - 7, _MS_DL_MALLOC(7) - 7, _MS_DL_MALLOC(8) - 7, _MS_DL_MALLOC(9) - 7, _MS_DL_MALLOC(10) - 7, _MS_DL_MALLOC(11) - 7, _MS_DL_MALLOC(12) - 7, _MS_DL_MALLOC(13) - 7, _MS_DL_MALLOC(14) - 7, _MS_DL_MALLOC(15) - 7
 };
 #define _MS_DL_LIMIT _ms_dl_limits[X] 
+#endif
 #endif
 
 // Zeropage variables
@@ -66,7 +69,7 @@ char *_ms_sparse_tiles_ptr_high, *_ms_sparse_tiles_ptr_low;
 #endif
 
 #ifdef VERTICAL_SCROLLING
-#define DMA_MASKING_OFFSET 17
+#define _MS_DMA_MASKING_OFFSET 17
 signed char _ms_vscroll_fine_offset;
 ramchip char _ms_vscroll_coarse_offset;
 char _ms_vscroll_coarse_offset_shifted;
@@ -91,7 +94,7 @@ ramchip char _ms_bottom_sbuffer[_MS_DL_MALLOC(-2)];
 ramchip char _ms_sbuffer[_MS_DL_MALLOC(-1)];
 #endif
 #else // VERTICAL_SCROLLING
-#define DMA_MASKING_OFFSET 0
+#define _MS_DMA_MASKING_OFFSET 0
 #endif
 
 #ifdef HORIZONTAL_SCROLLING
@@ -107,8 +110,20 @@ ramchip signed char _ms_delayed_hscroll;
 #endif
 #endif
 
-ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0) + DMA_MASKING_OFFSET], _ms_b0_dl1[_MS_DL_MALLOC(1) + DMA_MASKING_OFFSET], _ms_b0_dl2[_MS_DL_MALLOC(2) + DMA_MASKING_OFFSET], _ms_b0_dl3[_MS_DL_MALLOC(3) + DMA_MASKING_OFFSET], _ms_b0_dl4[_MS_DL_MALLOC(4) + DMA_MASKING_OFFSET], _ms_b0_dl5[_MS_DL_MALLOC(5) + DMA_MASKING_OFFSET], _ms_b0_dl6[_MS_DL_MALLOC(6) + DMA_MASKING_OFFSET], _ms_b0_dl7[_MS_DL_MALLOC(7) + DMA_MASKING_OFFSET], _ms_b0_dl8[_MS_DL_MALLOC(8) + DMA_MASKING_OFFSET], _ms_b0_dl9[_MS_DL_MALLOC(9) + DMA_MASKING_OFFSET], _ms_b0_dl10[_MS_DL_MALLOC(10) + DMA_MASKING_OFFSET], _ms_b0_dl11[_MS_DL_MALLOC(11) + DMA_MASKING_OFFSET], _ms_b0_dl12[_MS_DL_MALLOC(12) + DMA_MASKING_OFFSET], _ms_b0_dl13[_MS_DL_MALLOC(13) + DMA_MASKING_OFFSET], _ms_b0_dl14[_MS_DL_MALLOC(14) + DMA_MASKING_OFFSET], _ms_b0_dl15[_MS_DL_MALLOC(15) + DMA_MASKING_OFFSET];
-ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0) + DMA_MASKING_OFFSET], _ms_b1_dl1[_MS_DL_MALLOC(1) + DMA_MASKING_OFFSET], _ms_b1_dl2[_MS_DL_MALLOC(2) + DMA_MASKING_OFFSET], _ms_b1_dl3[_MS_DL_MALLOC(3) + DMA_MASKING_OFFSET], _ms_b1_dl4[_MS_DL_MALLOC(4) + DMA_MASKING_OFFSET], _ms_b1_dl5[_MS_DL_MALLOC(5) + DMA_MASKING_OFFSET], _ms_b1_dl6[_MS_DL_MALLOC(6) + DMA_MASKING_OFFSET], _ms_b1_dl7[_MS_DL_MALLOC(7) + DMA_MASKING_OFFSET], _ms_b1_dl8[_MS_DL_MALLOC(8) + DMA_MASKING_OFFSET], _ms_b1_dl9[_MS_DL_MALLOC(9) + DMA_MASKING_OFFSET], _ms_b1_dl10[_MS_DL_MALLOC(10) + DMA_MASKING_OFFSET], _ms_b1_dl11[_MS_DL_MALLOC(11) + DMA_MASKING_OFFSET], _ms_b1_dl12[_MS_DL_MALLOC(12) + DMA_MASKING_OFFSET], _ms_b1_dl13[_MS_DL_MALLOC(13) + DMA_MASKING_OFFSET], _ms_b1_dl14[_MS_DL_MALLOC(14) + DMA_MASKING_OFFSET], _ms_b1_dl15[_MS_DL_MALLOC(15) + 2 * DMA_MASKING_OFFSET];
+#ifdef __CONIO_H__
+#define _MS_FIRST_7_DL_SIZE (\
+    _MS_DL_MALLOC(0) + \
+    _MS_DL_MALLOC(1) + \
+    _MS_DL_MALLOC(2) + \
+    _MS_DL_MALLOC(3) + \
+    _MS_DL_MALLOC(4) + \
+    _MS_DL_MALLOC(5) + \
+    _MS_DL_MALLOC(6) + 7 * _MS_DMA_MASKING_OFFSET)
+ramchip char _conio_screen[CONIO_NB_LINES * 40 - _MS_FIRST_7_DL_SIZE]; 
+#endif
+
+ramchip char _ms_b0_dl0[_MS_DL_MALLOC(0) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl1[_MS_DL_MALLOC(1) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl2[_MS_DL_MALLOC(2) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl3[_MS_DL_MALLOC(3) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl4[_MS_DL_MALLOC(4) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl5[_MS_DL_MALLOC(5) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl6[_MS_DL_MALLOC(6) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl7[_MS_DL_MALLOC(7) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl8[_MS_DL_MALLOC(8) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl9[_MS_DL_MALLOC(9) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl10[_MS_DL_MALLOC(10) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl11[_MS_DL_MALLOC(11) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl12[_MS_DL_MALLOC(12) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl13[_MS_DL_MALLOC(13) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl14[_MS_DL_MALLOC(14) + _MS_DMA_MASKING_OFFSET], _ms_b0_dl15[_MS_DL_MALLOC(15) + _MS_DMA_MASKING_OFFSET];
+ramchip char _ms_b1_dl0[_MS_DL_MALLOC(0) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl1[_MS_DL_MALLOC(1) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl2[_MS_DL_MALLOC(2) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl3[_MS_DL_MALLOC(3) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl4[_MS_DL_MALLOC(4) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl5[_MS_DL_MALLOC(5) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl6[_MS_DL_MALLOC(6) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl7[_MS_DL_MALLOC(7) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl8[_MS_DL_MALLOC(8) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl9[_MS_DL_MALLOC(9) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl10[_MS_DL_MALLOC(10) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl11[_MS_DL_MALLOC(11) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl12[_MS_DL_MALLOC(12) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl13[_MS_DL_MALLOC(13) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl14[_MS_DL_MALLOC(14) + _MS_DMA_MASKING_OFFSET], _ms_b1_dl15[_MS_DL_MALLOC(15) + 2 * _MS_DMA_MASKING_OFFSET];
 
 #ifdef VERTICAL_SCROLLING
 aligned(256) const char _ms_shift3[256] = {
@@ -166,8 +181,8 @@ aligned(256) const char _ms_shift4[16 * _MS_DLL_ARRAY_SIZE] = {
 };
 #endif
 const char *_ms_dls[_MS_DLL_ARRAY_SIZE * 2] = {
-    _ms_b0_dl0 + DMA_MASKING_OFFSET, _ms_b0_dl1 + DMA_MASKING_OFFSET, _ms_b0_dl2 + DMA_MASKING_OFFSET, _ms_b0_dl3 + DMA_MASKING_OFFSET, _ms_b0_dl4 + DMA_MASKING_OFFSET, _ms_b0_dl5 + DMA_MASKING_OFFSET, _ms_b0_dl6 + DMA_MASKING_OFFSET, _ms_b0_dl7 + DMA_MASKING_OFFSET, _ms_b0_dl8 + DMA_MASKING_OFFSET, _ms_b0_dl9 + DMA_MASKING_OFFSET, _ms_b0_dl10 + DMA_MASKING_OFFSET, _ms_b0_dl11 + DMA_MASKING_OFFSET, _ms_b0_dl12 + DMA_MASKING_OFFSET, _ms_b0_dl13 + DMA_MASKING_OFFSET, _ms_b0_dl14 + DMA_MASKING_OFFSET, _ms_b0_dl15 + DMA_MASKING_OFFSET,
-    _ms_b1_dl0 + DMA_MASKING_OFFSET, _ms_b1_dl1 + DMA_MASKING_OFFSET, _ms_b1_dl2 + DMA_MASKING_OFFSET, _ms_b1_dl3 + DMA_MASKING_OFFSET, _ms_b1_dl4 + DMA_MASKING_OFFSET, _ms_b1_dl5 + DMA_MASKING_OFFSET, _ms_b1_dl6 + DMA_MASKING_OFFSET, _ms_b1_dl7 + DMA_MASKING_OFFSET, _ms_b1_dl8 + DMA_MASKING_OFFSET, _ms_b1_dl9 + DMA_MASKING_OFFSET, _ms_b1_dl10 + DMA_MASKING_OFFSET, _ms_b1_dl11 + DMA_MASKING_OFFSET, _ms_b1_dl12 + DMA_MASKING_OFFSET, _ms_b1_dl13 + DMA_MASKING_OFFSET, _ms_b1_dl14 + DMA_MASKING_OFFSET, _ms_b1_dl15 + DMA_MASKING_OFFSET
+    _ms_b0_dl0 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl1 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl2 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl3 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl4 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl5 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl6 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl7 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl8 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl9 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl10 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl11 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl12 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl13 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl14 + _MS_DMA_MASKING_OFFSET, _ms_b0_dl15 + _MS_DMA_MASKING_OFFSET,
+    _ms_b1_dl0 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl1 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl2 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl3 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl4 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl5 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl6 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl7 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl8 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl9 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl10 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl11 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl12 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl13 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl14 + _MS_DMA_MASKING_OFFSET, _ms_b1_dl15 + _MS_DMA_MASKING_OFFSET
 };
 
 const char _ms_set_wm_dl[7] = {0, 0x40, 0x21, 0xff, 160, 0, 0}; // Write mode 0
