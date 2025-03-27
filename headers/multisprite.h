@@ -1041,7 +1041,7 @@ INIT_BANK void multisprite_init()
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         } else {
-            _ms_tmpptr[++Y] = 0x29; // 10 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = 0x2a; // 11 lines. 8 high zone Holey DMA enabled just in case...
             _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
             _ms_tmpptr[++Y] = _ms_blank_dl;
         }

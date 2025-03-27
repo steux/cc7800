@@ -40,6 +40,7 @@ void joystick_update()
         // This is a single button joystick.
         if (joystick[0] & JOYSTICK_HAS_TWO_BUTTONS) {
             *SWCHB |= 4; // In order to protect the console
+            joystick[0] &= ~JOYSTICK_HAS_TWO_BUTTONS;
         }
         joystick[0] |= JOYSTICK_BUTTON1;
     } else if (joystick[0] & JOYSTICK_HAS_TWO_BUTTONS) {
@@ -57,6 +58,7 @@ void joystick_update()
         // This is a single button joystick.
         if (joystick[1] & JOYSTICK_HAS_TWO_BUTTONS) {
             *SWCHB |= 0x10; // In order to protect the console
+            joystick[1] &= ~JOYSTICK_HAS_TWO_BUTTONS;
         }
         joystick[1] |= JOYSTICK_BUTTON1;
     } else if (joystick[1] & JOYSTICK_HAS_TWO_BUTTONS) {

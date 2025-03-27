@@ -458,7 +458,6 @@ void display_init()
 
     multisprite_init();
     multisprite_set_charbase(digits);
-    joystick_init();
     
     // Top border in overscan
     if (_ms_pal_detected) {
@@ -557,6 +556,7 @@ void explosion_palette_roll()
 
 void main()
 {
+    joystick_init();
     game_init();
     display_init();
     

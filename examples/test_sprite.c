@@ -45,6 +45,7 @@ void main()
     dll[++X] = 0x00;
 
     // Setup Maria registers
+    *BACKGRND = 0xd8;
     *DPPH = dll >> 8;
     *DPPL = dll;
     *P0C1 = 0x18; // Setup Palette 0
