@@ -1,3 +1,28 @@
+# Colors
+
+The 7800 ProSystem has eight 3-color palettes plus a background color, totalling 25 colors from a palette of 256.
+
+By default, cc7800 will use mode 160A where each sprite is using a single 3-color palette.
+
+Colors are defined as follows:
+
+```
+*BACKGROUND = multisprite_color(0x34);
+
+*P0C1 = multisprite_color(0x1c);
+*P0C2 = multisprite_color(0xc5);
+*P0C3 = multisprite_color(0xcd);
+
+*P1C1 = 0x0f;
+*P1C2 = multisprite_color(0x9D);
+*P1C3 = multisprite_color(0x97);
+...
+```
+
+It is recommended to use `multisprite_color()` so that the color works the same whether on NTSC or PAL systems.
+
+## Various modes
+
  - 320B mode is trickier than it looks at first. It's not just a 3 color mode with transparency. 
  C1 is only displayed when you combine it with another color (from what I remember. See the color table attached). C1+C1 doesn't appear but is transparent (expect in Kangaroo mode where transparency is disabled), which is very annoying and quite limiting.
 
