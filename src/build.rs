@@ -112,9 +112,10 @@ impl<'a> MemoryMap<'a> {
         allow_scattered: bool,
         v: bool,
         definitive: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<u32, Error> {
         if definitive
             && args.verbose
+            && args.verbosity >= 2
             && v
             && (self.remaining_functions > 0
                 || self.remaining_scattered > 0
@@ -278,15 +279,15 @@ impl<'a> MemoryMap<'a> {
 
                     if definitive && fill > 0 {
                         // Write the effective scattered data
-                        if args.verbose && definitive {
-                            println!("Bank #{} : Putting 16 lines scattered data at ${:04x}{}. Zone filling is {}/256", self.bank, rorg, if holeydma_enabled_zone {" (Holey DMA)"} else {""}, fill);
+                        if args.verbose && definitive && args.verbosity >= 1 {
+                            println!("Bank #{}: Putting 16 lines scattered data at ${:04x}{}. Zone filling is {}/256", self.bank, rorg, if holeydma_enabled_zone {" (Holey DMA)"} else {""}, fill);
                         }
                         gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
                         gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
                         let mut counter;
                         for i in &sv {
                             gstate.write(&format!("\n{}", i.0))?;
-                            if args.verbose {
+                            if args.verbose && args.verbosity >= 2 {
                                 println!(" - {}", i.0);
                             }
                             counter = 0;
@@ -351,7 +352,7 @@ impl<'a> MemoryMap<'a> {
                     // Go on with filling the memory
                     if fill > 0 {
                         if size >= 0x1000 {
-                            return self.fill_memory(
+                            let s = self.fill_memory(
                                 org + 0x1000,
                                 rorg + 0x1000,
                                 size - 0x1000,
@@ -361,7 +362,8 @@ impl<'a> MemoryMap<'a> {
                                 true,
                                 true,
                                 definitive,
-                            );
+                            )?;
+                            return Ok(0x1000 + s);
                         }
                         return Err(Error::Configuration {
                             error: "Memory full".to_string(),
@@ -518,15 +520,15 @@ impl<'a> MemoryMap<'a> {
 
                     if definitive && fill > 0 {
                         // Write the effective scattered data
-                        if args.verbose {
-                            println!("Bank #{} : Putting 8 lines scattered data at ${:04x}{}. Zone filling is {}/256", self.bank, rorg, if holeydma_enabled_zone {" (Holey DMA)"} else {""}, fill);
+                        if args.verbose && args.verbosity >= 1 {
+                            println!("Bank #{}: Putting 8 lines scattered data at ${:04x}{}. Zone filling is {}/256", self.bank, rorg, if holeydma_enabled_zone {" (Holey DMA)"} else {""}, fill);
                         }
                         gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
                         gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
                         let mut counter;
                         for i in &sv {
                             gstate.write(&format!("\n{}", i.0))?;
-                            if args.verbose {
+                            if args.verbose && args.verbosity >= 2 {
                                 println!(" - {}", i.0);
                             }
                             counter = 0;
@@ -591,7 +593,7 @@ impl<'a> MemoryMap<'a> {
                     // Go on with filling the memory
                     if fill > 0 {
                         if size >= 0x800 {
-                            return self.fill_memory(
+                            let s = self.fill_memory(
                                 org + 0x800,
                                 rorg + 0x800,
                                 size - 0x800,
@@ -601,7 +603,8 @@ impl<'a> MemoryMap<'a> {
                                 true,
                                 true,
                                 definitive,
-                            );
+                            )?;
+                            return Ok(0x800 + s);
                         }
                         return Err(Error::Configuration {
                             error: "Memory full".to_string(),
@@ -660,15 +663,15 @@ impl<'a> MemoryMap<'a> {
 
                     if definitive && fill > 0 {
                         // Write the effective scattered data
-                        if args.verbose {
-                            println!("Bank #{} : Putting 12 lines scattered data at ${:04x}. Zone filling is {}/256", self.bank, rorg, fill);
+                        if args.verbose && args.verbosity >= 1 {
+                            println!("Bank #{}: Putting 12 lines scattered data at ${:04x}. Zone filling is {}/256", self.bank, rorg, fill);
                         }
                         gstate.write("\n; Scattered data\n\tSEG SCATTERED")?;
                         gstate.write(&format!("\n\n\tORG ${:04x}\n\tRORG ${:04x}", org, rorg))?;
                         let mut counter;
                         for i in &sv {
                             gstate.write(&format!("\n{}", i.0))?;
-                            if args.verbose {
+                            if args.verbose && args.verbosity >= 2 {
                                 println!(" - {}", i.0);
                             }
                             counter = 0;
@@ -733,7 +736,7 @@ impl<'a> MemoryMap<'a> {
                     // Go on with filling the memory
                     if fill > 0 {
                         if size >= 0x1000 {
-                            self.fill_memory(
+                            let s1 = self.fill_memory(
                                 org + 0xc00,
                                 rorg + 0xc00,
                                 0x400,
@@ -744,7 +747,7 @@ impl<'a> MemoryMap<'a> {
                                 true,
                                 definitive,
                             )?;
-                            return self.fill_memory(
+                            let s2 = self.fill_memory(
                                 org + 0x1000,
                                 rorg + 0x1000,
                                 size - 0x1000,
@@ -754,7 +757,8 @@ impl<'a> MemoryMap<'a> {
                                 true,
                                 true,
                                 definitive,
-                            );
+                            )?;
+                            return Ok(0xc00 + s1 + s2);
                         }
                         return Err(Error::Configuration {
                             error: "Memory full".to_string(),
@@ -765,7 +769,7 @@ impl<'a> MemoryMap<'a> {
 
             if self.remaining_scattered > 0 {
                 // Well, we have scattered data, so let's try to find a place for them
-                self.fill_memory(
+                let s1 = self.fill_memory(
                     org,
                     rorg,
                     0x800,
@@ -776,8 +780,8 @@ impl<'a> MemoryMap<'a> {
                     false,
                     definitive,
                 )?;
-                if size > 0x800 {
-                    return self.fill_memory(
+                let s2 = if size > 0x800 {
+                    self.fill_memory(
                         org + 0x800,
                         rorg + 0x800,
                         size - 0x800,
@@ -787,9 +791,11 @@ impl<'a> MemoryMap<'a> {
                         true,
                         true,
                         definitive,
-                    );
-                }
-                return Ok(());
+                    )?
+                } else {
+                    0
+                };
+                return Ok(s1 + s2);
             }
         }
 
@@ -801,7 +807,7 @@ impl<'a> MemoryMap<'a> {
                 gstate.write("\n\n; Functions definitions\n\tSEG CODE\n")?;
 
                 // Prelude code for each bank
-                if args.verbose {
+                if args.verbose && args.verbosity >= 2 {
                     println!("Bank #{}: Generating code at ${:04x}", self.bank, rorg);
                 }
                 gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
@@ -832,13 +838,13 @@ impl<'a> MemoryMap<'a> {
                     }
                     if let Some(s) = asm.2 {
                         filled += s as u32;
-                        if definitive && args.verbose {
+                        if definitive && args.verbose && args.verbosity >= 2 {
                             println!(" - Assembler {} code (filled {}/{})", name, filled, size);
                         }
                     } else {
                         let nl = asm.0.lines().count() as u32;
                         filled += nl * 3; // 3 bytes default per line estimate.
-                        if definitive && args.verbose {
+                        if definitive && args.verbose && args.verbosity >= 2 {
                             println!(
                                 " - Assembler {} code (filled {}/{} - estimated)",
                                 name, filled, size
@@ -905,7 +911,7 @@ impl<'a> MemoryMap<'a> {
                             self.remaining_functions -= 1;
                             filled += s;
 
-                            if definitive && args.verbose {
+                            if definitive && args.verbose && args.verbosity >= 2 {
                                 println!(" - {} function (filled {}/{})", f.0, filled, size);
                             }
                         }
@@ -920,7 +926,7 @@ impl<'a> MemoryMap<'a> {
             // Generate ROM tables
             if definitive {
                 gstate.write("\n; Tables in ROM\n")?;
-                if args.verbose {
+                if args.verbose && args.verbosity >= 2 {
                     println!("Bank #{}: Inserting ROM tables", self.bank);
                 }
             }
@@ -952,7 +958,7 @@ impl<'a> MemoryMap<'a> {
                             self.remaining_variables -= 1;
                             filled = s + s2;
                             if definitive {
-                                if args.verbose {
+                                if args.verbose && args.verbosity >= 2 {
                                     println!(" - {} array (filled {}/{})", v.0, filled, size);
                                 }
                                 match &v.1.def {
@@ -1097,7 +1103,7 @@ impl<'a> MemoryMap<'a> {
             self.remaining_variables, self.remaining_functions, self.remaining_scattered
         );
 
-        Ok(())
+        Ok(filled)
     }
 }
 
@@ -1677,7 +1683,7 @@ pub fn build_cartridge(
     let mut filled = 0;
     let mut ram1_filled = false;
     //let mut ram2_filled = false;
-    if args.verbose {
+    if args.verbose && args.verbosity >= 2 {
         println!("Atari 7800 internal RAM : 0x1800 onwards");
     }
     for v in compiler_state.sorted_variables().iter() {
@@ -1716,7 +1722,7 @@ pub fn build_cartridge(
                 */
                 gstate.write("\n\tSEG.U RAM3\n\tORG $2200\n\tRORG $2200\n")?;
                 filled = 0xa00 + sx;
-                if args.verbose {
+                if args.verbose && args.verbosity >= 2 {
                     println!("Atari 7800 internal RAM : 0x2200 onwards");
                 }
             }
@@ -1726,7 +1732,7 @@ pub fn build_cartridge(
                 });
             }
             gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
-            if args.verbose {
+            if args.verbose && args.verbosity >= 2 {
                 println!(" - {} ({} byte{})", v.0, sx, if sx > 1 { "s" } else { "" });
             }
         }
@@ -1737,7 +1743,7 @@ pub fn build_cartridge(
 
     // Generate veriables stored in RAM on cart (memory on chip)
     if memoryonchip {
-        if args.verbose {
+        if args.verbose && args.verbosity >= 2 {
             println!("Cart RAM : 0x4000 onwards");
         }
         let mut filled = 0;
@@ -1768,13 +1774,13 @@ pub fn build_cartridge(
                     });
                 }
                 gstate.write(&format!("{:23}\tds {}\n", v.0, sx))?;
-                if args.verbose {
+                if args.verbose && args.verbosity >= 2 {
                     println!(" - {} ({} byte{})", v.0, sx, if sx > 1 { "s" } else { "" });
                 }
             }
         }
         if args.verbose {
-            println!("Cart RAM : {} bytes left", 0x4000 - filled);
+            println!("Cart RAM at $4000: Filled {}/16384", filled);
         }
     }
 
@@ -1804,7 +1810,7 @@ pub fn build_cartridge(
         };
 
         let mut map = MemoryMap::new(compiler_state, bank);
-        map.fill_memory(
+        let filled = map.fill_memory(
             org,
             rorg,
             size,
@@ -1815,6 +1821,12 @@ pub fn build_cartridge(
             true,
             true,
         )?;
+        if args.verbose {
+            println!(
+                "Bank #{bank} at ${:04x} (RORG=${:04x}): Filled {filled}/{size} bytes",
+                org, rorg
+            );
+        }
         /*
         assert!(map.remaining_scattered == 0);
         assert!(map.remaining_functions == 0);

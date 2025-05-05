@@ -18,7 +18,7 @@
     Contact info: bruno.steux@gmail.com
 */
 
-// TODO: Add different verbosity levels
+// DONE Add different verbosity levels
 
 use cc6502::compile::compile;
 use cc6502::Args;
