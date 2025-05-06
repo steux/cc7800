@@ -21,11 +21,11 @@ Due to the last constraint, the 7800 has a mode called "HoleyDMA" which allows t
 
 Here's a partial view of a 7800 program memory. The graphical resources are at addresses $A000 and $C000:
 
-![A view of memory](HoleyDMAOff.png "A view of memory")
+![A view of memory](../images/HoleyDMAOff.png "A view of memory")
 
 With the HoleyDMA mode on, MARIA sees any odd 4096-bytes block above $8000 as blank, thus seeing something like this:
 
-![HoleyDMA](HoleyDMAOn.png "What MARIA sees when the HoleyDMA mode is on")
+![HoleyDMA](../images/HoleyDMAOn.png "What MARIA sees when the HoleyDMA mode is on")
 
 The HoleyDMA mode is set with cc7800 when defining a graphical resources in the YAML file:
 

@@ -27,7 +27,7 @@ If there still isn't enough RAM, a way around it is to use banking (`bank1 char 
 
 This occurs when two much code and resources are defined and the total goes beyond 52 Kb.
 
-The way around this is to use bank switching by using the keywords `bank1`, `bank2`, ... `bank9` in either a resource Yaml file, in front of `const` variables or in front of functions, e.g.
+The way around this is to use bank switching by using the keywords `bank1`, `bank2`, ... `bank15` in either a resource Yaml file, in front of `const` variables or in front of functions, e.g.
 
 ```
 bank1 const char my_array[32] = { ... };
@@ -35,7 +35,7 @@ bank1 const char my_array[32] = { ... };
 bank2 void my_function() { ... }
 ```
 
-Each bank is 16 Kb large. The default bank, bank #0, is now 16 Kb large as well (from address $C000 to $FFFF). All the other banks are stored from address $8000 and $BFFF. If bank #0 is always visible, only one non-default bank is visible at a time.
+Each bank is 16 Kb large, which can lead to a cart up to 256 Kb large. The default bank, bank #0, is now 16 Kb large as well (from address $C000 to $FFFF). All the other banks are stored from address $8000 and $BFFF. If bank #0 is always visible, only one non-default bank is visible at a time.
 
 The way to explicitly switch bank is to use the `ROM_SELECT` keyword (e.g. `*ROM_SELECT=2` to switch to bank #2)
 

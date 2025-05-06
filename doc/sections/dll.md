@@ -11,10 +11,10 @@ The DLL is a list of lists which contains all the graphical resources that will 
 
 This last point is specific to the 7800 and has a lot of implication. Namely, a sprite across two horizontal zones need to have two entries - one for each sublist.
 
-Here is a screenshot from [example_RType2.c](../examples/example_RType2.c), with the horizontal zones added:
+Here is a screenshot from [example_RType2.c](../../examples/example_RType2.c), with the horizontal zones added:
 
-![RType2](RType.png "RType2")
+![RType2](../images/RType.png "RType2")
 
 Because the first enemy is spread across two zones, two sprites need to be defined. One for the upper zone (outlined in green) and one for the lower zone (oulined in yellow). Both will be defined as a 8x16 sprite with enough empty space above and below to exactly fit the horizontal zone - hence the concept of [HoleyDMA](graphical_resources.md) to save some space in memory.
 
-![Sprite](Sprite.png "Sprite")
+![Sprite](../images/Sprite.png "Sprite")
