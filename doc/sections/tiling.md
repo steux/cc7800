@@ -10,7 +10,7 @@ By default, cc7800 defines the screen as follows:
 
 (include `multisprite_8lines.h` instead of `multisprite.h` to use 8-pixel high tiles instead)
 
-The easiest way is to use `tiling_init()` as seen in [example_tiled2.c](../examples/example_tiled2.c):
+The easiest way is to use `tiling_init()` as seen in [example_tiled2.c](../../examples/example_tiled2.c):
 
 ```
 reversed scattered(16,14) char tiles[224] = { ... };
@@ -52,7 +52,7 @@ Notes:
 
 When the background does not contain a lot of detail, it may be faster to use sparse tiling, i.e. only displays a few tiles when need be and leave the rest with the background color. The game Basketbrawl uses this technique.
 
-cc7800 has a `sparse_tiling_init()` API to use this feature. See [example_sparse_tiling.h](../examples/example_sparse_tiling.c).
+cc7800 has a `sparse_tiling_init()` API to use this feature. See [example_sparse_tiling.h](../../examples/example_sparse_tiling.c).
 
 ## Things to know
 

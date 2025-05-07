@@ -6,6 +6,6 @@ This is achived by using either `#define HORIZONTAL_SCROLLING`, `#define VERTICA
 
 See the following examples:
 
-- [example_tiled.c](../examples/example_tiled.c)
-- [example_vertical_scrolling.c](../examples/example_vertical_scrolling.c)
-- [example_vertical_scrolling_sparse.c](../examples/example_vertical_scrolling_sparse.c)
+- [example_tiled.c](../../examples/example_tiled.c)
+- [example_vertical_scrolling.c](../../examples/example_vertical_scrolling.c)
+- [example_vertical_scrolling_sparse.c](../../examples/example_vertical_scrolling_sparse.c)
