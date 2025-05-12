@@ -20,8 +20,10 @@ const char *dls[DLL_ARRAY_SIZE] = { dl0, dl1, dl2, dl3, dl4, dl5, dl6, dl7, dl8,
 ramchip char dll[(DLL_ARRAY_SIZE + 4) * 3];
 char dlend[DLL_ARRAY_SIZE];
 
-bank1 void init()
+bank2 void init()
 {
+    *BACKGRND = 0xff;
+
     // Build DLL
     // 25 blank lines
     dll[X = 0] = 0x4f;  // 16 lines
@@ -50,7 +52,7 @@ bank1 void init()
     *P0C1 = 0x18; // Setup Palette 0
     *P0C2 = 0x38;
     *P0C3 = 0x58;
-    *CTRL = 0x43; // Enable DMA
+    *CTRL = 0x4b; // Enable DMA
     *CTLSWA = 0; // Setup ports to read mode
     *CTLSWB = 0;
 }

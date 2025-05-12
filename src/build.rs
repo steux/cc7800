@@ -919,7 +919,7 @@ impl<'a> MemoryMap<'a> {
                 }
             }
         } else if definitive {
-            gstate.write(&format!("\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
+            gstate.write(&format!("\n\tSEG CODE\n\tORG ${:04x}\n\tRORG ${:04x}\n", org, rorg))?;
         }
 
         if self.remaining_variables > 0 {
