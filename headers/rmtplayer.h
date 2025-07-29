@@ -13,7 +13,11 @@ const char POKEY = 1;
 #ifdef POKEY_AT_450
 char *const pokeyaddress = 0x450;
 #else
+#ifdef POKEY_AT_800
+char *const pokeyaddress = 0x800;
+#else
 char *const pokeyaddress = 0x4000; 
+#endif
 #endif
 
 char *p_instrstable, *p_trackslbstable, *p_trackshbstable, *p_song;
