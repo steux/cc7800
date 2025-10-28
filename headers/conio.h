@@ -436,4 +436,19 @@ inline void conio_set_dl(char line, char *dl)
     _ms_b0_dll[X] = dl;
 }
 
+inline void conio_enable_dli(char line)
+{
+    line = (line << 2) - line + 6; // line = line * 3 + 6
+    if (_ms_pal_detected) line += 3;
+    X = line;
+    _ms_b0_dll[X] |= 0x80;
+}
+
+inline void conio_disable_dli(char line)
+{
+    line = (line << 2) - line + 6; // line = line * 3 + 6
+    if (_ms_pal_detected) line += 3;
+    _ms_b0_dll[X = line] &= 0x7f;
+}
+
 #endif // __CONIO_H__
