@@ -236,10 +236,10 @@ INIT_BANK void init()
     *MP2_P2C2 = multisprite_color(0xd8); // Light green
     *MP2_P2C3 = 0x0e; 
     
-    // Fire palette
-    *MP2_P3C1 = multisprite_color(0x43); // Red
-    *MP2_P3C2 = multisprite_color(0x37); // Orange
-    *MP2_P3C3 = multisprite_color(0x1c); // Yellow 
+    // Yellow palette (bright)
+    *MP2_P3C1 = multisprite_color(0x19); // Yellow (dark)
+    *MP2_P3C2 = multisprite_color(0x1c); // Yellow
+    *MP2_P3C3 = multisprite_color(0x1f); // Yellow (bright) 
 
     // Yellow palette (bright)
     *MP2_P4C1 = multisprite_color(0x19); // Yellow (dark)
@@ -382,7 +382,7 @@ bank1 void start_level1()
 
 void my_display_big_sprite(char x, char y, char *gfx, char width, char palette, char height, char mode)
 {
-    multisprite_display_big_sprite(x, y, gfx, width, palette, height, mode);
+    multisprite_plus_display_big_sprite(x, y, gfx, width, palette, height, mode);
 }
 
 inline void display_boss(char x, char y, char palette)
@@ -496,7 +496,7 @@ void joystick_input()
 
 char missile_management(char x, char y) {
     char i, exploded = 0;
-    multisprite_display_sprite_aligned_ex(x, y, missiles, 3, 3, 0);
+    multisprite_plus_display_sprite_aligned_ex(x, y, missiles, 3, 3, 0);
     // Check collision with enemies
     for (i = enemy_first; i != enemy_last; i++) {
         if (i == ENEMY_NB_MAX) {
@@ -530,7 +530,7 @@ void draw_gameover()
     x = xx - 36;
     ptr = game;
     for (i = 0; i != 2; i++) {
-        multisprite_display_sprite_ex(x, ((224 - 16 - 16) / 2), ptr, 9, 7, 0);
+        multisprite_plus_display_sprite_ex(x, ((224 - 16 - 16) / 2), ptr, 9, 7, 0);
         ptr = over;
         x = 160 - xx;
     }
@@ -601,13 +601,13 @@ void step()
             y = spaceship_ypos + 24;
             if (exhaust_state < 10) {
                 x = spaceship_xpos + 2;
-                multisprite_display_small_sprite_ex(x, y, exhauststart, 2, 3, 8, 0);
+                multisprite_plus_display_small_sprite_ex(x, y, exhauststart, 2, 3, 8, 0);
             } else {
                 char *gfxptr;
                 i = exhaust_state - 10;
                 gfxptr = exhaust1 + i;
                 x = spaceship_xpos + 4;
-                multisprite_display_sprite_ex(x, y, gfxptr, 1, 3, 0);
+                multisprite_plus_display_sprite_ex(x, y, gfxptr, 1, 3, 0);
             }
         }
     }
@@ -644,7 +644,7 @@ void step()
                 if (explosion_counter[X] < 10) gfx = small_explosion1;
                 else if (explosion_counter[X] < 20) gfx = small_explosion2;
                 else gfx = small_explosion3;
-                multisprite_display_sprite_ex(xexplosion, yexplosion, gfx, 2, 3, 0); 
+                multisprite_plus_display_sprite_ex(xexplosion, yexplosion, gfx, 2, 3, 0); 
             }
         }
     }

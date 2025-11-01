@@ -993,7 +993,7 @@ INIT_BANK void multisprite_init()
     *BACKGRND = 0x0;
     _ms_maria_plus = (*OFFSET == '+');
 
-    multisprite_get_tv();
+    //multisprite_get_tv();
     multisprite_clear();
     multisprite_save();
 
@@ -2302,8 +2302,12 @@ ramplus char _ms_plus_b1_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
 INIT_BANK void multisprite_plus_init()
 {
     // Reset DL ends for both buffers
+    
+    Y = 1;
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
         _ms_plus_dlend[X] = 0;
+        _ms_tmpptr = _ms_plus_dls[X];
+        _ms_tmpptr[Y] = 0; 
     }
     _ms_tmpptr = _ms_plus_b0_dll;
     for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
@@ -2365,7 +2369,7 @@ void multisprite_plus_flip()
     if (!_ms_buffer) {
         // Add DL end entry on each DL
         for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= _MS_DLL_ARRAY_SIZE; X--) {
-            _ms_tmpptr = _ms_dls[X];
+            _ms_tmpptr = _ms_plus_dls[X];
             Y = _ms_plus_dlend[X];
             _ms_tmpptr[++Y] = 0; 
         }
@@ -2377,14 +2381,14 @@ void multisprite_plus_flip()
     } else {
         // Add DL end entry on each DL
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
-            _ms_tmpptr = _ms_dls[X];
+            _ms_tmpptr = _ms_plus_dls[X];
             Y = _ms_plus_dlend[X];
             _ms_tmpptr[++Y] = 0; 
         }
         *MP1_DPPH = _ms_plus_b0_dll >> 8; // 0 the current displayed buffer
         *MP1_DPPL = _ms_plus_b0_dll;
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
-            _ms_plus_dlend[Y] = 0;
+          _ms_plus_dlend[Y] = 0;
         }
     }
 }
@@ -2392,6 +2396,7 @@ void multisprite_plus_flip()
 #define multisprite_plus_display_sprite(x, y, gfx, width, palette) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2402,6 +2407,7 @@ void multisprite_plus_flip()
                 _ms_plus_dlend[X] = Y; \
                 if (_ms_tmp) { \
                     X++; \
+                    { \
                         _ms_tmpptr = _ms_plus_dls[X];  \
                         Y = _ms_plus_dlend[X]; \
                         if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2419,6 +2425,7 @@ void multisprite_plus_flip()
 #define multisprite_plus_display_small_sprite(x, y, gfx, width, palette, margin) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2429,6 +2436,7 @@ void multisprite_plus_flip()
                 _ms_plus_dlend[X] = Y; \
                 if (_ms_tmp >= margin) { \
                     X++; \
+                    { \
                         _ms_tmpptr = _ms_plus_dls[X];  \
                         Y = _ms_plus_dlend[X]; \
                         if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2446,6 +2454,7 @@ void multisprite_plus_flip()
 #define multisprite_plus_display_small_sprite_ex(x, y, gfx, width, palette, margin, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2457,6 +2466,7 @@ void multisprite_plus_flip()
                 _ms_plus_dlend[X] = Y; \
                 if (_ms_tmp >= margin) { \
                     X++; \
+                    { \
                         _ms_tmpptr = _ms_plus_dls[X];  \
                         Y = _ms_plus_dlend[X]; \
                         if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2475,6 +2485,7 @@ void multisprite_plus_flip()
 #define multisprite_plus_display_big_sprite(x, y, gfx, width, palette, height, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2489,9 +2500,10 @@ void multisprite_plus_flip()
                     _ms_tmp2 = ((_ms_tmpptr2 >> 8) - 0x10) | _ms_tmp; \
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
                         X++; \
+                        { \
                             _ms_tmpptr = _ms_plus_dls[X];  \
                             Y = _ms_plus_dlend[X]; \
-                            if (Y < _MS_PLUS_DL_LIMIT - 5) { \
+                            if (Y < _MS_DL_LIMIT - 5) { \
                                 _ms_tmpptr[Y++] = _ms_tmpptr2; \
                                 _ms_tmpptr[Y++] = (mode)?0xc0:0x40; \
                                 _ms_tmpptr[Y++] = _ms_tmp2; \
@@ -2508,6 +2520,7 @@ void multisprite_plus_flip()
                         } \
                     } \
                     X++; \
+                    { \
                         _ms_tmpptr = _ms_plus_dls[X];  \
                         Y = _ms_plus_dlend[X]; \
                         if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2524,6 +2537,7 @@ void multisprite_plus_flip()
                     for (_ms_tmp3 = (height) - 1; _ms_tmp3 != 0; _ms_tmp3--) { \
                         X++; \
                         _ms_tmp2 += width; \
+                        { \
                             _ms_tmpptr = _ms_plus_dls[X];  \
                             Y = _ms_plus_dlend[X]; \
                             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2543,6 +2557,7 @@ void multisprite_plus_flip()
 #define multisprite_plus_display_sprite_ex(x, y, gfx, width, palette, mode) \
 	_ms_tmp = (y) & 0x0f; \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2554,6 +2569,7 @@ void multisprite_plus_flip()
                 _ms_plus_dlend[X] = Y; \
                 if (_ms_tmp) { \
                     X++; \
+                    { \
                         _ms_tmpptr = _ms_plus_dls[X];  \
                         Y = _ms_plus_dlend[X]; \
                         if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2569,8 +2585,23 @@ void multisprite_plus_flip()
             }\
         }
 
-#define multisprite_plus_display_sprite_aligned(x, y, gfx, width, palette, mode) \
+#define multisprite_plus_display_sprite_aligned(x, y, gfx, width, palette) \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
+            _ms_tmpptr = _ms_plus_dls[X]; \
+            Y = _ms_plus_dlend[X]; \
+            if (Y < _MS_PLUS_DL_LIMIT) { \
+                _ms_tmpptr[Y++] = (gfx); \
+                _ms_tmpptr[Y++] = -width & 0x1f | (palette << 5); \
+                _ms_tmpptr[Y++] = ((gfx) >> 8); \
+                _ms_tmpptr[Y++] = (x); \
+                _ms_plus_dlend[X] = Y; \
+            }\
+        }
+
+#define multisprite_plus_display_sprite_aligned_ex(x, y, gfx, width, palette, mode) \
+	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2585,6 +2616,7 @@ void multisprite_plus_flip()
 
 #define multisprite_plus_display_sprite_aligned_fast(x, y, gfx, width, palette) \
 	X = _ms_shift4[Y = (y & 0xfe | _ms_buffer)]; \
+        { \
             _ms_tmpptr = _ms_plus_dls[X]; \
             Y = _ms_plus_dlend[X]; \
             if (Y < _MS_PLUS_DL_LIMIT) { \
@@ -2616,5 +2648,6 @@ void multisprite_plus_flip()
             _ms_tmpptr[Y++] = (x); \
             _ms_plus_dlend[X] = Y; \
         }
+
 
 #endif // __ATARI7800_MULTISPRITE__
