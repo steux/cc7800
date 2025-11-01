@@ -161,11 +161,12 @@ INIT_BANK void init()
 {
     sfx_init();
 
+    multisprite_plus_init();
     multisprite_plus_init_overlay();
-    *MP1_DPPH = _ms_overlay_dll >> 8;
-    *MP1_DPPL = _ms_overlay_dll;
-    *MP1_CTRL = 0x10; // 2 charaacters width
-    *MP1_CHBASE = digits >> 8; 
+    *MP2_DPPH = _ms_overlay_dll >> 8;
+    *MP2_DPPL = _ms_overlay_dll;
+    *MP2_CTRL = 0x10; // 2 charaacters width
+    *MP2_CHBASE = digits >> 8; 
 
     multisprite_init();
     multisprite_set_charbase(blue_objects1);
@@ -220,6 +221,46 @@ INIT_BANK void init()
     *MP1_P7C2 = multisprite_color(0x38); // Orange
     *MP1_P7C3 = 0x0f; // White 
 
+    // Grey palette
+    *MP2_P0C1 = 0x04;
+    *MP2_P0C2 = 0x08;
+    *MP2_P0C3 = 0x0b;
+
+    // Blue palette
+    *MP2_P1C1 = multisprite_color(0x84); // Dark blue 
+    *MP2_P1C2 = multisprite_color(0x87); // Light blue
+    *MP2_P1C3 = multisprite_color(0xac); // Turquoise 
+
+    // Green palette
+    *MP2_P2C1 = multisprite_color(0xd4); // Dark green 
+    *MP2_P2C2 = multisprite_color(0xd8); // Light green
+    *MP2_P2C3 = 0x0e; 
+    
+    // Fire palette
+    *MP2_P3C1 = multisprite_color(0x43); // Red
+    *MP2_P3C2 = multisprite_color(0x37); // Orange
+    *MP2_P3C3 = multisprite_color(0x1c); // Yellow 
+
+    // Yellow palette (bright)
+    *MP2_P4C1 = multisprite_color(0x19); // Yellow (dark)
+    *MP2_P4C2 = multisprite_color(0x1c); // Yellow
+    *MP2_P4C3 = multisprite_color(0x1f); // Yellow (bright) 
+
+    // Blue palette
+    *MP2_P5C1 = multisprite_color(0x54); // Dark purple 
+    *MP2_P5C2 = multisprite_color(0x57); // Light purple
+    *MP2_P5C3 = multisprite_color(0x5c); // Rose 
+
+    // Green palette
+    *MP2_P6C1 = multisprite_color(0xda); // Light green 
+    *MP2_P6C2 = multisprite_color(0xdd); // Very light green
+    *MP2_P6C3 = 0x0f; 
+    
+    // Fire palette (with white)
+    *MP2_P7C1 = multisprite_color(0x44); // Red
+    *MP2_P7C2 = multisprite_color(0x38); // Orange
+    *MP2_P7C3 = 0x0f; // White 
+    
     // Grey palette
     *P0C1 = 0x04;
     *P0C2 = 0x08;
@@ -718,6 +759,7 @@ void main()
         }
 
         multisprite_flip();
+        multisprite_plus_flip();
         if (scrolling_done != 3) multisprite_vertical_scrolling(2);
     } while(1);
 }
