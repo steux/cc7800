@@ -1,7 +1,5 @@
 #include "prosystem.h"
 #include "maria_plus.h"
-#define _MS_NB_TOP_ZONES 0
-#define _MS_NB_SCROLLING_ZONES 14
 #define VERTICAL_SCROLLING
 #define INIT_BANK bank7
 #include "multisprite_plus.h"
@@ -161,6 +159,7 @@ INIT_BANK void init()
 {
     sfx_init();
 
+    multisprite_get_tv();
     multisprite_plus_init();
     multisprite_plus_init_overlay();
     *MP2_DPPH = _ms_overlay_dll >> 8;
