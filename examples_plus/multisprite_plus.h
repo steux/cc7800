@@ -2215,4 +2215,51 @@ void multisprite_enable_holeydma()
     }
 }
 
+// Maria+ setup
+ramplus char _ms_overlay_dll[20 * 3]; 
+
+void multisprite_plus_init_overlay()
+{
+    // Build DLL
+    // 69 blank lines for PAL
+    // 19 blank lines for NTSC
+    if (_ms_pal_detected) {
+        // 16 blank lines
+        _ms_overlay_dll[Y = 0] = 0x0f;  // 16 lines
+        _ms_overlay_dll[++Y] = _ms_set_wm_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_set_wm_dl;
+        // 16 blank lines
+        _ms_overlay_dll[++Y] = 0x2f;  // 16 lines.. 8 high zone Holey DMA enabled just in case...
+        _ms_overlay_dll[++Y] = _ms_blank_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_blank_dl;
+    } else {
+        _ms_overlay_dll[Y = 0] = 0x27; // 8 lines. 8 high zone Holey DMA enabled just in case...
+        _ms_overlay_dll[++Y] = _ms_set_wm_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_set_wm_dl;
+    }
+    // 16 pixel high regions (14 regions = 224 pixels)
+    for (X = 0; X != 14; X++) {
+        _ms_overlay_dll[++Y] = 0x4f; // 16 lines
+        _ms_overlay_dll[++Y] = _ms_blank_dl >> 8; // High address
+        _ms_overlay_dll[++Y] = _ms_blank_dl;
+    }
+    if (_ms_pal_detected) {
+        // 16 blank lines
+        _ms_overlay_dll[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
+        _ms_overlay_dll[++Y] = _ms_blank_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_blank_dl;
+        // 16 blank lines
+        _ms_overlay_dll[++Y] = 0x0f;  // 16 lines
+        _ms_overlay_dll[++Y] = _ms_blank_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_blank_dl;
+        // 4 blank lines
+        _ms_overlay_dll[++Y] = 0x03;  // 4 lines
+        _ms_overlay_dll[++Y] = _ms_blank_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_blank_dl;
+    } else {
+        _ms_overlay_dll[++Y] = 0x2a; // 11 lines. 8 high zone Holey DMA enabled just in case...
+        _ms_overlay_dll[++Y] = _ms_blank_dl >> 8;
+        _ms_overlay_dll[++Y] = _ms_blank_dl;
+    }
+}
 #endif // __ATARI7800_MULTISPRITE__

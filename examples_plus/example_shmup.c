@@ -1,4 +1,5 @@
 #include "prosystem.h"
+#include "maria_plus.h"
 #define _MS_NB_TOP_ZONES 0
 #define _MS_NB_SCROLLING_ZONES 14
 #define VERTICAL_SCROLLING
@@ -160,6 +161,12 @@ INIT_BANK void init()
 {
     sfx_init();
 
+    multisprite_plus_init_overlay();
+    *MP1_DPPH = _ms_overlay_dll >> 8;
+    *MP1_DPPL = _ms_overlay_dll;
+    *MP1_CTRL = 0x10; // 2 charaacters width
+    *MP1_CHBASE = digits >> 8; 
+
     multisprite_init();
     multisprite_set_charbase(blue_objects1);
     joystick_init();
@@ -169,6 +176,49 @@ INIT_BANK void init()
     for (X = 11; X >= 0; X--) {
         dl_in_ram[X] = custom_dl[X];
     }
+    X = (_ms_pal_detected)?7:4;
+    _ms_overlay_dll[X++] = dl_in_ram >> 8;
+    _ms_overlay_dll[X] = dl_in_ram;
+
+    // Grey palette
+    *MP1_P0C1 = 0x04;
+    *MP1_P0C2 = 0x08;
+    *MP1_P0C3 = 0x0b;
+
+    // Blue palette
+    *MP1_P1C1 = multisprite_color(0x84); // Dark blue 
+    *MP1_P1C2 = multisprite_color(0x87); // Light blue
+    *MP1_P1C3 = multisprite_color(0xac); // Turquoise 
+
+    // Green palette
+    *MP1_P2C1 = multisprite_color(0xd4); // Dark green 
+    *MP1_P2C2 = multisprite_color(0xd8); // Light green
+    *MP1_P2C3 = 0x0e; 
+    
+    // Blue palette
+    *MP1_P3C1 = multisprite_color(0x54); // Dark purple 
+    *MP1_P3C2 = multisprite_color(0x57); // Light purple
+    *MP1_P3C3 = multisprite_color(0x5c); // Rose 
+
+    // Yellow palette (bright)
+    *MP1_P4C1 = multisprite_color(0x19); // Yellow (dark)
+    *MP1_P4C2 = multisprite_color(0x1c); // Yellow
+    *MP1_P4C3 = multisprite_color(0x1f); // Yellow (bright) 
+
+    // Blue palette
+    *MP1_P5C1 = multisprite_color(0x54); // Dark purple 
+    *MP1_P5C2 = multisprite_color(0x57); // Light purple
+    *MP1_P5C3 = multisprite_color(0x5c); // Rose 
+
+    // Green palette
+    *MP1_P6C1 = multisprite_color(0xda); // Light green 
+    *MP1_P6C2 = multisprite_color(0xdd); // Very light green
+    *MP1_P6C3 = 0x0f; 
+    
+    // Fire palette (with white)
+    *MP1_P7C1 = multisprite_color(0x44); // Red
+    *MP1_P7C2 = multisprite_color(0x38); // Orange
+    *MP1_P7C3 = 0x0f; // White 
 
     // Grey palette
     *P0C1 = 0x04;
