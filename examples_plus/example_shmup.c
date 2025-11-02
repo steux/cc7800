@@ -1,6 +1,7 @@
 #include "prosystem.h"
 #include "maria_plus.h"
 #define VERTICAL_SCROLLING
+#define PARALLAX_SCROLLING
 #define INIT_BANK bank7
 #include "multisprite_plus.h"
 #include "joystick.h"

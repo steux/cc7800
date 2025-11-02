@@ -2649,5 +2649,264 @@ void multisprite_plus_flip()
             _ms_plus_dlend[X] = Y; \
         }
 
+#ifdef PARALLAX_SCROLLING
+#ifndef _MS_PSCROLL_DL_SIZE
+#define _MS_PSCROLL_DL_SIZE (3*5 + 2 + 5) 
+#endif
+#define _MS_PSCROLL_DMA_MASKING_OFFSET 5
+
+ramplus char _ms_pscroll_b0_dl0[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl1[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl2[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl3[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl4[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl5[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl6[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl7[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl8[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl9[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl10[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl11[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl12[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl13[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl14[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b0_dl15[_MS_PSCROLL_DL_SIZE];
+ramplus char _ms_pscroll_b1_dl0[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl1[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl2[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl3[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl4[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl5[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl6[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl7[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl8[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl9[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl10[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl11[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl12[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl13[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl14[_MS_PSCROLL_DL_SIZE], _ms_pscroll_b1_dl15[_MS_PSCROLL_DL_SIZE];
+const char *_ms_pscroll_dls[_MS_DLL_ARRAY_SIZE * 2] = {
+    _ms_pscroll_b0_dl0 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl1 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl2 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl3 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl4 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl5 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl6 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl7 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl8 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl9 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl10 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl11 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl12 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl13 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl14 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b0_dl15 + _MS_PSCROLL_DMA_MASKING_OFFSET,
+    _ms_pscroll_b1_dl0 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl1 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl2 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl3 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl4 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl5 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl6 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl7 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl8 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl9 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl10 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl11 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl12 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl13 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl14 + _MS_PSCROLL_DMA_MASKING_OFFSET, _ms_pscroll_b1_dl15 + _MS_PSCROLL_DMA_MASKING_OFFSET
+};
+ramplus char _ms_pscroll_b0_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3]; 
+ramplus char _ms_pscroll_b1_dll[(_MS_DLL_ARRAY_SIZE + 6) * 3];
+
+ramplus char _ms_pscroll_sbuffer[_MS_PSCROLL_DL_SIZE];
+ramplus signed char _ms_pscroll_fine_offset;
+ramplus char _ms_pscroll_coarse_offset;
+ramplus char _ms_delayed_pscroll;
+ramplus char _ms_pscroll_sbuffer_size;
+char *_ms_pscroll_sparse_tiles_ptr_high, *_ms_pscroll_sparse_tiles_ptr_low;
+
+INIT_BANK void multisprite_pscroll_init()
+{
+    _ms_tmpptr = _ms_pscroll_b0_dll;
+    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
+        // Build DLL
+        // 69 blank lines for PAL
+        // 19 blank lines for NTSC
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_tmpptr[Y = 0] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_set_wm_dl;
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x2f;  // 16 lines.. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        } else {
+            _ms_tmpptr[Y = 0] = 0x27; // 8 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_set_wm_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_set_wm_dl;
+        }
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_NB_TOP_ZONES; _ms_tmp2++) {
+            _ms_tmpptr[++Y] = 0x4f; // 16 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        }
+        // 16 pixel high regions (14 regions = 224 pixels)
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_NB_SCROLLING_ZONES; X++, _ms_tmp2++) {
+            _ms_tmpptr[++Y] = 0x4f; // 16 lines
+            _ms_tmpptr[++Y] = _ms_pscroll_dls[X] >> 8; // High address
+            _ms_tmpptr[++Y] = _ms_pscroll_dls[X]; // Low address
+        }
+        // 1 pixel high region for the last display list (for vertical scrolling)
+        _ms_tmpptr[++Y] = 0x40; // 1 line
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
+        if (_ms_pal_detected) {
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x2f;  // 16 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+            // 16 blank lines
+            _ms_tmpptr[++Y] = 0x0f;  // 16 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+            // 4 blank lines
+            _ms_tmpptr[++Y] = 0x03;  // 4 lines
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        } else {
+            _ms_tmpptr[++Y] = 0x2a; // 11 lines. 8 high zone Holey DMA enabled just in case...
+            _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+            _ms_tmpptr[++Y] = _ms_blank_dl;
+        }
+        _ms_tmpptr = _ms_pscroll_b1_dll;
+        X = _MS_DLL_ARRAY_SIZE;
+    }
+
+    // Fill the prepended data with DMA masking object
+    for (X = 0; X != _MS_DLL_ARRAY_SIZE * 2; X++) {
+        _ms_tmpptr = _ms_pscroll_dls[X] - _MS_PSCROLL_DMA_MASKING_OFFSET;
+        Y = 0;
+        _ms_tmpptr[Y++] = 0; 
+        _ms_tmpptr[Y++] = 0x80; // WM = 1, Direct mode, DMA kill
+        _ms_tmpptr[Y++] = 0xa0;
+        _ms_tmpptr[Y++] = 0;
+        _ms_tmpptr[Y] = 0; 
+    }
+
+    _ms_pscroll_fine_offset = 0;
+    _ms_pscroll_coarse_offset = 0;
+    _ms_delayed_pscroll = 0;
+    _ms_pscroll_sbuffer_size = 0;
+ 
+    while (!(*MSTAT < 0)); // Wait for VBLANK
+    *DPPH = _ms_pscroll_b1_dll >> 8; // 1 the current displayed buffer
+    *DPPL = _ms_pscroll_b1_dll;
+}
+
+#define multisprite_pscroll_buffer_empty() (!_ms_pscroll_sbuffer_size)
+
+#define multisprite_pscroll_init_sparse_tiles(ptr) \
+    _ms_pscroll_sparse_tiles_ptr_high = ptr[Y = 0];\
+    _ms_pscroll_sparse_tiles_ptr_low = ptr[Y = 1];\
+    _ms_pscroll_sbuffer_size = 128;
+
+void multisprite_pscroll_buffer_sparse_tiles(char c)
+{
+    char *stiles, tmp, writemode = -1;
+    Y = c;
+    stiles = _ms_pscroll_sparse_tiles_ptr_low[Y] | (_ms_pscroll_sparse_tiles_ptr_high[Y] << 8);   
+    Y = 1;
+    tmp = stiles[Y];
+    X = _ms_pscroll_sbuffer_size & 0x7f;
+    while (tmp != 0xff) {
+        _ms_pscroll_sbuffer[X++] = stiles[++Y]; // Low address
+        char mode = stiles[++Y];
+        if ((mode & 0x20) || ((mode & 0x80) != writemode)) { // Indirect or different writemode
+            _ms_pscroll_sbuffer[X++] = mode;
+            _ms_pscroll_sbuffer[X++] = stiles[++Y];
+            _ms_pscroll_sbuffer[X++] = stiles[++Y];
+            writemode = mode & 0x80;
+        } else {
+            // We can do it in 4 bytes mode
+            char ha = stiles[++Y];
+            char wp = stiles[++Y];
+            _ms_pscroll_sbuffer[X++] = wp;
+            _ms_pscroll_sbuffer[X++] = ha;
+        }
+        _ms_pscroll_sbuffer[X++] = tmp << 3;
+        ++Y;
+        tmp = stiles[++Y];
+    }
+    if (!X) X = 128; // To mark sbuffer_size != 0
+    _ms_pscroll_sbuffer_size = X;
+}
+
+void _ms_pscroll_adjust_bottom_of_screen()
+{
+    X = _ms_pscroll_coarse_offset + _MS_NB_SCROLLING_ZONES;
+    if (X >= 16) X -= 16;
+
+    if (_ms_buffer) {
+        _ms_tmpptr = _ms_pscroll_b1_dll;
+        X += _MS_DLL_ARRAY_SIZE;
+    } else {
+        _ms_tmpptr = _ms_pscroll_b0_dll;
+    }
+    if (_ms_pal_detected) { Y = 6 + 3 * _MS_NB_TOP_ZONES; } else { Y = 3 + 3 * _MS_NB_TOP_ZONES; }
+    _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | (15 - _ms_pscroll_fine_offset); // 16 - _ms_pscroll_fine_offset lines
+    Y +=  3 * _MS_NB_SCROLLING_ZONES;
+    if (_ms_pscroll_fine_offset) {
+        _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | 0x0f; // 16 lines
+         _ms_tmpptr2 = _ms_pscroll_dls[X] - _MS_PSCROLL_DMA_MASKING_OFFSET; // Point last line to prepended DMA masking object
+        _ms_tmpptr[++Y] = _ms_tmpptr2 >> 8;
+        _ms_tmpptr[++Y] = _ms_tmpptr2;
+        ++Y;
+        _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | _ms_pscroll_fine_offset;  // _ms_pscroll_fine_offset + 1 lines
+        _ms_tmp = 0xa0 | _ms_pscroll_fine_offset;
+        _ms_tmpptr2[Y = 2] = _ms_tmp;
+    } else {
+        _ms_tmpptr[Y] &= 0xf0; // 1 line
+        _ms_tmpptr[++Y] = _ms_blank_dl >> 8;
+        _ms_tmpptr[++Y] = _ms_blank_dl;
+        ++Y;
+        _ms_tmpptr[Y] = (_ms_tmpptr[Y] & 0xf0) | 0x0f;  // 16 lines
+    }
+}
+
+void _ms_pscroll_move_dlls_down()
+{
+    if (_ms_pal_detected) {
+        Y = 6 + (_MS_NB_TOP_ZONES * 3);
+    } else {
+        Y = 3 + (_MS_NB_TOP_ZONES * 3);
+    }
+    if (_ms_buffer) {
+        _ms_tmpptr = _ms_pscroll_b1_dll;
+        X = _ms_pscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+        // 16 pixel high regions
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_NB_SCROLLING_ZONES; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_pscroll_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_pscroll_dls[X]; // Low address
+            X++;
+            if (X == _MS_DLL_ARRAY_SIZE + 16) X = _MS_DLL_ARRAY_SIZE;
+        }
+        Y++;
+        _ms_tmpptr[Y++] = _ms_pscroll_dls[X] >> 8; // High address
+        _ms_tmpptr[Y++] = _ms_pscroll_dls[X]; // Low address
+        
+        // Copy the scroll buffer to the first zone 
+        X = _ms_pscroll_coarse_offset + _MS_DLL_ARRAY_SIZE;
+    } else {
+        _ms_tmpptr = _ms_pscroll_b0_dll;
+        X = _ms_pscroll_coarse_offset;
+        // 16 pixel high regions
+        for (_ms_tmp2 = 0; _ms_tmp2 != _MS_NB_SCROLLING_ZONES; _ms_tmp2++) {
+            Y++;
+            _ms_tmpptr[Y++] = _ms_pscroll_dls[X] >> 8; // High address
+            _ms_tmpptr[Y++] = _ms_pscroll_dls[X]; // Low address
+            X++;
+            if (X == 16) X = 0;
+        }
+        Y++;
+        _ms_tmpptr[Y++] = _ms_pscroll_dls[X] >> 8; // High address
+        _ms_tmpptr[Y++] = _ms_pscroll_dls[X]; // Low address
+        
+        // Copy the scroll buffer to the first zone 
+        X = _ms_pscroll_coarse_offset;
+    }
+
+    _ms_tmpptr = _ms_pscroll_dls[X];
+    Y = _ms_pscroll_sbuffer_size & 0x7f;
+    _ms_tmpptr[++Y] = 0; // Termination byte
+    Y--; Y--; // Come back to the right position before copy
+    for (; Y >= 0; Y--) { 
+        _ms_tmpptr[Y] = _ms_pscroll_sbuffer[Y];
+    }
+}
+
+void multisprite_pscrolling()
+{
+    _ms_pscroll_fine_offset -= _ms_tmp;
+    if (_ms_pscroll_fine_offset < 0) {
+        _ms_pscroll_coarse_offset--; 
+        if (_ms_pscroll_coarse_offset < 0)
+            _ms_pscroll_coarse_offset = _MS_DLL_ARRAY_SIZE - 1;
+        _ms_move_dlls_down();
+        _ms_pscroll_fine_offset += 16;
+        _ms_delayed_pscroll = 1;
+    } else {
+        _ms_delayed_pscroll = 3;
+    }
+    _ms_pscroll_adjust_bottom_of_screen();
+}
+
+void multisprite_pscroll_flip()
+{
+    if (_ms_buffer) {
+        *DPPH = _ms_pscroll_b1_dll >> 8; // 1 the current displayed buffer
+        *DPPL = _ms_pscroll_b1_dll;
+    } else {
+        *DPPH = _ms_pscroll_b0_dll >> 8; // 0 the current displayed buffer
+        *DPPL = _ms_pscroll_b0_dll;
+    }
+    if (_ms_delayed_pscroll) {
+        if (_ms_delayed_pscroll == 1) {
+            _ms_pscroll_move_dlls_down();
+            _ms_pscroll_sbuffer_size = 0;
+        }
+        _ms_pscroll_adjust_bottom_of_screen();
+        _ms_delayed_pscroll = 0;
+    }
+}
+
+#endif // PARALLAX_SCROLLING
 
 #endif // __ATARI7800_MULTISPRITE__
