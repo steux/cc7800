@@ -792,11 +792,14 @@ void step()
 
 void main()
 {
+    char first = 1;
     *OFFSET = 0x09; // Active Maria+ mode
     init();
     
     start_level1();
-
+    multisprite_pscroll_sparse_tiling(200, 0, 0, 14);
+    //multisprite_sparse_tiling(tilemap_data_ptrs, 200, 0, 0, 14);
+    
     // Main loop
     do {
         // Prepare scrolling data
@@ -829,6 +832,10 @@ void main()
         multisprite_plus_flip();
         #ifdef PARALLAX_SCROLLING
         multisprite_pscroll_flip();
+        if (first) {
+            first = 0;
+            multisprite_pscroll_sparse_tiling(200, 0, 0, 14);
+        }
         #endif
         if (scrolling_done != 3) {
             multisprite_vertical_scrolling(2);

@@ -2944,6 +2944,48 @@ void multisprite_pscroll_flip()
     }
 }
 
+void multisprite_pscroll_sparse_tiling(char line, char top, char left, char height)
+{
+    char *ptr, data[5], y, bottom;
+    _ms_tmp2 = line;
+
+    bottom = top + height;
+    if (_ms_buffer) {
+        top += _MS_DLL_ARRAY_SIZE; 
+        bottom += _MS_DLL_ARRAY_SIZE;
+    }
+
+    for (X = top; X < bottom; _ms_tmp2++, X++) {
+        Y = _ms_tmp2;
+        ptr = _ms_pscroll_sparse_tiles_ptr_low[Y] | (_ms_pscroll_sparse_tiles_ptr_high[Y] << 8);   
+        _ms_tmpptr = _ms_pscroll_dls[X];
+        Y = 1;
+        y = 0;
+        data[4] = ptr[Y];
+        while (data[4] != 0xff) {
+            data[0] = ptr[++Y];
+            data[1] = ptr[++Y];
+            data[2] = ptr[++Y];
+            data[3] = ptr[++Y];
+            ++Y;
+            _save_y = Y;
+            Y = y; // 6 cycles
+            _ms_tmpptr[Y++] = data[0]; // 11 cycles
+            _ms_tmpptr[Y++] = data[1];
+            _ms_tmpptr[Y++] = data[2];
+            _ms_tmpptr[Y++] = data[3];
+            _ms_tmpptr[Y++] = (data[4] << 3) + left;
+            y = Y; // 21 cycles
+            Y = _save_y;
+            Y++;
+            data[4] = ptr[++Y];
+        }
+        Y = y;
+        _ms_tmpptr[++Y] = 0;
+    }
+}
+
+
 #endif // PARALLAX_SCROLLING
 
 #endif // __ATARI7800_MULTISPRITE__
