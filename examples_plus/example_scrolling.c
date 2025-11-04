@@ -140,7 +140,7 @@ void multisprite_pscroll_buffer_sparse_tiles(char c)
     stiles = _ms_pscroll_sparse_tiles_ptr_low[Y] | (_ms_pscroll_sparse_tiles_ptr_high[Y] << 8);   
     Y = 1;
     tmp = stiles[Y];
-    X = _ms_pscroll_sbuffer_size & 0x7f;
+    X = 0; //_ms_pscroll_sbuffer_size & 0x7f;
     while (tmp != 0xff) {
         _ms_pscroll_sbuffer[X++] = stiles[++Y]; // Low address
         char mode = stiles[++Y];
@@ -157,6 +157,7 @@ void multisprite_pscroll_buffer_sparse_tiles(char c)
             _ms_pscroll_sbuffer[X++] = ha;
         }
         _ms_pscroll_sbuffer[X++] = tmp << 3;
+        ++Y;
         ++Y;
         tmp = stiles[++Y];
     }
@@ -238,6 +239,8 @@ void _ms_pscroll_move_dlls_down()
         // Copy the scroll buffer to the first zone 
         X = _ms_pscroll_coarse_offset;
     }
+
+    //_ms_pscroll_sbuffer_size = 0; 
 
     _ms_tmpptr = _ms_pscroll_dls[X];
     Y = _ms_pscroll_sbuffer_size & 0x7f;
@@ -388,15 +391,15 @@ void main()
     level1();
 
     multisprite_pscroll_sparse_tiling(200, 0, 0, 14);
+    multisprite_pscroll_buffer_sparse_tiles(--pscrolling_counter);
+    pscrolling_counter--;
     
     // Main loop
     do {
-        /*
         if (multisprite_pscroll_buffer_empty()) {
             multisprite_pscroll_buffer_sparse_tiles(pscrolling_counter);
             if (pscrolling_counter) pscrolling_counter--; 
         }
-        */
 
         if (_ms_buffer == 1) _ms_buffer = 0;
         else _ms_buffer = 1;

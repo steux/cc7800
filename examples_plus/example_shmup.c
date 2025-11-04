@@ -798,8 +798,9 @@ void main()
     
     start_level1();
     multisprite_pscroll_sparse_tiling(200, 0, 0, 14);
-    //multisprite_sparse_tiling(tilemap_data_ptrs, 200, 0, 0, 14);
-    
+    multisprite_pscroll_buffer_sparse_tiles(--pscrolling_counter);
+    pscrolling_counter--;
+
     // Main loop
     do {
         // Prepare scrolling data
@@ -840,7 +841,7 @@ void main()
         if (scrolling_done != 3) {
             multisprite_vertical_scrolling(2);
             #ifdef PARALLAX_SCROLLING
-            //multisprite_pscrolling(1);
+            multisprite_pscrolling(1);
             #endif
         }
     } while(1);

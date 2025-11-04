@@ -2711,7 +2711,7 @@ INIT_BANK void multisprite_pscroll_init()
         _ms_tmpptr[Y] = 0; 
     }
     _ms_tmpptr = _ms_pscroll_b0_dll;
-    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
+    for (X = 0, _ms_tmp = 0; _ms_tmp != 2; _ms_tmp++) {
         // Build DLL
         // 69 blank lines for PAL
         // 19 blank lines for NTSC
@@ -2818,6 +2818,7 @@ void multisprite_pscroll_buffer_sparse_tiles(char c)
             _ms_pscroll_sbuffer[X++] = ha;
         }
         _ms_pscroll_sbuffer[X++] = tmp << 3;
+        ++Y;
         ++Y;
         tmp = stiles[++Y];
     }
