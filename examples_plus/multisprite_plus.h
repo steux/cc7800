@@ -975,8 +975,14 @@ inline void multisprite_start()
     _ms_dmaerror = 0;
     
     while (!(*MSTAT < 0)); // Wait for VBLANK
+#ifdef PARALLAX_SCROLLING
+    *MP1_DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
+    *MP1_DPPL = _ms_b1_dll;
+    *MP1_CTRL = 0x10; // 2 characters width
+#else
     *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
     *DPPL = _ms_b1_dll;
+#endif
 #ifdef MODE_320AC
     *CTRL = 0x53;
 #else
@@ -1664,8 +1670,13 @@ void multisprite_flip()
         *BACKGRND = 0x0;
 #endif
         while (!(*MSTAT < 0)); // Wait for VBLANK
+#ifdef PARALLAX_SCROLLING
+        *MP1_DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
+        *MP1_DPPL = _ms_b1_dll;
+#else
         *DPPH = _ms_b1_dll >> 8; // 1 the current displayed buffer
         *DPPL = _ms_b1_dll;
+#endif
 #ifdef DEBUG
         *BACKGRND = 0x0f;
 #endif
@@ -1711,8 +1722,13 @@ void multisprite_flip()
         *BACKGRND = 0x0;
 #endif
         while (!(*MSTAT < 0)); // Wait for VBLANK
+#ifdef PARALLAX_SCROLLING
+        *MP1_DPPH = _ms_b0_dll >> 8; // 1 the current displayed buffer
+        *MP1_DPPL = _ms_b0_dll;
+#else
         *DPPH = _ms_b0_dll >> 8; // 0 the current displayed buffer
         *DPPL = _ms_b0_dll;
+#endif
 #ifdef DEBUG
         *BACKGRND = 0x0f;
 #endif
@@ -2360,8 +2376,13 @@ INIT_BANK void multisprite_plus_init()
         _ms_tmpptr = _ms_plus_b1_dll;
         X = _MS_DLL_ARRAY_SIZE;
     }
+#ifdef PARALLAX_SCROLLING
+    *MP2_DPPH = _ms_plus_b1_dll >> 8; // 1 the current displayed buffer
+    *MP2_DPPL = _ms_plus_b1_dll;
+#else
     *MP1_DPPH = _ms_plus_b1_dll >> 8; // 1 the current displayed buffer
     *MP1_DPPL = _ms_plus_b1_dll;
+#endif
 }
 
 void multisprite_plus_flip()
@@ -2373,8 +2394,13 @@ void multisprite_plus_flip()
             Y = _ms_plus_dlend[X];
             _ms_tmpptr[++Y] = 0; 
         }
+#ifdef PARALLAX_SCROLLING
+        *MP2_DPPH = _ms_plus_b1_dll >> 8; // 1 the current displayed buffer
+        *MP2_DPPL = _ms_plus_b1_dll;
+#else
         *MP1_DPPH = _ms_plus_b1_dll >> 8; // 1 the current displayed buffer
         *MP1_DPPL = _ms_plus_b1_dll;
+#endif
         for (X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; X--) {
             _ms_plus_dlend[X] = 0;
         }
@@ -2385,8 +2411,13 @@ void multisprite_plus_flip()
             Y = _ms_plus_dlend[X];
             _ms_tmpptr[++Y] = 0; 
         }
-        *MP1_DPPH = _ms_plus_b0_dll >> 8; // 0 the current displayed buffer
+#ifdef PARALLAX_SCROLLING
+        *MP2_DPPH = _ms_plus_b0_dll >> 8; // 1 the current displayed buffer
+        *MP2_DPPL = _ms_plus_b0_dll;
+#else
+        *MP1_DPPH = _ms_plus_b0_dll >> 8; // 1 the current displayed buffer
         *MP1_DPPL = _ms_plus_b0_dll;
+#endif
         for (Y = _MS_DLL_ARRAY_SIZE * 2 - 1, X = _MS_DLL_ARRAY_SIZE - 1; X >= 0; Y--, X--) {
           _ms_plus_dlend[Y] = 0;
         }
@@ -2651,7 +2682,8 @@ void multisprite_plus_flip()
 
 #ifdef PARALLAX_SCROLLING
 #ifndef _MS_PSCROLL_DL_SIZE
-#define _MS_PSCROLL_DL_SIZE (3*5 + 2 + 5) 
+#define _MS_PSCROLL_DL_SIZE 32 
+//#define _MS_PSCROLL_DL_SIZE (3*5 + 2 + 5) 
 #endif
 #define _MS_PSCROLL_DMA_MASKING_OFFSET 5
 
@@ -2673,6 +2705,11 @@ char *_ms_pscroll_sparse_tiles_ptr_high, *_ms_pscroll_sparse_tiles_ptr_low;
 
 INIT_BANK void multisprite_pscroll_init()
 {
+    Y = 1;
+    for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
+        _ms_tmpptr = _ms_pscroll_dls[X];
+        _ms_tmpptr[Y] = 0; 
+    }
     _ms_tmpptr = _ms_pscroll_b0_dll;
     for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
         // Build DLL
@@ -2872,14 +2909,14 @@ void _ms_pscroll_move_dlls_down()
     }
 }
 
-void multisprite_pscrolling()
+void multisprite_pscrolling(char s)
 {
-    _ms_pscroll_fine_offset -= _ms_tmp;
+    _ms_pscroll_fine_offset -= s;
     if (_ms_pscroll_fine_offset < 0) {
         _ms_pscroll_coarse_offset--; 
         if (_ms_pscroll_coarse_offset < 0)
             _ms_pscroll_coarse_offset = _MS_DLL_ARRAY_SIZE - 1;
-        _ms_move_dlls_down();
+        _ms_pscroll_move_dlls_down();
         _ms_pscroll_fine_offset += 16;
         _ms_delayed_pscroll = 1;
     } else {
@@ -2890,7 +2927,7 @@ void multisprite_pscrolling()
 
 void multisprite_pscroll_flip()
 {
-    if (_ms_buffer) {
+    if (!_ms_buffer) { // ms_buffer has already been flipped by multisprite_flip()
         *DPPH = _ms_pscroll_b1_dll >> 8; // 1 the current displayed buffer
         *DPPL = _ms_pscroll_b1_dll;
     } else {

@@ -81,6 +81,9 @@ ramchip char button_pressed;
 ramchip char exhaust_state;
 ramchip char spaceship_xpos, spaceship_ypos, spaceship_state, spaceship_state_counter; 
 ramchip char scrolling_counter, scrolling_done;
+#ifdef PARALLAX_SCROLLING
+ramplus char pscrolling_counter;
+#endif
 
 ramchip char game_state;
 #define STATE_RUNNING  0
@@ -121,6 +124,9 @@ INIT_BANK new_game()
     exhaust_state = 0;
     scrolling_done = 0;
     scrolling_counter = 255;
+    #ifdef PARALLAX_SCROLLING
+    pscrolling_counter = 200;
+    #endif
 
     // Initialize bullets
     bullet_first = 0;
@@ -163,13 +169,23 @@ INIT_BANK void init()
     multisprite_get_tv();
     multisprite_plus_init();
     multisprite_plus_init_overlay();
+    #ifdef PARALLAX_SCROLLING
+    multisprite_pscroll_init();
+    *MP3_DPPH = _ms_overlay_dll >> 8;
+    *MP3_DPPL = _ms_overlay_dll;
+    *MP3_CTRL = 0x10; // 2 charaacters width
+    *CHBASE = blue_objects1 >> 8;
+    *MP1_CHBASE = blue_objects1 >> 8;
+    *MP3_CHBASE = digits >> 8;
+    #else
     *MP2_DPPH = _ms_overlay_dll >> 8;
     *MP2_DPPL = _ms_overlay_dll;
     *MP2_CTRL = 0x10; // 2 charaacters width
+    *CHBASE = blue_objects1 >> 8;
     *MP2_CHBASE = digits >> 8; 
+    #endif    
 
     multisprite_init();
-    multisprite_set_charbase(blue_objects1);
     joystick_init();
     button_pressed = 0;
 
@@ -222,6 +238,46 @@ INIT_BANK void init()
     *MP1_P7C3 = 0x0f; // White 
 
     // Grey palette
+    *MP3_P0C1 = 0x04;
+    *MP3_P0C2 = 0x08;
+    *MP3_P0C3 = 0x0b;
+
+    // Blue palette
+    *MP3_P1C1 = multisprite_color(0x84); // Dark blue 
+    *MP3_P1C2 = multisprite_color(0x87); // Light blue
+    *MP3_P1C3 = multisprite_color(0xac); // Turquoise 
+
+    // Green palette
+    *MP3_P2C1 = multisprite_color(0xd4); // Dark green 
+    *MP3_P2C2 = multisprite_color(0xd8); // Light green
+    *MP3_P2C3 = 0x0e; 
+    
+    // Yellow palette (bright)
+    *MP3_P3C1 = multisprite_color(0x19); // Yellow (dark)
+    *MP3_P3C2 = multisprite_color(0x1c); // Yellow
+    *MP3_P3C3 = multisprite_color(0x1f); // Yellow (bright) 
+
+    // Yellow palette (bright)
+    *MP3_P4C1 = multisprite_color(0x19); // Yellow (dark)
+    *MP3_P4C2 = multisprite_color(0x1c); // Yellow
+    *MP3_P4C3 = multisprite_color(0x1f); // Yellow (bright) 
+
+    // Blue palette
+    *MP3_P5C1 = multisprite_color(0x54); // Dark purple 
+    *MP3_P5C2 = multisprite_color(0x57); // Light purple
+    *MP3_P5C3 = multisprite_color(0x5c); // Rose 
+
+    // Green palette
+    *MP3_P6C1 = multisprite_color(0xda); // Light green 
+    *MP3_P6C2 = multisprite_color(0xdd); // Very light green
+    *MP3_P6C3 = 0x0f; 
+    
+    // Fire palette (with white)
+    *MP3_P7C1 = multisprite_color(0x44); // Red
+    *MP3_P7C2 = multisprite_color(0x38); // Orange
+    *MP3_P7C3 = 0x0f; // White 
+    
+    // Grey palette
     *MP2_P0C1 = 0x04;
     *MP2_P0C2 = 0x08;
     *MP2_P0C3 = 0x0b;
@@ -266,16 +322,16 @@ INIT_BANK void init()
     *P0C2 = 0x08;
     *P0C3 = 0x0b;
 
-    // Blue palette
-    *P1C1 = multisprite_color(0x84); // Dark blue 
-    *P1C2 = multisprite_color(0x87); // Light blue
-    *P1C3 = multisprite_color(0xac); // Turquoise 
-
     // Green palette
-    *P2C1 = multisprite_color(0xd4); // Dark green 
-    *P2C2 = multisprite_color(0xd8); // Light green
-    *P2C3 = 0x0e; 
+    *P1C1 = multisprite_color(0xd4); // Dark green 
+    *P1C2 = multisprite_color(0xd8); // Light green
+    *P1C3 = 0x0e; 
     
+    // Blue palette
+    *P2C1 = multisprite_color(0x84); // Dark blue 
+    *P2C2 = multisprite_color(0x87); // Light blue
+    *P2C3 = multisprite_color(0xac); // Turquoise 
+
     // Fire palette
     *P3C1 = multisprite_color(0x43); // Red
     *P3C2 = multisprite_color(0x37); // Orange
@@ -376,6 +432,9 @@ bank1 void start_level1()
 {
     // Init level 1 music (in bank1)
     multisprite_vscroll_init_sparse_tiles(tilemap_data_ptrs);
+    #ifdef PARALLAX_SCROLLING
+    multisprite_pscroll_init_sparse_tiles(tilemap_data_ptrs);
+    #endif
     spawn_boss();
     music_on = 1;
 }
@@ -750,6 +809,14 @@ void main()
                 scrolling_done = 2;
             } else scrolling_done = 3;
         }
+        #ifdef PARALLAX_SCROLLING
+        if (multisprite_pscroll_buffer_empty()) {
+            if (!scrolling_done) {
+                multisprite_pscroll_buffer_sparse_tiles(pscrolling_counter);
+                if (pscrolling_counter) pscrolling_counter--; 
+            }
+        }
+        #endif
 
         joystick_input();
         step();
@@ -760,6 +827,14 @@ void main()
 
         multisprite_flip();
         multisprite_plus_flip();
-        if (scrolling_done != 3) multisprite_vertical_scrolling(2);
+        #ifdef PARALLAX_SCROLLING
+        multisprite_pscroll_flip();
+        #endif
+        if (scrolling_done != 3) {
+            multisprite_vertical_scrolling(2);
+            #ifdef PARALLAX_SCROLLING
+            //multisprite_pscrolling(1);
+            #endif
+        }
     } while(1);
 }
