@@ -1004,7 +1004,7 @@ INIT_BANK void multisprite_init()
     multisprite_save();
 
     _ms_tmpptr = _ms_b0_dll;
-    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
+    for (X = 0, _ms_tmp = 0; _ms_tmp != 2; _ms_tmp++) {
         // Build DLL
         // 69 blank lines for PAL
         // 19 blank lines for NTSC
@@ -2326,7 +2326,7 @@ INIT_BANK void multisprite_plus_init()
         _ms_tmpptr[Y] = 0; 
     }
     _ms_tmpptr = _ms_plus_b0_dll;
-    for (X = 0, _ms_tmp = 0; _ms_tmp <= 1; _ms_tmp++) {
+    for (X = 0, _ms_tmp = 0; _ms_tmp != 2; _ms_tmp++) {
         // Build DLL
         // 69 blank lines for PAL
         // 19 blank lines for NTSC
