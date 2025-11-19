@@ -822,6 +822,7 @@ void main()
         }
         #endif
 
+        sfx_play();
         joystick_input();
         step();
         if (update_score) {

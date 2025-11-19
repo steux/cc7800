@@ -16,7 +16,7 @@ void interrupt dli()
 void main()
 {
     char i, j, k, l;
-    *OFFSET = 0x03; // Activate Pokey1 + Pokey2 
+    *OFFSET = '+'; //0x03; // Activate Pokey1 + Pokey2 
     clrscr();
     gotoxy(6, 0);
     textcolor(2);

@@ -1687,13 +1687,12 @@ pub fn build_cartridge(
     }
 
     if plusram {
-        gstate.write("\n\tSEG.U RAM1\n\tORG $1000\n\tRORG $1000\n")?;
+        gstate.write("\n\tSEG.U RAM1\n\tORG $2800\n\tRORG $2800\n")?;
         // main RAM variables
         let mut filled = 0;
-        let mut ram1_filled = false;
         //let mut ram2_filled = false;
         if args.verbose && args.verbosity >= 2 {
-            println!("Atari 7800+ internal RAM : 0x1000 to 0x17ff & 0x2800 to 0x2fff");
+            println!("Atari 7800+ internal RAM : 0x2800 to 0x37ff");
         }
         for v in compiler_state.sorted_variables().iter() {
             if v.1.memory == VariableMemory::Ramplus && v.1.def == VariableDefinition::None {
@@ -1715,26 +1714,6 @@ pub fn build_cartridge(
                     }
                 };
                 filled += sx;
-                if filled > 2048 && !ram1_filled {
-                    // Skip the zeropage shadow
-                    ram1_filled = true;
-                    /*
-                    gstate.write("\n\tSEG.U RAM2\n\tORG $2100\n\tRORG $2200\n")?;
-                    filled = 0x900 + sx;
-                    if args.verbose {
-                    println!("Atari 7800 internal RAM : 0x2100 onwards (in between zeropage & stack shadows)");
-                    }
-                    }
-                    if filled > 0x940 && !ram2_filled {
-                    // Skip the stack shadow
-                    ram2_filled = true;
-                    */
-                    gstate.write("\n\tSEG.U RAM3\n\tORG $2800\n\tRORG $2800\n")?;
-                    filled = 2048 + sx;
-                    if args.verbose && args.verbosity >= 2 {
-                        println!("Atari 7800 internal RAM : 0x2800 onwards");
-                    }
-                }
                 if filled > 4096 {
                     return Err(Error::Configuration {
                         error: "Memory full. Internal Atari 7800+ extra RAM is limited to 4KB".to_string(),
