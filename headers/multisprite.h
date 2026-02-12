@@ -201,7 +201,7 @@ ramchip char _ms_pal_detected;
 ramchip char _ms_pal_frame_skip_counter;
 
 INIT_BANK void multisprite_init();
-INIT_BANK void multisprite_clear();
+void multisprite_clear();
 void multisprite_save();
 void multisprite_restore();
 void multisprite_flip();
@@ -1071,7 +1071,7 @@ INIT_BANK void multisprite_init()
     multisprite_start();
 }
 
-INIT_BANK void multisprite_clear()
+void multisprite_clear()
 {
     // Reset DL ends for both buffers
     for (X = _MS_DLL_ARRAY_SIZE * 2 - 1; X >= 0; X--) {
@@ -1119,7 +1119,14 @@ void multisprite_save()
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
             _ms_tmpptr2 = _ms_dls[X = _ms_tmp];
-            for (Y = _ms_dlend_save[X] - 1; Y >= 0; Y--) {
+            // 2 Zeroes
+            Y = _ms_dlend_save[X];
+            Y++;
+            _ms_tmpptr[Y] = 0;
+            _ms_tmpptr2[Y--] = 0;
+            _ms_tmpptr[Y] = 0;
+            _ms_tmpptr2[Y--] = 0;
+            for (; Y >= 0; Y--) {
                 _ms_tmpptr2[Y] = _ms_tmpptr[Y];
             } 
         }
@@ -1140,7 +1147,14 @@ void multisprite_save()
         for (_ms_tmp = _MS_DLL_ARRAY_SIZE - 1; _ms_tmp >= 0; _ms_tmp--) {
             _ms_tmpptr = _ms_dls[X = _ms_tmp + _MS_DLL_ARRAY_SIZE];
             _ms_tmpptr2 = _ms_dls[X = _ms_tmp];
-            for (Y = _ms_dlend_save[X] - 1; Y >= 0; Y--) {
+            // 2 Zeroes
+            Y = _ms_dlend_save[X];
+            Y++;
+            _ms_tmpptr[Y] = 0;
+            _ms_tmpptr2[Y--] = 0;
+            _ms_tmpptr[Y] = 0;
+            _ms_tmpptr2[Y--] = 0;
+            for (; Y >= 0; Y--) {
                 _ms_tmpptr[Y] = _ms_tmpptr2[Y];
             } 
         }
@@ -1174,6 +1188,14 @@ void multisprite_clear_overlay()
             _ms_dlend[X] = _ms_dlend_save[X];
         }
     }
+}
+
+void multisprite_clear_overlay_line(char line)
+{
+    X = Y = line;
+    if (_ms_buffer) Y = line | _MS_DLL_ARRAY_SIZE;
+    _ms_dlend_save_overlay[Y] = _ms_dlend_save[X];
+    _ms_dlend[Y] = _ms_dlend_save[X];
 }
 #endif
 
@@ -2123,9 +2145,14 @@ void _ms_display_bitmap(char left, char top, char height)
 
     for (X = top; X < bottom; _ms_tmp2++) {
         Y = _ms_tmp2;
-        ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);   
-        _ms_tmpptr = _ms_dls[X];
-        y = _ms_dlend[X];
+        ptr = _ms_sparse_tiles_ptr_low[Y] | (_ms_sparse_tiles_ptr_high[Y] << 8);  
+        if (_ms_buffer) {
+            _ms_tmpptr = _ms_dls[Y = X | _MS_DLL_ARRAY_SIZE];
+            y = _ms_dlend[Y];
+        } else {
+            _ms_tmpptr = _ms_dls[X];
+            y = _ms_dlend[X];
+        }
         Y = 0;
         // First 5 bytes serie (setting the mode)
         data[0] = ptr[Y++];
@@ -2159,8 +2186,14 @@ void _ms_display_bitmap(char left, char top, char height)
             data[0] = ptr[Y++];
             data[1] = ptr[Y++];
         }
+        Y = y;
         _ms_tmpptr[++Y] = 0;
-        _ms_dlend[X++] = y;
+        if (_ms_buffer) {
+            _ms_dlend[Y = X | _MS_DLL_ARRAY_SIZE] = y;
+        } else {
+            _ms_dlend[X] = y;
+        }
+        X++;
     }
 }
 
