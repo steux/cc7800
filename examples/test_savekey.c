@@ -1,4 +1,5 @@
 #include "conio.h"
+#include "joystick.h"
 
 #include "i2c.inc"
 
@@ -83,21 +84,40 @@ eeprom_error:
 
 void main()
 {
-    clrscr();
-    for (i = 0; i != 100; i++) {
-        itoa(i, str, 10);
+    joystick_init();
+    do {
+        clrscr();
+        for (i = 0; i != 100; i++) {
+            itoa(i, str, 10);
+            gotoxy(0, 0);
+            cputs(str);
+            gotoxy(0, 1);
+            cputs("Write test");
+            gotoxy(0, 2);
+            if (!savekey_write()) { cputs("Test failed"); }
+            gotoxy(0, 3);
+            cputs("Read test");
+            gotoxy(0, 4);
+            if (!savekey_read()) { cputs("Test failed"); }
+            gotoxy(0, 5);
+            if (i != j) { cputs("Test failed"); }
+        }
+        gotoxy(0, 6);
+        cputs("Press button to restart");
+        do {
+            joystick_update();
+        } while (!(joystick[0] & JOYSTICK_BUTTON1));
+        do {
+            joystick_update();
+        } while (joystick[0] & JOYSTICK_BUTTON1);
+
+        clrscr();
         gotoxy(0, 0);
-        cputs(str);
-        gotoxy(0, 1);
-        cputs("Write test");
-        gotoxy(0, 2);
-        if (!savekey_write()) { cputs("Test failed"); }
-        gotoxy(0, 3);
-        cputs("Read test");
-        gotoxy(0, 4);
-        if (!savekey_read()) { cputs("Test failed"); }
-        gotoxy(0, 5);
-        if (i != j) { cputs("Test failed"); }
-    } 
-    while(1);
+        cputs("Toggling joystick port 2 outputs");
+        *CTLSWA = 0x0F; // Set P1 pins as output
+        do {
+            joystick_update();
+            *SWCHA = i++; 
+        } while (!(joystick[0] & JOYSTICK_BUTTON1));
+    } while(1);
 }
