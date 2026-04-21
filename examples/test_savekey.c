@@ -44,7 +44,7 @@ const char dummy[8192] = {
 ==== ASSEMBLER END ====
 
 char i, j;
-char str[4];
+char str[4], wstr[4], rstr[4], istr[4];
 
 char savekey_write()
 {
@@ -52,7 +52,7 @@ char savekey_write()
     asm("bcs .eeprom_error", 2);
     load(0x11);
     asm("jsr i2c_txbyte", 3);
-    load(0x00);
+    load(0x40);
     asm("jsr i2c_txbyte", 3);
     load(i);
     asm("jsr i2c_txbyte", 3);
@@ -69,7 +69,7 @@ char savekey_read()
     asm("bcs .eeprom_error	; exit if command byte not acknowledged", 2);
     load(0x11);
     asm("jsr i2c_txbyte", 3);
-    load(0x00);
+    load(0x40);
     asm("jsr i2c_txbyte", 3);
     asm("jsr i2c_stopwrite", 3);
     asm("jsr i2c_startread", 3);
@@ -78,7 +78,18 @@ char savekey_read()
     asm("jsr i2c_stopread", 3);
     return 1;
 eeprom_error:
-    asm("jsr i2c_stopread", 3);
+    asm("jsr i2c_stopwrite", 3);
+    return 0;
+}
+
+char test_write_finished()
+{
+    asm("jsr i2c_startwrite", 3);
+    asm("bcs .eeprom_error", 2);
+    asm("jsr i2c_stopwrite", 3);
+    return 1;
+eeprom_error:
+    asm("jsr i2c_stopwrite", 3);
     return 0;
 }
 
@@ -86,6 +97,7 @@ void main()
 {
     joystick_init();
     do {
+        char wtest = 0, rtest = 0, itest = 0;
         clrscr();
         for (i = 0; i != 100; i++) {
             itoa(i, str, 10);
@@ -94,13 +106,24 @@ void main()
             gotoxy(0, 1);
             cputs("Write test");
             gotoxy(0, 2);
-            if (!savekey_write()) { cputs("Test failed"); }
+            if (!savekey_write()) wtest++; 
+            itoa(wtest, wstr, 10);
+            cputs(wstr);
+            // Wait for some time
+            char c = 0;
+            for (c = 0; c != 100; c++) {
+                if (test_write_finished()) break;
+            }
             gotoxy(0, 3);
             cputs("Read test");
             gotoxy(0, 4);
-            if (!savekey_read()) { cputs("Test failed"); }
+            if (!savekey_read()) rtest++; 
+            itoa(rtest, rstr, 10);
+            cputs(rstr);
             gotoxy(0, 5);
-            if (i != j) { cputs("Test failed"); }
+            if (i != j) itest++; 
+            itoa(itest, istr, 10);
+            cputs(istr);
         }
         gotoxy(0, 6);
         cputs("Press button to restart");

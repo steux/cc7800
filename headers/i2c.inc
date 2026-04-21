@@ -66,12 +66,16 @@ I2C_SCL_MASK    equ     $08
         nop
         nop     ; Slow down things
         I2C_SDA_OUT
+        nop
+        nop     ; Slow down things
 
         endm
 
 
         mac     I2C_STOP
 
+        nop
+        nop     ; Slow down things
         I2C_SCL_0
         nop
         nop     ; Slow down things
@@ -79,6 +83,8 @@ I2C_SCL_MASK    equ     $08
         nop
         nop     ; Slow down things
         I2C_SCL_1
+        nop
+        nop     ; Slow down things
 
         ; return port to input mode
         lda     #$00
@@ -98,6 +104,7 @@ I2C_SCL_MASK    equ     $08
         asl
         sta     SWACNT  ; SDA = !C
 
+        nop
         nop
         nop     ; Slow down things
 
@@ -132,6 +139,10 @@ I2C_SCL_MASK    equ     $08
         I2C_SDA_IN
         nop     ; slow down things a little bit
         I2C_SCL_1
+
+        nop
+        nop
+        nop ; Slow things down
 
         lda     SWCHA
         lsr
